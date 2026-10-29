@@ -3,6 +3,7 @@ import { api } from './api';
 import { adminViewRevision } from './admin-view-authority';
 import { Busy, ErrorBox } from './ui';
 import type { ContentDocument } from './types';
+import { purchaseDependencyNames } from './cms-purchase-dependency-field';
 import {
   supportContentDraftSchema,
   readSupportContentRevision,
@@ -81,14 +82,21 @@ export function SupportContentPreview({
             <p>متن دکمهٔ تیکت: {value.ticketsAction}</p>
             <h3>{value.faqTitle}</h3>
             <p className="preserve-lines">{value.faqDescription}</p>
-            <p>{value.faqs.filter((x) => x.enabled).length.toLocaleString('fa-IR')} پرسش فعال</p>
+            <p>
+              {value.faqs.filter((x) => x.enabled).length.toLocaleString('fa-IR')} پرسش فعال در سند؛
+              وابستگی نوع خرید در نمایش عمومی نیز بررسی می‌شود.
+            </p>
             {value.faqs.map((faq, index) => (
               <article key={faq.id}>
                 <strong>
                   {(index + 1).toLocaleString('fa-IR')}. {faq.question}
                 </strong>
                 <small>
-                  {faq.enabled ? 'در نسخهٔ عمومی نمایش داده می‌شود' : 'غیرفعال؛ در پاسخ عمومی نیست'}
+                  {!faq.enabled
+                    ? 'غیرفعال؛ در پاسخ عمومی نیست'
+                    : faq.purchaseMethodKind
+                      ? `نمایش پس از انتشار، مشروط به فعال‌بودن حداقل یک روش ${purchaseDependencyNames[faq.purchaseMethodKind]}`
+                      : 'فعال؛ بدون وابستگی به نوع خرید'}
                 </small>
                 <p className="preserve-lines">{faq.answer}</p>
               </article>

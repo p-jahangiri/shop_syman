@@ -5,7 +5,7 @@ import { CreditCheckoutQuotePanel } from './credit-checkout-quote-panel';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { customerCreditCheckoutQuoteJournal } from '../lib/credit-checkout-quote-journal';
 import { ArrowLeft, ChevronLeft, CreditCard, Info, RefreshCw, WalletCards } from 'lucide-react';
-import { useI18n } from './locale-provider';
+import { useI18n, useStorefront } from './locale-provider';
 import { useCustomerSession } from './auth-provider';
 import { useShop } from './shop-provider';
 import Link from './localized-link';
@@ -24,6 +24,7 @@ import type { CheckoutQuoteV4 } from '@/lib/quote-v4-contract';
 import type { ServerCartV2 } from '@/lib/cart-v2-contract';
 
 export function AcceptedQuoteReview() {
+  const { purchaseMethods } = useStorefront();
   const { locale, digits, toman, t } = useI18n(),
     auth = useCustomerSession(),
     shop = useShop();
@@ -130,12 +131,17 @@ export function AcceptedQuoteReview() {
   }, []);
   const data = owner && overview?.owner === owner && overview.cart === cart ? overview.data : null,
     failed = !!owner && overview?.owner === owner && overview.cart === cart && overview.failed;
-  const method = data?.methods.find((m) => m.id === methodId) ?? data?.methods[0],
+  const currentMethods =
+    data?.methods.filter((method) =>
+      purchaseMethods.some((current) => current.enabled && current.id === method.id),
+    ) ?? [];
+  const method = currentMethods.find((m) => m.id === methodId) ?? currentMethods[0],
     plan =
       method?.kind === 'cheque'
         ? (data?.plans.find((p) => p.id === planId) ?? data?.plans[0])
         : undefined;
   const calculation =
+      method &&
       saved &&
       saved.cartVersion === cart?.version &&
       saved.selectedMethod?.id === method?.id &&
@@ -405,7 +411,7 @@ export function AcceptedQuoteReview() {
                     role="radiogroup"
                     aria-label={text('روش خرید', 'Purchase method')}
                   >
-                    {data.methods.map((m) => (
+                    {currentMethods.map((m) => (
                       <label
                         key={m.id}
                         className={`payment-option${method?.id === m.id ? ' active' : ''}`}
@@ -429,7 +435,7 @@ export function AcceptedQuoteReview() {
                         </span>
                       </label>
                     ))}
-                    {!data.methods.length && (
+                    {!currentMethods.length && (
                       <p className="notice">
                         {text(
                           'روش خرید مشترکی برای همهٔ این اقلام موجود نیست.',

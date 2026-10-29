@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { Field } from './ui';
-import type { Category } from './types';
+import type { Category, PurchaseMethod } from './types';
+import { CmsPurchaseDependencyField } from './cms-purchase-dependency-field';
 
 export interface CmsMenuItem {
+  purchaseMethodKind?: PurchaseMethod['kind'];
   label: string;
   href: string;
   children?: CmsMenuItem[];
@@ -136,6 +138,11 @@ export function CmsMenuEditor({
                 </select>
               </Field>
             </div>
+            <CmsPurchaseDependencyField
+              label={`وابستگی نمایش «${title}» به نوع خرید`}
+              value={item.purchaseMethodKind}
+              onChange={(purchaseMethodKind) => update(index, { purchaseMethodKind })}
+            />
             <Field
               label="مسیر داخلی"
               hint="مسیر بدون پیشوند fa یا en وارد شود؛ فروشگاه زبان جاری را حفظ می‌کند. تغییر مقصد، عنوان یا زیرمنوهای شما را حذف نمی‌کند."

@@ -32,7 +32,10 @@ function CategoryRules({
   return (
     <fieldset>
       <legend>محدودیت دسته‌ها</legend>
-      <small>بدون انتخاب دسته، این شرایط برای همهٔ دسته‌ها قابل استفاده است.</small>
+      <small>
+        بدون انتخاب دسته، محدودیت دسته‌ای اعمال نمی‌شود؛ محدودیت مبلغ، روش‌های مجاز کالا و وضعیت
+        فعال‌بودن همچنان بررسی می‌شوند.
+      </small>
       {!catalog ? (
         <p>انتخاب‌های فعلی تا دریافت فهرست دسته‌ها حفظ می‌شوند.</p>
       ) : (
@@ -169,6 +172,26 @@ export function MethodForm({
       <SaveNotice uncertain={uncertain} stale={stale} />
       <MissingCatalog catalog={catalog} />
       <fieldset disabled={disabled} className="finance-fields">
+        <legend>تنظیمات روش خرید</legend>
+        <div className="notice">
+          <Check
+            name="purchase-method-enabled"
+            role="switch"
+            label="اجازهٔ استفاده از این روش برای خریدهای جدید"
+            checked={v.enabled}
+            onChange={(e) => set({ ...v, enabled: e.target.checked })}
+          />
+          <p role="status">
+            {v.enabled
+              ? 'با ذخیره، این روش در سطح فروشگاه فعال خواهد بود؛ انتخاب آن برای هر خرید به شرایط کالا، مبلغ، دسته و سرویس مربوط هم وابسته است.'
+              : 'با ذخیره، این روش برای خرید جدید قابل انتخاب نخواهد بود؛ سفارش‌ها، برنامه‌های چکی و سوابق قبلی حفظ می‌شوند.'}
+          </p>
+          <small>
+            تغییر کلید فقط پس از ذخیره اعمال می‌شود. برای حذف معرفی و تبلیغ یک نوع خرید، همهٔ
+            روش‌های همان نوع را غیرفعال کنید؛ خاموش‌کردن یک روش، روش‌های هم‌نوع دیگر را خاموش
+            نمی‌کند.
+          </small>
+        </div>
         <div className="form-grid">
           <Text
             label="عنوان فارسی"
@@ -183,7 +206,10 @@ export function MethodForm({
             onChange={(nameEn) => set({ ...v, nameEn })}
             required
           />
-          <Field label="نوع روش">
+          <Field
+            label="نوع روش"
+            hint="نقدی آنلاین برای درگاه نقدی، چکی برای فروش با چک، و اقساط ارائه‌دهنده برای سرویس اقساطی بیرونی است."
+          >
             <select
               value={v.kind}
               onChange={(e) => set({ ...v, kind: e.target.value as PurchaseMethod['kind'] })}
@@ -224,17 +250,16 @@ export function MethodForm({
         />
         <div className="inline-checks">
           <Check
-            label="فعال"
-            checked={v.enabled}
-            onChange={(e) => set({ ...v, enabled: e.target.checked })}
-          />
-          <Check
             label="نیازمند تأیید (برای چکی اجباری است)"
             checked={v.requiresApproval || v.kind === 'cheque'}
             disabled={v.kind === 'cheque'}
             onChange={(e) => set({ ...v, requiresApproval: e.target.checked })}
           />
         </div>
+        <p className="muted">
+          فعال‌بودن این روش، اتصال یا پذیرش درگاه را اثبات نمی‌کند. برای چکی، تأیید اعتبار و مدارک
+          جداست؛ اجازهٔ ارسال پس از دریافت پیش‌پرداخت و تأیید دستی همهٔ چک‌ها بررسی می‌شود.
+        </p>
       </fieldset>
       <Actions
         disabled={disabled}
@@ -297,6 +322,25 @@ export function PlanForm({
       <SaveNotice uncertain={uncertain} stale={stale} />
       <MissingCatalog catalog={catalog} />
       <fieldset disabled={disabled} className="finance-fields">
+        <legend>تنظیمات طرح چکی</legend>
+        <div className="notice">
+          <Check
+            name="cheque-plan-enabled"
+            role="switch"
+            label="اجازهٔ انتخاب این طرح برای خریدهای چکی جدید"
+            checked={v.enabled}
+            onChange={(e) => set({ ...v, enabled: e.target.checked })}
+          />
+          <p role="status">
+            {v.enabled
+              ? 'با ذخیره، این طرح برای انتخاب‌های جدید فعال خواهد بود؛ روش چکی فعال و شرایط مجاز همان کالا و خرید هم لازم است.'
+              : 'با ذخیره، این طرح از انتخاب‌های جدید خارج می‌شود؛ اقساط و شرایط ثبت‌شدهٔ سفارش‌های قبلی تغییر نمی‌کنند.'}
+          </p>
+          <small>
+            برای توقف کامل معرفی و خرید چکی، در تب روش‌های خرید همهٔ روش‌های نوع «چکی» را غیرفعال
+            کنید. غیرفعال‌کردن این طرح، روش چکی یا سایر طرح‌ها را خاموش نمی‌کند.
+          </small>
+        </div>
         <div className="form-grid">
           <Text
             label="عنوان فارسی"
@@ -363,11 +407,6 @@ export function PlanForm({
           catalog={catalog}
           value={v.categoryIds}
           onChange={(categoryIds) => set({ ...v, categoryIds })}
-        />
-        <Check
-          label="طرح فعال است"
-          checked={v.enabled}
-          onChange={(e) => set({ ...v, enabled: e.target.checked })}
         />
         <p className="notice">
           شرایط عددی را مدیر تعیین می‌کند؛ گردش مدارک، تأیید اعتبار و وصول چک جدا تکمیل می‌شود.

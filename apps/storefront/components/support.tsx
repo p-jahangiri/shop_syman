@@ -16,12 +16,14 @@ import {
 import { normalizePersian } from '@/lib/commerce';
 import { Button, Modal } from './ui';
 import type { SupportContentLoad } from '@/lib/support-content-fetch';
+import { isPurchaseContentEnabled, isPurchaseKindEnabled } from '@/lib/purchasing';
 const faqs = [
   {
     q: 'این نسخه امکان خرید واقعی دارد؟',
     a: 'این نسخه برای بررسی طراحی و تجربهٔ فروشگاه است. ثبت سفارش، پیامک و پرداخت واقعی هنوز فعال نیستند.',
   },
   {
+    purchaseMethodKind: 'cheque' as const,
     q: 'شرایط خرید چکی چگونه است؟',
     a: 'در خرید چکی، مدت، درصد و پیش‌پرداخت توسط مدیر فروشگاه تعیین می‌شود. محاسبه‌گر فعلی نمونه است؛ خرید نهایی به بررسی و تأیید چک و مدارک نیاز دارد.',
   },
@@ -52,13 +54,18 @@ type Message = {
 };
 export function Support({ contentLoad }: { contentLoad?: SupportContentLoad }) {
   const { t, locale } = useI18n();
-  const { dataSource } = useStorefront();
+  const { dataSource, purchaseMethods } = useStorefront();
+  const chequeEnabled = isPurchaseKindEnabled(purchaseMethods, 'cheque');
   const copy = (fa: string, en: string) => (locale === 'fa' ? fa : en);
   const connected = dataSource === 'api';
   const content = connected && contentLoad?.status === 'ready' ? contentLoad.page.content : null;
   const currentFaqs = connected
-    ? (content?.faqs.map((f) => ({ id: f.id, q: f.question, a: f.answer })) ?? [])
-    : faqs.map((f, index) => ({ id: String(index), q: t(f.q), a: t(f.a) }));
+    ? (content?.faqs
+        .filter((f) => isPurchaseContentEnabled(f, purchaseMethods))
+        .map((f) => ({ id: f.id, q: f.question, a: f.answer })) ?? [])
+    : faqs
+        .filter((f) => isPurchaseContentEnabled(f, purchaseMethods))
+        .map((f, index) => ({ id: String(index), q: t(f.q), a: t(f.a) }));
   const ticketsAction =
     content?.ticketsAction ??
     copy('ثبت و پیگیری درخواست پشتیبانی', 'Send and track a support request');
@@ -67,9 +74,14 @@ export function Support({ contentLoad }: { contentLoad?: SupportContentLoad }) {
     [messages, setMessages] = useState<Message[]>([
       {
         role: 'guide',
-        text: t(
-          'سلام! این راهنمای نمایشی سایمان است. دربارهٔ خرید چکی، ارسال، گارانتی یا مقایسه سؤال دارید؟',
-        ),
+        text: chequeEnabled
+          ? t(
+              'سلام! این راهنمای نمایشی سایمان است. دربارهٔ خرید چکی، ارسال، گارانتی یا مقایسه سؤال دارید؟',
+            )
+          : copy(
+              'سلام! دربارهٔ ارسال، گارانتی یا مقایسهٔ کالاها راهنمایی می‌خواهید؟',
+              'Hello! Do you need help with delivery, warranty or product comparison?',
+            ),
       },
     ]);
   function send(e: React.FormEvent) {
@@ -77,7 +89,7 @@ export function Support({ contentLoad }: { contentLoad?: SupportContentLoad }) {
     if (!text.trim()) return;
     const q = normalizePersian(text);
     const answer =
-      q.includes('چک') || q.includes('قسط')
+      chequeEnabled && (q.includes('چک') || q.includes('قسط'))
         ? faqs[1].a
         : q.includes('ارسال') || q.includes('تحویل')
           ? faqs[2].a
@@ -138,16 +150,18 @@ export function Support({ contentLoad }: { contentLoad?: SupportContentLoad }) {
         )}
       </section>
       <div className="support-cards">
-        <Link href="/installments">
-          <CreditCard />
-          <h2>{t('خرید چکی')}</h2>
-          <p>
-            {connected
-              ? copy('شرایط طرح‌ها و مراحل بررسی', 'Plan terms and review steps')
-              : t('محاسبهٔ نمونه و مسیر تأیید چک')}
-          </p>
-          <ArrowLeft size={17} />
-        </Link>
+        {chequeEnabled && (
+          <Link href="/installments">
+            <CreditCard />
+            <h2>{t('خرید چکی')}</h2>
+            <p>
+              {connected
+                ? copy('شرایط طرح‌ها و مراحل بررسی', 'Plan terms and review steps')
+                : t('محاسبهٔ نمونه و مسیر تأیید چک')}
+            </p>
+            <ArrowLeft size={17} />
+          </Link>
+        )}
         <Link href={connected ? '/support/tickets' : '#faq'}>
           <ShieldCheck />
           <h2>{t('گارانتی و مرجوعی')}</h2>
@@ -241,7 +255,11 @@ export function Support({ contentLoad }: { contentLoad?: SupportContentLoad }) {
               value={text}
               maxLength={500}
               onChange={(e) => setText(e.target.value)}
-              placeholder={t('مثلاً شرایط چک را بگو')}
+              placeholder={
+                chequeEnabled
+                  ? t('مثلاً شرایط چک را بگو')
+                  : copy('مثلاً دربارهٔ گارانتی راهنمایی کن', 'For example, help me with warranty')
+              }
             />
             <button
               type="submit"

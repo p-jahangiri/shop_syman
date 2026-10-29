@@ -1,6 +1,6 @@
 {
-  "bytes": 12800589,
-  "fileCount": 1222,
+  "bytes": 12826190,
+  "fileCount": 1224,
   "files": [
     {
       "bytes": 136,
@@ -227,11 +227,11 @@
       "sha256": "2d19979c721107de2e79126ecfa05ffd34389dd3b07611446a8a028f990f8015"
     },
     {
-      "bytes": 28388,
+      "bytes": 30693,
       "mode": 420,
       "origin": "source",
       "path": "apps/admin/src/admin-guides.ts",
-      "sha256": "63f8c44567505e1b863464c565ff6e6ab5bee9e279f894da9c96c3390fc62fdd"
+      "sha256": "4a193440444bd02ab777105c691174690c5a458d09e45c34c8f23af779f0d0ea"
     },
     {
       "bytes": 1730,
@@ -451,11 +451,11 @@
       "sha256": "ad22bb8486bca876c2bbbcfafc196ebdf59c2010bd03bc29f39344758095ff9b"
     },
     {
-      "bytes": 6961,
+      "bytes": 7374,
       "mode": 420,
       "origin": "source",
       "path": "apps/admin/src/cms-menu-editor.tsx",
-      "sha256": "901248afb27faa5abe0118713ed774965c465867071f7fdede12afee50de3a5a"
+      "sha256": "2265492853804253942278954f6b847d94c619dfa47b39ba19af75c9432e762c"
     },
     {
       "bytes": 28781,
@@ -463,6 +463,13 @@
       "origin": "source",
       "path": "apps/admin/src/cms-pages.tsx",
       "sha256": "df8df22973a97fa0fadd427ef7eb5e6ee15cd48cf0f6d08608bcb54f88c5d6ab"
+    },
+    {
+      "bytes": 1348,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/admin/src/cms-purchase-dependency-field.tsx",
+      "sha256": "1ceaf7d9daf3ff8c0ee3390a0552413d2d3bd4450d2db620d3f2fec21e4cc188"
     },
     {
       "bytes": 21391,
@@ -584,18 +591,18 @@
       "sha256": "a09d8d3dcc3c13baf85d6cd2fdd1b748ab1d592b25d44cd17e566cbc18d276fe"
     },
     {
-      "bytes": 13221,
+      "bytes": 16198,
       "mode": 420,
       "origin": "source",
       "path": "apps/admin/src/finance-forms.tsx",
-      "sha256": "758149d6bfd3825475b468420ad1d7b0e2931810cadee41d46a0c3c9a85057af"
+      "sha256": "09e11875816922373740f2f6b3eaf37dd2e103df29e3739ba97d178bc1c2af33"
     },
     {
-      "bytes": 13205,
+      "bytes": 16294,
       "mode": 420,
       "origin": "source",
       "path": "apps/admin/src/finance.tsx",
-      "sha256": "f99fbe22c5bb3887b73023689b3ed7804527fdb9f045de84a1749625f0eed601"
+      "sha256": "f30fb8d917556fd86d76efa86ca88cc6ef8def7b2d44c01f2b465668c59ca65d"
     },
     {
       "bytes": 3077,
@@ -815,11 +822,11 @@
       "sha256": "9128e00b52bf97c2b12931d4b8b051c4d070fc483f3f072971e4b9b0e82c598e"
     },
     {
-      "bytes": 33496,
+      "bytes": 34975,
       "mode": 420,
       "origin": "source",
       "path": "apps/admin/src/operations.tsx",
-      "sha256": "54704d3882104727e8c3dcc42546842c79428dbcf9852e511dcea58d1c641993"
+      "sha256": "702d30df397889b88c36b2a532d2993b376d7b6892d5a8d45dc34b15ecbca5d4"
     },
     {
       "bytes": 3088,
@@ -1137,18 +1144,18 @@
       "sha256": "1b0774bde3508c12af7c5f5c5db91cf9bdc6f69675ea9e275a707bf450a93193"
     },
     {
-      "bytes": 8023,
+      "bytes": 8509,
       "mode": 420,
       "origin": "source",
       "path": "apps/admin/src/support-content-editor.tsx",
-      "sha256": "4b9ada8a096469971c315c44d4059dd8393ead62cbb5ffca6d0059915e69623d"
+      "sha256": "5c39e0badd99f1221549c86a2365254dcc24794aa206df10313ba9d5e95afcd0"
     },
     {
-      "bytes": 4644,
+      "bytes": 5121,
       "mode": 420,
       "origin": "source",
       "path": "apps/admin/src/support-content-preview.tsx",
-      "sha256": "a81191145b3d88f4060f30a6be320506197fcbc3a1694a064f42ec3b9ad8859f"
+      "sha256": "2077af7d3ae600d729dfd0d66d9427af021a67d71724b8990671956f39488031"
     },
     {
       "bytes": 124,
@@ -1333,11 +1340,11 @@
       "sha256": "becdc91230c8172dbb129c3cd9c963d569dfe41e9f140fda34d70519362f1a8a"
     },
     {
-      "bytes": 1118,
+      "bytes": 1495,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/app/[locale]/installments/page.tsx",
-      "sha256": "f8c4a0a22a4b8c594bd60e4f3ec8c4fef631dbc333f1ffa05bc0f765a0fd9e23"
+      "sha256": "c8a394164f8029d5d47f2d98aa392125d636f0ec37d1dec771668dad1238337e"
     },
     {
       "bytes": 1352,
@@ -1403,11 +1410,11 @@
       "sha256": "f33f6afb905216ea0ad3d8b29a3ed86399c304a8ee244a66eef1c7f8b8b60b02"
     },
     {
-      "bytes": 12494,
+      "bytes": 13574,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/app/[locale]/page.tsx",
-      "sha256": "36d7c6f580fb955ead9e4c0019f0434f6bd226323a0183ad5da47814b00ab602"
+      "sha256": "109b170bd11eb8f14767cddf67120603cf6d691d1e165eb923b5fcf9ed38f286"
     },
     {
       "bytes": 1921,
@@ -1620,11 +1627,11 @@
       "sha256": "f7fccefdf2c3f8b88c69eea597d57f77030afba8efdb918579f3e0a3f6b43043"
     },
     {
-      "bytes": 126147,
+      "bytes": 126242,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/app/globals.css",
-      "sha256": "84451ab32e87c6e89f00e6870203f7d3ece7ea96716a38918baeb36d6ee0a548"
+      "sha256": "dc192269eb1209bce9598ed24062e20d472749a62feec09fc2107d10337c39ad"
     },
     {
       "bytes": 4018,
@@ -1704,18 +1711,18 @@
       "sha256": "2bd0ad8af28dfae936174a532c2e7e18c868fc53cdb1ce8502c91f34a83e1ad9"
     },
     {
-      "bytes": 31257,
+      "bytes": 31502,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/accepted-quote-review.tsx",
-      "sha256": "9af28c6fd0fb49e0552965fbccdf6980973effb7608303570d94149ace2135fb"
+      "sha256": "bb9b13bf2085d23a6572bc8f84b14c3f212ffa2831657cdcc2a6d902d4ca811b"
     },
     {
-      "bytes": 22415,
+      "bytes": 22876,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/account.tsx",
-      "sha256": "5fca8d9958580ebabcd6838d3b79980bc70d007a86a3c2f721fafc1028de8a93"
+      "sha256": "bd0535f60ebc23a4c8d28f704161ac3cb95ea2ae6d1c99e30f94c2966da49aa3"
     },
     {
       "bytes": 2013,
@@ -1781,11 +1788,11 @@
       "sha256": "b5389027c81586df907f42f00f560e7c93a921ab0428cd00748df1283fd9ddc8"
     },
     {
-      "bytes": 24605,
+      "bytes": 24596,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/checkout.tsx",
-      "sha256": "47cf0d14c87f2adabdf3bd23c84d8b67c3d8dc368a75b8f08ee1a170934514c9"
+      "sha256": "fe83748848beaae462d8f88314c56ea3a52e45382dda4ef0adadc79196735ccb"
     },
     {
       "bytes": 2987,
@@ -1851,18 +1858,18 @@
       "sha256": "c4961dd7a23602784fc561fbcd91ec3a040aad23648874e32d0b0b3d69d29c16"
     },
     {
-      "bytes": 10954,
+      "bytes": 10994,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/connected-account.tsx",
-      "sha256": "d09ad69f6ed781b8133e6fafb0dc9d5998703071eda2490adeaff7c6eb34cde3"
+      "sha256": "741bbd46ed079f0e189378d41f2ecca40e300f48a3f74a65e114783f6cf12274"
     },
     {
-      "bytes": 31604,
+      "bytes": 32021,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/connected-checkout.tsx",
-      "sha256": "f18f0d49e67e8bf03a27689b2e98b5239122bbf30f263952c72d9e1d899d8489"
+      "sha256": "af1ccc3420f25da836ab35cdd2b2bfb5609021a67c4edcc1ea5ea156e62a4ed4"
     },
     {
       "bytes": 24302,
@@ -1893,18 +1900,18 @@
       "sha256": "6322a4682150c8e143662fa4ec31ede963cd0ab69955157a3e7778fc48a40852"
     },
     {
-      "bytes": 36007,
+      "bytes": 36485,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/credit-applications-workspace.tsx",
-      "sha256": "c779cc380a891d833c92d4b8f60f9698a30e677a9e8b5aeb49c4109ca46f1120"
+      "sha256": "885947e934ad257597e75a12e5d74bcc3ea713147d14a3ccefba1f919d82bc0d"
     },
     {
-      "bytes": 25710,
+      "bytes": 26008,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/credit-checkout-quote-panel.tsx",
-      "sha256": "8a748b7285c0e2f194950ba33623caf3ab8b34bbaa4d9898b8cf74b508345070"
+      "sha256": "f8dea0200e347b905716617d4e10adad43ae098466dd641ae1beabd0964288ff"
     },
     {
       "bytes": 4956,
@@ -1998,11 +2005,11 @@
       "sha256": "c373c26cdb013c7be97858f25825c5bf10cfcfb3890f6628d00a827918f93c73"
     },
     {
-      "bytes": 4728,
+      "bytes": 4875,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/customer-credit-applications.tsx",
-      "sha256": "6fcbd642265e452757740965a50f24eaf5996487ad63300ad7fd0a6ae0694a19"
+      "sha256": "17ea32910534c5e63d0f56607f4c9ab4b162a38a97467bf54c2cdb3d7078f0da"
     },
     {
       "bytes": 12338,
@@ -2096,11 +2103,11 @@
       "sha256": "ce4f7616962ea357b3939fbc4590150ba1cbe52883ef3bcfed271c6e70245129"
     },
     {
-      "bytes": 12921,
+      "bytes": 15221,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/installments.tsx",
-      "sha256": "cf698558cc956ed24e53003d07ddc0d6b163d1fb2ca1419a9df891dcc833d5e1"
+      "sha256": "22343833c9bd2dbb6f63cd25cfbf1a3eda87fff44715f7a6545661e796e9e25d"
     },
     {
       "bytes": 806,
@@ -2117,11 +2124,11 @@
       "sha256": "eeacd05614aa00d120c48a3f6e201be8b9fd40326ddacd09fbe601afbb1cba41"
     },
     {
-      "bytes": 3512,
+      "bytes": 4247,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/locale-provider.tsx",
-      "sha256": "10d20e515a68076f2b284a91ebc328ea46344af9bbb553cc2825093c8ae529f9"
+      "sha256": "b24489c1232efe32f83588da75ebf6af6c1df037db6a9a2f703a038b646816f7"
     },
     {
       "bytes": 969,
@@ -2236,11 +2243,11 @@
       "sha256": "c240aefc49b234c8788fad342d7d146ab6455bad070645a32a602654b660876c"
     },
     {
-      "bytes": 18440,
+      "bytes": 18460,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/product-detail.tsx",
-      "sha256": "8ee279b1381924aa007db0b88a7d813b6bec5ee89cb1821eef3f7a310bd5557c"
+      "sha256": "21baad23029e356fa7f012f32a6c137ac33e8777afc2c99184ac78e06400edb5"
     },
     {
       "bytes": 1901,
@@ -2278,11 +2285,11 @@
       "sha256": "f8c822b87e6115092672fcf0b661b6d7b0033cec96cf8b3ba7362083e57a6e54"
     },
     {
-      "bytes": 28856,
+      "bytes": 29482,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/shell.tsx",
-      "sha256": "086763944dd0feeaa050c16b3bec9f8c27b1a098a63d4de4ef75473d39e00a2c"
+      "sha256": "8961a82d791a196138156273da21b6de4abca450921df53d5c3122db32022300"
     },
     {
       "bytes": 1673,
@@ -2341,11 +2348,11 @@
       "sha256": "af2aaa1e8d7e71b79a53555d42bb9dd044d93d67d5fd9f1e3287471ae4789a0e"
     },
     {
-      "bytes": 11486,
+      "bytes": 12429,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/support.tsx",
-      "sha256": "aae977255017593485a07cd48a4a970e6f062a0fb776f8946d12f6b6072ccf85"
+      "sha256": "5307d5e1c25d5fc76042dd1802b1ebd7d644d95cc426e8a8caecf8f5dda58a0b"
     },
     {
       "bytes": 14441,
@@ -3363,11 +3370,11 @@
       "sha256": "8daa1a7c4090b69676e35c5f0ce6fb293178b1824213422d5a7df91d1703c11b"
     },
     {
-      "bytes": 2382,
+      "bytes": 4034,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/lib/purchasing.ts",
-      "sha256": "1ec444cc706876002d472b55ad50dd7894b3c79f03eee1bac1baf22f12150ffd"
+      "sha256": "793133ed02626b5944aa41563f3445c9e1b595419b89b3549c0ca2b298ad29a8"
     },
     {
       "bytes": 1832,
@@ -3559,11 +3566,11 @@
       "sha256": "451097bcee0aaa4c2e9a68b9a0d763e44987340c1ca97e15fe1a78f4e5431a42"
     },
     {
-      "bytes": 8651,
+      "bytes": 8979,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/lib/snapshot.ts",
-      "sha256": "a5863f3c28c028e9ffc59b5b9aae97f60e33a217b68fbc6e80ac30e25e9aec89"
+      "sha256": "07606e7cc4142391af5170775a1cab1e80566642c32070f2d0261139f58d857e"
     },
     {
       "bytes": 6204,
@@ -3664,11 +3671,11 @@
       "sha256": "e6bb9cce27089c512dbf1f45222d74615cd09f1b84173606774ed104df95e16c"
     },
     {
-      "bytes": 3402,
+      "bytes": 3503,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/lib/support-content-contract.ts",
-      "sha256": "6043873e8e6d514bd7e8c51cd9d72ecad7de89996af13baf09b30fd00a8d023b"
+      "sha256": "da58741e1e128d09acf8ff55dcda689a6e6b08fc9d4229f0e8ec141a30a5f351"
     },
     {
       "bytes": 2475,
@@ -3734,11 +3741,11 @@
       "sha256": "47f133ff3356df4febd1797f45860e98e738192b7880bbc9af5551e0b2d11139"
     },
     {
-      "bytes": 4281,
+      "bytes": 4471,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/lib/types.ts",
-      "sha256": "78d2dd242ec39fa1a2cd4172e815d43f5a25076d11deea05bcfb966a0dd2e2ee"
+      "sha256": "3df910d60462facd632ec46b182345e4a912e99174ff011c096ecb119bdb6f4f"
     },
     {
       "bytes": 1311,
@@ -6478,11 +6485,11 @@
       "sha256": "40da05a58f0848156a9bbcb296cad79edbb60d6eb974de3353796a3d9cd9d2dd"
     },
     {
-      "bytes": 17850,
+      "bytes": 17893,
       "mode": 420,
       "origin": "source",
       "path": "backend/src/Shop.Modules.Cms/Content.cs",
-      "sha256": "c7a7004a678e279b1da88006328b36d1c444dc760ea8b02a8a387cde814df112"
+      "sha256": "3be8fb224d26884538a77a82433f2b2400a3a62b530696036ac5e0df2f452063"
     },
     {
       "bytes": 98,
@@ -6506,11 +6513,18 @@
       "sha256": "dd19b0aeb634c1b043796f082bb72f338e2886658efa26e5b1ce4bd0b0fc4d33"
     },
     {
-      "bytes": 6968,
+      "bytes": 1787,
+      "mode": 420,
+      "origin": "source",
+      "path": "backend/src/Shop.Modules.Cms/SitePurchaseRules.cs",
+      "sha256": "b4ecb81a0c603912c56f2f861a09ec3dfb97f6b3f117d2655b1846f3d8c67b9f"
+    },
+    {
+      "bytes": 7641,
       "mode": 420,
       "origin": "source",
       "path": "backend/src/Shop.Modules.Cms/SupportContent.cs",
-      "sha256": "b89a8168e7bd3494d3ee6b885c913425bdedbc7b57722c4b683612cd2f2eafd2"
+      "sha256": "24af2d72e376be06961b01ea5d644a0bb85b23665fb337be4ce2512befc5145c"
     },
     {
       "bytes": 13086,
@@ -8559,8 +8573,8 @@
   ],
   "formatVersion": 1,
   "overlayTreeSha256": [],
-  "productionTreeSha256": "2babca6832a6ca1d06d3f7dd833420ea6002748eb5cf7094d8910e6ae9f4d272",
-  "sourceTreeSha256": "652bec47566236e5b96dff3952ca07a057029942d78b168d2ff67d3fac754756",
+  "productionTreeSha256": "f3601f219fd10296ca53353f7975786b1ac7d86ccdac696d936e9a5316970aca",
+  "sourceTreeSha256": "c02bb701c72c4016cc2e2eb94d4b94d15e016ae0abe06fe186cbd34d0a67ae37",
   "transformations": [
     "package.json: retain production build/start scripts",
     "apps/storefront/package.json: retain production build/start scripts",

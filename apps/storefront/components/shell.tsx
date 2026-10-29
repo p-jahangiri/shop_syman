@@ -11,6 +11,7 @@ import { searchProducts } from '@/lib/catalog-client';
 import type { Product } from '@/lib/types';
 import { LanguageSwitch } from './language-switch';
 import { ContentMenu } from './content-menu';
+import { filterPurchaseMenu, isPurchaseKindEnabled } from '@/lib/purchasing';
 import Image from '@/components/content-image';
 import { usePathname, useRouter } from '@/components/localized-link';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -66,7 +67,9 @@ export function Brand() {
 }
 export function Header() {
   const { t, digits, locale } = useI18n();
-  const { site, categories } = useStorefront();
+  const { site, categories, purchaseMethods } = useStorefront();
+  const chequeEnabled = isPurchaseKindEnabled(purchaseMethods, 'cheque');
+  const menuItems = filterPurchaseMenu(site.nav, purchaseMethods);
   const { cart, serverCart, wishlist, setCartOpen, ready } = useShop();
   const [query, setQuery] = useState(''),
     [searchOpen, setSearchOpen] = useState(false),
@@ -167,10 +170,12 @@ export function Header() {
             <span className="live-dot" />
             {t(site.announcement)}
           </span>
-          <Link href="/installments">
-            {t('یک انتخاب، چند پرداخت')}
-            <ArrowLeft size={13} />
-          </Link>
+          {chequeEnabled && (
+            <Link href="/installments">
+              {t('یک انتخاب، چند پرداخت')}
+              <ArrowLeft size={13} />
+            </Link>
+          )}
         </div>
       </div>
       <header className="header">
@@ -321,12 +326,14 @@ export function Header() {
               />
             </div>
             <span className="nav-divider" />
-            <ContentMenu items={site.nav} />
-            <Link href="/installments" className="nav-credit">
-              <CreditCard size={16} />
-              {t('خرید چکی')}
-              <span>{t('آسان‌تر')}</span>
-            </Link>
+            <ContentMenu items={menuItems} />
+            {chequeEnabled && (
+              <Link href="/installments" className="nav-credit">
+                <CreditCard size={16} />
+                {t('خرید چکی')}
+                <span>{t('آسان‌تر')}</span>
+              </Link>
+            )}
           </nav>
           <Link href="/support" className="support-link">
             <Headphones size={16} />
@@ -363,10 +370,12 @@ export function Header() {
             <Grid2X2 size={19} />
             {t('همهٔ محصولات')}
           </Link>
-          <ContentMenu items={site.nav} onNavigate={() => setMenu(false)} />
-          <Link href="/installments" onClick={() => setMenu(false)}>
-            {t('خرید چکی')}
-          </Link>
+          <ContentMenu items={menuItems} onNavigate={() => setMenu(false)} />
+          {chequeEnabled && (
+            <Link href="/installments" onClick={() => setMenu(false)}>
+              {t('خرید چکی')}
+            </Link>
+          )}
           <Link href="/compare" onClick={() => setMenu(false)}>
             {t('مقایسهٔ محصولات')}
           </Link>
@@ -388,7 +397,9 @@ export function Header() {
 export function Footer() {
   const source = useStorefront().dataSource;
   const { t, locale } = useI18n();
-  const { site } = useStorefront();
+  const { site, purchaseMethods } = useStorefront();
+  const chequeEnabled = isPurchaseKindEnabled(purchaseMethods, 'cheque');
+  const menuItems = filterPurchaseMenu(site.nav, purchaseMethods);
   return (
     <>
       <section className="confidence container">
@@ -399,13 +410,15 @@ export function Footer() {
             <small>{t('جزئیات گارانتی کنار هر کالا')}</small>
           </span>
         </div>
-        <div>
-          <CreditCard />
-          <span>
-            <strong>{t('خرید متناسب با شما')}</strong>
-            <small>{t('بررسی شرایط پرداخت چکی')}</small>
-          </span>
-        </div>
+        {chequeEnabled && (
+          <div>
+            <CreditCard />
+            <span>
+              <strong>{t('خرید متناسب با شما')}</strong>
+              <small>{t('بررسی شرایط پرداخت چکی')}</small>
+            </span>
+          </div>
+        )}
         <div>
           <PackageCheck />
           <span>
@@ -446,11 +459,11 @@ export function Footer() {
           </div>
           <div>
             <h3>{t('کشف سایمان')}</h3>
-            <ContentMenu items={site.nav} />
+            <ContentMenu items={menuItems} />
           </div>
           <div>
             <h3>{t('همراه شما')}</h3>
-            <Link href="/installments">{t('راهنمای خرید چکی')}</Link>
+            {chequeEnabled && <Link href="/installments">{t('راهنمای خرید چکی')}</Link>}
             <Link href="/support">{t('گارانتی و مرجوعی')}</Link>
             <Link href={source === 'api' ? '/orders' : '/account?tab=orders'}>
               {t('پیگیری سفارش')}

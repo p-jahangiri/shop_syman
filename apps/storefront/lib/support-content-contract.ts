@@ -16,7 +16,14 @@ const plain = (max: number, min = 0, single = false) =>
         !/\p{Surrogate}/u.test(x) &&
         (!single || !/[\n\t]/.test(x)),
     );
-const faq = z.object({ id, question: plain(240, 1, true), answer: plain(4000, 1) }).strict();
+const faq = z
+  .object({
+    id,
+    question: plain(240, 1, true),
+    answer: plain(4000, 1),
+    purchaseMethodKind: z.enum(['online', 'cheque', 'installment']).optional(),
+  })
+  .strict();
 const fields = {
   isDemo: z.boolean(),
   eyebrow: plain(140, 0, true),
