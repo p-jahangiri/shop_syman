@@ -24,6 +24,7 @@ import { useI18n, useStorefront } from './locale-provider';
 import { useShop } from './shop-provider';
 import { Button, groupNavigation } from './ui';
 import { ConnectedAccount } from './connected-account';
+import { isPurchaseKindEnabled } from '@/lib/purchasing';
 
 type Screen = 'login' | 'otp' | 'register' | 'reset' | 'account';
 export function Account() {
@@ -32,7 +33,8 @@ export function Account() {
 }
 function PreviewAccount() {
   const { t, digits } = useI18n();
-  const { authSettings } = useStorefront();
+  const { authSettings, purchaseMethods } = useStorefront();
+  const chequeEnabled = isPurchaseKindEnabled(purchaseMethods, 'cheque');
   const { wishlist } = useShop();
   const params = useSearchParams();
   const [screen, setScreen] = useState<Screen>('login'),
@@ -53,6 +55,7 @@ function PreviewAccount() {
     confirm: '',
   });
   const passwordEnabled = authSettings.emailPassword || authSettings.usernamePassword;
+  const activeTab = tab === 'credit' && !chequeEnabled ? 'overview' : tab;
   function changeScreen(next: Screen) {
     setScreen(next);
     setError('');
@@ -144,7 +147,7 @@ function PreviewAccount() {
     ['overview', 'نمای کلی', UserRound],
     ['orders', 'سفارش‌های من', Package],
     ['addresses', 'نشانی‌ها', MapPin],
-    ['credit', 'خرید چکی', CreditCard],
+    ...(chequeEnabled ? [['credit', 'خرید چکی', CreditCard] as const] : []),
   ] as const;
   const input = (name: keyof typeof registration, label: string, type = 'text') => (
     <div className="field" key={name}>
@@ -449,7 +452,11 @@ function PreviewAccount() {
             <p>{t('حساب نمایشی · بدون ورود واقعی')}</p>
             <nav>
               {menu.map(([id, label, Icon]) => (
-                <button key={id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)}>
+                <button
+                  key={id}
+                  className={activeTab === id ? 'active' : ''}
+                  onClick={() => setTab(id)}
+                >
                   <Icon size={18} />
                   {t(label)}
                   <ChevronLeft size={13} />
@@ -472,7 +479,7 @@ function PreviewAccount() {
             </nav>
           </aside>
           <section className="card-panel account-main">
-            {tab === 'overview' ? (
+            {activeTab === 'overview' ? (
               <>
                 <span className="eyebrow">{t('خوش برگشتی')}</span>
                 <h1>{t('همه‌چیز برای انتخاب بعدی‌ات آماده است.')}</h1>
@@ -487,11 +494,13 @@ function PreviewAccount() {
                     <strong>{digits(wishlist.length)}</strong>
                     <span>{t('انتخاب ذخیره‌شده')}</span>
                   </Link>
-                  <Link href="/installments">
-                    <CreditCard />
-                    <strong>{t('چکی')}</strong>
-                    <span>{t('راهنمای خرید')}</span>
-                  </Link>
+                  {chequeEnabled && (
+                    <Link href="/installments">
+                      <CreditCard />
+                      <strong>{t('چکی')}</strong>
+                      <span>{t('راهنمای خرید')}</span>
+                    </Link>
+                  )}
                 </div>
                 <div className="notice">
                   {t(
@@ -507,34 +516,34 @@ function PreviewAccount() {
               </>
             ) : (
               <div className="empty-state">
-                {tab === 'orders' ? (
+                {activeTab === 'orders' ? (
                   <Package size={45} />
-                ) : tab === 'addresses' ? (
+                ) : activeTab === 'addresses' ? (
                   <MapPin size={45} />
                 ) : (
                   <CreditCard size={45} />
                 )}
                 <h2>
                   {t(
-                    tab === 'orders'
+                    activeTab === 'orders'
                       ? 'هنوز سفارشی ثبت نشده'
-                      : tab === 'addresses'
+                      : activeTab === 'addresses'
                         ? 'نشانی‌ها بعد از اتصال حساب'
                         : 'اول، شرایط خرید چکی را ببین',
                   )}
                 </h2>
                 <p>
                   {t(
-                    tab === 'orders'
+                    activeTab === 'orders'
                       ? 'این پیش‌نمایش سفارشی ثبت نمی‌کند. در نسخهٔ متصل، وضعیت سفارش و ارسال همین‌جا نمایش داده می‌شود.'
-                      : tab === 'addresses'
+                      : activeTab === 'addresses'
                         ? 'ذخیره و مدیریت نشانی پس از راه‌اندازی حساب واقعی فعال می‌شود.'
                         : 'درخواست اعتبار و مدارک فقط در نسخهٔ متصل و پس از تأیید شرایط دریافت می‌شوند.',
                   )}
                 </p>
                 <Button asChild variant="outline">
-                  <Link href={tab === 'credit' ? '/installments' : '/catalog'}>
-                    {t(tab === 'credit' ? 'محاسبه و شرایط' : 'کشف محصولات')}
+                  <Link href={activeTab === 'credit' ? '/installments' : '/catalog'}>
+                    {t(activeTab === 'credit' ? 'محاسبه و شرایط' : 'کشف محصولات')}
                     <ArrowLeft size={16} />
                   </Link>
                 </Button>

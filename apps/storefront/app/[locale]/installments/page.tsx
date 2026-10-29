@@ -4,17 +4,26 @@ import { getCatalogProducts } from '@/lib/catalog-server';
 import { lookupInputSchema } from '@/lib/catalog-contract';
 import { ProductsScope } from '@/components/locale-provider';
 import { Installments } from '@/components/installments';
+import { isPurchaseKindEnabled } from '@/lib/purchasing';
 export async function generateMetadata() {
-  const { t } = await serverI18n();
-  return { title: t('راهنما و محاسبهٔ خرید چکی') };
+  const { t, locale, purchaseMethods } = await serverI18n();
+  return {
+    title: isPurchaseKindEnabled(purchaseMethods, 'cheque')
+      ? t('راهنما و محاسبهٔ خرید چکی')
+      : locale === 'fa'
+        ? 'صفحه در دسترس نیست'
+        : 'Page unavailable',
+    robots: { index: false, follow: false },
+  };
 }
 export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{ product?: string; variant?: string }>;
 }) {
+  const { locale, purchaseMethods } = await serverI18n();
+  if (!isPurchaseKindEnabled(purchaseMethods, 'cheque')) notFound();
   const query = await searchParams;
-  const { locale } = await serverI18n();
   if (query.product && !lookupInputSchema.safeParse({ slugs: [query.product] }).success) notFound();
   const products = query.product
     ? await getCatalogProducts(locale, { slugs: [query.product] })

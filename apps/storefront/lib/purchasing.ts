@@ -1,5 +1,50 @@
-import type { CartLine, ChequePlan, Product, PurchaseMethod, Variant } from './types.ts';
+import type { CartLine, ChequePlan, MenuItem, Product, PurchaseMethod, Variant } from './types.ts';
 import { findVariant } from './commerce.ts';
+
+/** Global visibility never overrides SKU, amount, plan or provider eligibility. */
+export function isPurchaseKindEnabled(
+  methods: readonly PurchaseMethod[],
+  kind: PurchaseMethod['kind'],
+) {
+  return methods.some((method) => method.enabled && method.kind === kind);
+}
+
+export function isPurchaseHrefEnabled(href: string, methods: readonly PurchaseMethod[]) {
+  try {
+    const path = decodeURIComponent(new URL(href, 'https://sayman.invalid').pathname)
+      .replace(/^\/(?:fa|en)(?=\/|$)/, '')
+      .replace(/\/+$/, '');
+    return !/^\/installments(?:\/|$)/.test(path) || isPurchaseKindEnabled(methods, 'cheque');
+  } catch {
+    return false;
+  }
+}
+
+export function isPurchaseContentEnabled(
+  content: { purchaseMethodKind?: PurchaseMethod['kind']; href?: string; kind?: string },
+  methods: readonly PurchaseMethod[],
+) {
+  return (
+    (!content.purchaseMethodKind || isPurchaseKindEnabled(methods, content.purchaseMethodKind)) &&
+    (content.kind !== 'cheque' || isPurchaseKindEnabled(methods, 'cheque')) &&
+    (!content.href || isPurchaseHrefEnabled(content.href, methods))
+  );
+}
+
+/** Preserve the CMS tree and historical account routes; remove only unavailable promotions. */
+export function filterPurchaseMenu(
+  items: readonly MenuItem[],
+  methods: readonly PurchaseMethod[],
+): MenuItem[] {
+  return items.flatMap((item) => {
+    if (!isPurchaseContentEnabled(item, methods)) return [];
+    if (!item.children) return [item];
+    const children = filterPurchaseMenu(item.children, methods);
+    return item.children.length && !children.length && item.href === '#'
+      ? []
+      : [{ ...item, children }];
+  });
+}
 
 export interface ProductPurchaseRules {
   purchaseMethodIds: string[];

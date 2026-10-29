@@ -14,11 +14,19 @@ import { Check, ErrorBox, Field, Modal } from './ui';
 import { DataTable } from './ui-table';
 import { ProductPicker } from './product-picker';
 import { Area, Text } from './forms';
-import { nameOf, type Catalog, type Content, type ContentDocument } from './types';
+import {
+  nameOf,
+  type Catalog,
+  type Content,
+  type ContentDocument,
+  type PurchaseMethod,
+} from './types';
 import { CmsMenuEditor, type CmsMenuItem } from './cms-menu-editor';
 import { CmsAppearanceEditor } from './cms-appearance-editor';
+import { CmsPurchaseDependencyField } from './cms-purchase-dependency-field';
 import type { SiteAppearance } from '../../storefront/lib/types';
 interface Promo {
+  purchaseMethodKind?: PurchaseMethod['kind'];
   eyebrow: string;
   title: string;
   action: string;
@@ -27,6 +35,7 @@ interface Promo {
   watermark?: string;
 }
 interface HomeBlock {
+  purchaseMethodKind?: PurchaseMethod['kind'];
   id: string;
   kind: 'categories' | 'collection' | 'promotions' | 'products' | 'spotlight' | 'brands' | 'cheque';
   enabled: boolean;
@@ -51,6 +60,7 @@ interface SiteData {
   about: string;
   chequeDisclaimer: string;
   hero: {
+    purchaseMethodKind?: PurchaseMethod['kind'];
     eyebrow: string;
     title: string;
     description: string;
@@ -357,6 +367,11 @@ function HomeBlocksEditor({
                 حذف بلوک
               </button>
             </div>
+            <CmsPurchaseDependencyField
+              label="وابستگی نمایش کل بلوک به نوع خرید"
+              value={block.purchaseMethodKind}
+              onChange={(purchaseMethodKind) => update(block.id, { purchaseMethodKind })}
+            />
             <div className="form-grid">
               {(
                 [
@@ -449,6 +464,17 @@ function HomeBlocksEditor({
                 {block.items?.map((promo, i) => (
                   <fieldset key={i}>
                     <legend>بنر {(i + 1).toLocaleString('fa-IR')}</legend>
+                    <CmsPurchaseDependencyField
+                      label={`وابستگی نمایش بنر ${(i + 1).toLocaleString('fa-IR')} به نوع خرید`}
+                      value={promo.purchaseMethodKind}
+                      onChange={(purchaseMethodKind) =>
+                        update(block.id, {
+                          items: block.items?.map((item, position) =>
+                            position === i ? { ...item, purchaseMethodKind } : item,
+                          ),
+                        })
+                      }
+                    />
                     <div className="form-grid">
                       {(
                         [
@@ -725,6 +751,13 @@ function ContentForm({
             />
             <fieldset>
               <legend>محتوای ابتدای صفحه</legend>
+              <CmsPurchaseDependencyField
+                label="وابستگی نمایش کل محتوای ابتدای صفحه به نوع خرید"
+                value={site.hero.purchaseMethodKind}
+                onChange={(purchaseMethodKind) =>
+                  set({ ...site, hero: { ...site.hero, purchaseMethodKind } })
+                }
+              />
               {(
                 [
                   ['eyebrow', 'متن بالای عنوان'],

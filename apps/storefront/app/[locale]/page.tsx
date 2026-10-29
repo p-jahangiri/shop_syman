@@ -13,6 +13,7 @@ import { Spotlight } from '@/components/spotlight';
 import { ScrollRail } from '@/components/scroll-rail';
 import { activeHomeBlocks, curatedProducts } from '@/lib/home-blocks';
 import type { HomeBlock } from '@/lib/types';
+import { isPurchaseContentEnabled, isPurchaseHrefEnabled } from '@/lib/purchasing';
 const lines = (text: string) =>
   text.split('\n').map((line, i) => (
     <Fragment key={i}>
@@ -37,7 +38,9 @@ export default async function HomePage() {
     { id: 'categories', kind: 'categories', enabled: true, title: t('دنیای دیجیتال تو') },
     { id: 'collection', kind: 'collection', enabled: true },
   ];
-  const active = activeHomeBlocks(blocks, now);
+  const active = activeHomeBlocks(blocks, now).filter((block) =>
+    isPurchaseContentEnabled(block, purchaseMethods),
+  );
   const productBlocks = active.filter(
     (b) => b.kind === 'products' || b.kind === 'collection' || b.kind === 'spotlight',
   );
@@ -84,86 +87,100 @@ export default async function HomePage() {
     <ProductsScope products={products}>
       <div className="home-page">
         <div className="container">
-          <section className="hero" aria-labelledby="home-hero-title">
-            <div className="hero-copy">
-              <span className="hero-eyebrow">
-                <span />
-                {site.hero.eyebrow}
-              </span>
-              <h1 id="home-hero-title">
-                {site.hero.title.split('\n').map((line, i) => (
-                  <Fragment key={i}>
-                    {i > 0 && <br />}
-                    {i === 0 ? line : <span>{line}</span>}
-                  </Fragment>
-                ))}
-              </h1>
-              <p>{site.hero.description}</p>
-              <div className="hero-actions">
-                <Button asChild>
-                  <Link href={site.hero.actionHref ?? '/catalog'}>
-                    {site.hero.action}
-                    <ArrowUpLeft size={20} />
-                  </Link>
-                </Button>
-                <Link href={site.hero.secondaryHref ?? '/installments'} className="hero-secondary">
-                  {site.hero.secondary}
-                  <ArrowLeft size={16} />
-                </Link>
-              </div>
-              {site.hero.footnote && (
-                <div className="hero-bottom">
-                  <div className="hero-mini-icons" aria-hidden="true">
-                    <span>
-                      <Check size={14} />
-                    </span>
-                    <span>
-                      <Sparkles size={14} />
-                    </span>
-                    <span>
-                      <CreditCard size={14} />
-                    </span>
-                  </div>
-                  <span>{site.hero.footnote}</span>
-                </div>
-              )}
-            </div>
-            <div className="hero-visual">
-              <span className="hero-orbit orbit-one" aria-hidden="true" />
-              <span className="hero-orbit orbit-two" aria-hidden="true" />
-              {site.hero.visualTitle && (
-                <span className="hero-word" aria-hidden="true">
-                  {lines(site.hero.visualTitle)}
+          {isPurchaseContentEnabled(site.hero, purchaseMethods) ? (
+            <section className="hero" aria-labelledby="home-hero-title">
+              <div className="hero-copy">
+                <span className="hero-eyebrow">
+                  <span />
+                  {site.hero.eyebrow}
                 </span>
-              )}
-              {heroImage && (
-                <Image
-                  src={heroImage}
-                  alt={site.hero.title.replaceAll('\n', ' ')}
-                  width={700}
-                  height={560}
-                  loading="eager"
-                  fetchPriority="high"
-                  sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 1344px) 46vw, 620px"
-                />
-              )}
-              {site.hero.floatingTitle && (
-                <div className="hero-floating">
-                  <span className="floating-icon">
-                    <Sparkles size={21} />
-                  </span>
-                  <div>
-                    <strong>{site.hero.floatingTitle}</strong>
-                    <span>{site.hero.floatingDescription}</span>
-                  </div>
+                <h1 id="home-hero-title">
+                  {site.hero.title.split('\n').map((line, i) => (
+                    <Fragment key={i}>
+                      {i > 0 && <br />}
+                      {i === 0 ? line : <span>{line}</span>}
+                    </Fragment>
+                  ))}
+                </h1>
+                <p>{site.hero.description}</p>
+                <div className="hero-actions">
+                  {isPurchaseHrefEnabled(site.hero.actionHref ?? '/catalog', purchaseMethods) && (
+                    <Button asChild>
+                      <Link href={site.hero.actionHref ?? '/catalog'}>
+                        {site.hero.action}
+                        <ArrowUpLeft size={20} />
+                      </Link>
+                    </Button>
+                  )}
+                  {isPurchaseHrefEnabled(
+                    site.hero.secondaryHref ?? '/installments',
+                    purchaseMethods,
+                  ) && (
+                    <Link
+                      href={site.hero.secondaryHref ?? '/installments'}
+                      className="hero-secondary"
+                    >
+                      {site.hero.secondary}
+                      <ArrowLeft size={16} />
+                    </Link>
+                  )}
                 </div>
-              )}
-              <span className="hero-index" aria-hidden="true">
-                01 <i />
-                {site.latinName}
-              </span>
-            </div>
-          </section>
+                {site.hero.footnote && (
+                  <div className="hero-bottom">
+                    <div className="hero-mini-icons" aria-hidden="true">
+                      <span>
+                        <Check size={14} />
+                      </span>
+                      <span>
+                        <Sparkles size={14} />
+                      </span>
+                      <span>
+                        <CreditCard size={14} />
+                      </span>
+                    </div>
+                    <span>{site.hero.footnote}</span>
+                  </div>
+                )}
+              </div>
+              <div className="hero-visual">
+                <span className="hero-orbit orbit-one" aria-hidden="true" />
+                <span className="hero-orbit orbit-two" aria-hidden="true" />
+                {site.hero.visualTitle && (
+                  <span className="hero-word" aria-hidden="true">
+                    {lines(site.hero.visualTitle)}
+                  </span>
+                )}
+                {heroImage && (
+                  <Image
+                    src={heroImage}
+                    alt={site.hero.title.replaceAll('\n', ' ')}
+                    width={700}
+                    height={560}
+                    loading="eager"
+                    fetchPriority="high"
+                    sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 1344px) 46vw, 620px"
+                  />
+                )}
+                {site.hero.floatingTitle && (
+                  <div className="hero-floating">
+                    <span className="floating-icon">
+                      <Sparkles size={21} />
+                    </span>
+                    <div>
+                      <strong>{site.hero.floatingTitle}</strong>
+                      <span>{site.hero.floatingDescription}</span>
+                    </div>
+                  </div>
+                )}
+                <span className="hero-index" aria-hidden="true">
+                  01 <i />
+                  {site.latinName}
+                </span>
+              </div>
+            </section>
+          ) : (
+            <h1 className="sr-only">{site.name}</h1>
+          )}
           <div className="preview-note">
             <span className="live-dot" />
             {t('پیش‌نمایش فروشگاه سایمان · کالاها و شرایط نمونه‌اند؛ خرید واقعی فعال نیست.')}
@@ -207,10 +224,14 @@ export default async function HomePage() {
                   initialProducts={byBlock.get(block.id) ?? []}
                 />
               );
-            if (block.kind === 'promotions')
+            if (block.kind === 'promotions') {
+              const promotions =
+                block.items?.filter((item) => isPurchaseContentEnabled(item, purchaseMethods)) ??
+                [];
+              if (!promotions.length) return null;
               return (
                 <section key={block.id} className="promo-grid">
-                  {block.items?.map((item, i) => (
+                  {promotions.map((item, i) => (
                     <Link
                       key={`${item.href}:${i}`}
                       href={item.href}
@@ -238,6 +259,7 @@ export default async function HomePage() {
                   ))}
                 </section>
               );
+            }
             if (block.kind === 'spotlight')
               return (
                 <Spotlight

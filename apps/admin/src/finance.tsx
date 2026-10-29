@@ -25,7 +25,11 @@ export function FinancePage({ catalog, writable }: { catalog?: Catalog; writable
   return (
     <>
       <section className="panel">
-        <h2>شرایط خرید</h2>
+        <h2>مدیریت روش‌ها و شرایط خرید</h2>
+        <p>
+          وضعیت نقدی آنلاین، چکی و اقساط ارائه‌دهنده از روش‌های خرید مدیریت می‌شود؛ مدت، نرخ و
+          پیش‌پرداخت فروش چکی در طرح‌ها تنظیم می‌شوند.
+        </p>
         <div className="row-buttons" role="group" aria-label="بخش شرایط خرید">
           <button aria-pressed={scope === 'method'} onClick={() => setScope('method')}>
             روش‌های خرید
@@ -34,6 +38,31 @@ export function FinancePage({ catalog, writable }: { catalog?: Catalog; writable
             طرح‌های چکی
           </button>
         </div>
+        <details className="notice">
+          <summary>راهنمای فعال‌کردن یا توقف یک نوع خرید</summary>
+          <ol>
+            <li>
+              در روش‌های خرید، نوع موردنظر را فیلتر و هر روش را با «وضعیت و شرایط» باز کنید. کلید
+              اجازهٔ خرید جدید را تغییر دهید و ذخیره کنید.
+            </li>
+            <li>
+              برای توقف کامل معرفی و تبلیغ یک نوع، همهٔ روش‌های همان نوع باید غیرفعال باشند؛ وجود
+              حتی یک روش فعال هم‌نوع، معرفی آن نوع خرید را نگه می‌دارد.
+            </li>
+            <li>
+              فعال‌بودن روش، مجوز خرید همهٔ کالاها نیست؛ شرایط کالا و تنوع، دسته، مبلغ و سرویس مربوط
+              نیز بررسی می‌شوند.
+            </li>
+            <li>
+              غیرفعال‌کردن طرح چکی فقط همان طرح را از انتخاب‌های جدید خارج می‌کند. سفارش‌ها، برنامهٔ
+              اقساط و سوابق قبلی حذف یا بازنویسی نمی‌شوند.
+            </li>
+          </ol>
+          <p>
+            برای اطمینان از توقف کامل یک نوع، فیلتر «فعال» و همان نوع را اعمال کنید و صفحه‌های بعدی
+            را هم بررسی کنید؛ تعداد این صفحه، تعداد کل روش‌های فروشگاه نیست.
+          </p>
+        </details>
       </section>
       <PurchaseList key={scope} scope={scope} catalog={catalog} writable={writable} />
       <p className="notice">
@@ -98,8 +127,13 @@ function PurchaseList({
         <div>
           <h2>{method ? 'روش‌های خرید' : 'طرح‌های چکی'}</h2>
           <p>
-            هر صفحه حداکثر ۵۰ مورد است؛ جزئیات و محدودیت‌های دسته هنگام بازکردن همان مورد دریافت
-            می‌شوند.
+            {method
+              ? 'هر ردیف یک روش مستقل است؛ برای تغییر وضعیت سراسری همان روش یا حدود مجاز آن، «وضعیت و شرایط» را باز کنید.'
+              : 'هر ردیف یک مجموعهٔ شرایط محاسبهٔ چکی است؛ خاموش‌کردن طرح، روش چکی را خاموش نمی‌کند.'}
+          </p>
+          <p>
+            هر صفحه حداکثر ۵۰ مورد است. وضعیت ذخیره‌شده در فهرست دیده می‌شود؛ جزئیات و نسخهٔ تازه
+            هنگام بازکردن همان مورد دریافت می‌شوند.
           </p>
         </div>
         <div className="row-buttons">
@@ -213,7 +247,7 @@ function PurchaseList({
                     <th>عنوان</th>
                     <th>{method ? 'روش' : 'مدت و فاصله'}</th>
                     {!method && <th>نرخ‌ها</th>}
-                    <th>فعالیت</th>
+                    <th>وضعیت تنظیمات</th>
                     <th>محدودیت دسته</th>
                     <th>جزئیات</th>
                   </tr>
@@ -239,15 +273,24 @@ function PurchaseList({
                           پیش‌پرداخت
                         </td>
                       )}
-                      <td>{row.enabled ? 'فعال' : 'غیرفعال'}</td>
+                      <td>
+                        <span className="badge">
+                          {row.enabled ? 'فعال در تنظیمات' : 'غیرفعال برای خرید جدید'}
+                        </span>
+                        <small>{row.enabled ? 'با رعایت شروط خرید' : 'سوابق قبلی محفوظ است'}</small>
+                      </td>
                       <td>
                         {row.categoryCount
                           ? `${row.categoryCount.toLocaleString('fa-IR')} دسته`
                           : 'همهٔ دسته‌ها'}
                       </td>
                       <td>
-                        <button className="row-action" onClick={() => setEditing(row.id)}>
-                          {writable ? 'ویرایش شرایط' : 'مشاهدهٔ شرایط'}
+                        <button
+                          className="row-action"
+                          aria-label={`${writable ? 'تغییر وضعیت و شرایط' : 'مشاهدهٔ وضعیت و شرایط'} ${row.nameFa || row.nameEn || row.id}`}
+                          onClick={() => setEditing(row.id)}
+                        >
+                          {writable ? 'وضعیت و شرایط' : 'مشاهدهٔ وضعیت و شرایط'}
                         </button>
                       </td>
                     </tr>

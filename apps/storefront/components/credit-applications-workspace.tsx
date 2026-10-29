@@ -49,6 +49,7 @@ export function CreditApplicationsWorkspace({
   scopeJournal,
   download,
   recoveryLink,
+  canCreate = true,
 }: {
   owner: string;
   locale: 'fa' | 'en';
@@ -62,6 +63,7 @@ export function CreditApplicationsWorkspace({
   scopeJournal?: CreditScopeJournal;
   download?: CreditDocumentDownload;
   recoveryLink?: import('react').ReactNode;
+  canCreate?: boolean;
 }) {
   const text = (fa: string, en: string) => (locale === 'fa' ? fa : en),
     prefix = staff ? '/api/admin/credit' : '/api/credit';
@@ -268,7 +270,7 @@ export function CreditApplicationsWorkspace({
   }, [owner, refresh, loadPage]);
 
   useEffect(() => {
-    if (staff) return;
+    if (staff || !canCreate) return;
     const generation = ++planGeneration.current;
     setPlans(null);
     void loadPlans(null, true, generation);
@@ -276,7 +278,7 @@ export function CreditApplicationsWorkspace({
       advanceRequestGeneration(planGeneration);
       planAbort.current?.abort();
     };
-  }, [owner, staff, plansRefresh, loadPlans]);
+  }, [owner, staff, canCreate, plansRefresh, loadPlans]);
   useEffect(() => {
     const generation = ++detailGeneration.current;
     detailAbort.current?.abort();
@@ -340,7 +342,7 @@ export function CreditApplicationsWorkspace({
   }
   function create(e: FormEvent) {
     e.preventDefault();
-    if (unresolved || staff || plansBusy || plansFailed) return;
+    if (!canCreate || unresolved || staff || plansBusy || plansFailed) return;
     const plan = plans?.items.find((p) => p.id === planId),
       rial = parseCreditRequestedToman(amount),
       parsed = creditApplicationCreateSchema.safeParse({
@@ -519,7 +521,7 @@ export function CreditApplicationsWorkspace({
             {text('۵۰ درخواست بعدی', 'Next 50 applications')}
           </button>
         )}
-        {!staff && (
+        {!staff && canCreate && (
           <button
             type="button"
             disabled={unresolved}
@@ -747,6 +749,13 @@ export function CreditApplicationsWorkspace({
             {text(
               'برای مشاهدهٔ شرایط ثبت‌شده، یک پرونده را انتخاب کنید.',
               'Select an application to view its retained terms.',
+            )}
+          </p>
+        ) : !canCreate ? (
+          <p role="status">
+            {text(
+              'درخواست خرید جدید فعلاً فعال نیست؛ سوابق و پیگیری درخواست‌های قبلی در دسترس‌اند.',
+              'New purchases are currently unavailable. Previous applications and tracking remain accessible.',
             )}
           </p>
         ) : (

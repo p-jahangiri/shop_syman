@@ -16,7 +16,7 @@ import {
   RefreshCw,
   WalletCards,
 } from 'lucide-react';
-import { useI18n } from './locale-provider';
+import { useI18n, useStorefront } from './locale-provider';
 import { useCustomerSession } from './auth-provider';
 import { useShop } from './shop-provider';
 import Link from './localized-link';
@@ -35,6 +35,7 @@ import { readQuoteV5Attempt } from '@/lib/quote-v5-journal';
 export function ConnectedCheckout() {
   const auth = useCustomerSession();
   const { locale } = useI18n();
+  const { purchaseMethods } = useStorefront();
   const { serverCart, retry } = useShop();
   const owner = auth.status === 'member' ? auth.session!.user.id : null;
   const orderEntry = useSyncExternalStore(
@@ -75,6 +76,9 @@ export function ConnectedCheckout() {
   if (
     creditEntry &&
     (creditEntry.state === 'unknown' ||
+      !purchaseMethods.some(
+        (method) => method.enabled && method.id === creditEntry.command.body.methodId,
+      ) ||
       creditEntry.command.locale !== locale ||
       creditEntry.command.body.cartVersion !== serverCart?.version)
   )
@@ -130,6 +134,7 @@ export function ConnectedCheckout() {
 }
 function QuoteReview() {
   const { locale, digits, toman, t } = useI18n();
+  const { purchaseMethods } = useStorefront();
   const text = (fa: string, en: string) => (locale === 'fa' ? fa : en);
   const { serverCart, ready, cartIssue, cartBusy, retry } = useShop();
   const auth = useCustomerSession();
@@ -211,13 +216,18 @@ function QuoteReview() {
   }, [saved]);
   const data = overview?.cart === serverCart ? overview.data : null;
   const failed = overview?.cart === serverCart && overview.failed;
-  const method = data?.methods.find((m) => m.id === methodId) ?? data?.methods[0];
+  const currentMethods =
+    data?.methods.filter((method) =>
+      purchaseMethods.some((current) => current.enabled && current.id === method.id),
+    ) ?? [];
+  const method = currentMethods.find((m) => m.id === methodId) ?? currentMethods[0];
   const plan =
     method?.kind === 'cheque'
       ? (data?.plans.find((p) => p.id === planId) ?? data?.plans[0])
       : undefined;
   const choice = `${serverCart?.version}:${method?.id ?? ''}:${plan?.id ?? ''}`;
-  const calculation = saved?.cart === serverCart && saved.choice === choice ? saved.data : null;
+  const calculation =
+    method && saved?.cart === serverCart && saved.choice === choice ? saved.data : null;
   const expired = calculation ? quoteExpired(calculation, now || Date.now()) : false;
   const display = calculation ?? data;
   const waitingForPlan = method?.kind === 'cheque' && !calculation;
@@ -405,7 +415,7 @@ function QuoteReview() {
                   role="radiogroup"
                   aria-label={text('روش خرید', 'Purchase method')}
                 >
-                  {data.methods.map((m) => (
+                  {currentMethods.map((m) => (
                     <label
                       key={m.id}
                       className={`payment-option${method?.id === m.id ? ' active' : ''}`}
@@ -424,7 +434,7 @@ function QuoteReview() {
                       </span>
                     </label>
                   ))}
-                  {!data.methods.length && (
+                  {!currentMethods.length && (
                     <p className="notice">
                       {text(
                         'روش خرید مشترکی برای تمام اقلام موجود نیست؛ سبد را بازبینی کنید.',

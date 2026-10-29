@@ -12,6 +12,7 @@ const attributes = z.record(z.string(), z.string());
 const menu: z.ZodType<MenuItem> = z.lazy(() =>
   z.object({
     label: z.string().max(150),
+    purchaseMethodKind: z.enum(['online', 'cheque', 'installment']).optional(),
     href: z
       .string()
       .startsWith('/')
@@ -40,6 +41,7 @@ export const homeBlockSchema = z
       'cheque',
     ]),
     enabled: z.boolean(),
+    purchaseMethodKind: z.enum(['online', 'cheque', 'installment']).optional(),
     eyebrow: z.string().optional(),
     title: z.string().optional(),
     description: z.string().optional(),
@@ -54,6 +56,7 @@ export const homeBlockSchema = z
       .array(
         z.object({
           eyebrow: z.string(),
+          purchaseMethodKind: z.enum(['online', 'cheque', 'installment']).optional(),
           title: z.string(),
           action: z.string(),
           href: internalPath,
@@ -104,6 +107,7 @@ export const snapshotSchema = z.object({
     chequeDisclaimer: z.string(),
     about: z.string(),
     hero: z.object({
+      purchaseMethodKind: z.enum(['online', 'cheque', 'installment']).optional(),
       eyebrow: z.string(),
       title: z.string(),
       description: z.string(),

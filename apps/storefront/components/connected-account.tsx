@@ -157,7 +157,9 @@ export function ConnectedAccount() {
             <Link href="/notifications">{text('اعلان‌های من', 'My notifications')}</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/credit">{text('درخواست‌های خرید چکی', 'My cheque applications')}</Link>
+            <Link href="/credit">
+              {text('سوابق و پیگیری خرید چکی', 'Cheque history and applications')}
+            </Link>
           </Button>
           <Button variant="outline" disabled={busy} onClick={logout}>
             <LogOut size={17} />

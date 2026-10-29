@@ -8,10 +8,12 @@ using Shop.SharedKernel;
 namespace Shop.Modules.Cms;
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public sealed record SupportFaqDraft(string Id, string Question, string Answer, bool Enabled);
+public sealed record SupportFaqDraft(string Id, string Question, string Answer, bool Enabled,
+    [property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] string? PurchaseMethodKind = null);
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record SupportContentDraft(int SchemaVersion, bool IsDemo, string Eyebrow, string Title, string Description, string TicketsAction, string FaqTitle, string FaqDescription, SupportFaqDraft[] Faqs);
-public sealed record SupportFaqPublic(string Id, string Question, string Answer);
+public sealed record SupportFaqPublic(string Id, string Question, string Answer,
+    [property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] string? PurchaseMethodKind = null);
 public sealed record SupportContentPublic(bool IsDemo, string Eyebrow, string Title, string Description, string TicketsAction, string FaqTitle, string FaqDescription, SupportFaqPublic[] Faqs);
 public sealed record SupportContentRevision(int SchemaVersion, string Locale, string RevisionId, int Revision, SupportContentDraft Content);
 public sealed record SupportContentPage(int SchemaVersion, string Locale, int Revision, [property:JsonIgnore(Condition=JsonIgnoreCondition.Never)] SupportContentPublic? Content);
@@ -27,7 +29,13 @@ public static class SupportContentRules
     {
         try {
             if (value.Count != Keys.Length || value.Any(x => !Keys.Contains(x.Key, StringComparer.Ordinal)) || JsonSerializer.SerializeToUtf8Bytes(value).Length > 100000 || value["faqs"] is not JsonArray faqs || faqs.Count > 30) throw Invalid();
-            foreach (var node in faqs) if (node is not JsonObject item || item.Count != FaqKeys.Length || item.Any(x => !FaqKeys.Contains(x.Key, StringComparer.Ordinal))) throw Invalid();
+            foreach (var node in faqs) {
+                if (node is not JsonObject item || item.Count < FaqKeys.Length || item.Count > FaqKeys.Length + 1
+                    || FaqKeys.Any(key => !item.ContainsKey(key))
+                    || item.Any(x => !FaqKeys.Contains(x.Key, StringComparer.Ordinal) && x.Key != "purchaseMethodKind")) throw Invalid();
+                if (item.TryGetPropertyValue("purchaseMethodKind", out var dependency)
+                    && (dependency is not JsonValue text || !text.TryGetValue<string>(out var kind) || !SitePurchaseRules.IsSupportedKind(kind))) throw Invalid();
+            }
             var content = value.Deserialize<SupportContentDraft>(Json) ?? throw Invalid(); if (content.SchemaVersion != 1 || content.Faqs is null || content.Faqs.Length != faqs.Count) throw Invalid();
             Text(content.Eyebrow, 0, 140, true); Text(content.Title, 1, 200, true); Text(content.Description, 0, 1000); Text(content.TicketsAction, 1, 100, true); Text(content.FaqTitle, 1, 150, true); Text(content.FaqDescription, 0, 1000);
             var ids = new HashSet<string>(StringComparer.Ordinal);
@@ -55,7 +63,7 @@ public sealed class SupportContentReader(CmsDbContext db, bool showDevelopmentSa
         try {
             if (row.Oversized || row.Revision < 1 || row.Json is null || JsonNode.Parse(row.Json) is not JsonObject value) throw SupportContentRules.Unavailable();
             var draft = SupportContentRules.Read(value); if (draft.IsDemo && !showDevelopmentSamples) return new(1, locale, 0, null);
-            var content = new SupportContentPublic(draft.IsDemo, draft.Eyebrow, draft.Title, draft.Description, draft.TicketsAction, draft.FaqTitle, draft.FaqDescription, draft.Faqs.Where(x => x.Enabled).Select(x => new SupportFaqPublic(x.Id, x.Question, x.Answer)).ToArray());
+            var content = new SupportContentPublic(draft.IsDemo, draft.Eyebrow, draft.Title, draft.Description, draft.TicketsAction, draft.FaqTitle, draft.FaqDescription, draft.Faqs.Where(x => x.Enabled).Select(x => new SupportFaqPublic(x.Id, x.Question, x.Answer, x.PurchaseMethodKind)).ToArray());
             return new(1, locale, row.Revision, content);
         } catch (Exception e) when (e is BusinessException or JsonException or InvalidOperationException) { throw SupportContentRules.Unavailable(); }
     }

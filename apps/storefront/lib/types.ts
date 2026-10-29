@@ -100,11 +100,13 @@ export interface AttributeDefinition {
   showInSpecs?: boolean;
 }
 export interface MenuItem {
+  purchaseMethodKind?: PurchaseMethod['kind'];
   label: string;
   href: string;
   children?: MenuItem[];
 }
 export interface PromoContent {
+  purchaseMethodKind?: PurchaseMethod['kind'];
   eyebrow: string;
   title: string;
   action: string;
@@ -113,6 +115,7 @@ export interface PromoContent {
   watermark?: string;
 }
 export interface HomeBlock {
+  purchaseMethodKind?: PurchaseMethod['kind'];
   id: string;
   kind: 'categories' | 'collection' | 'promotions' | 'products' | 'spotlight' | 'brands' | 'cheque';
   enabled: boolean;
@@ -135,6 +138,7 @@ export interface SiteContent {
   announcement: string;
   seo?: { title?: string; description?: string; shareImage?: string; allowIndexing?: boolean };
   hero: {
+    purchaseMethodKind?: PurchaseMethod['kind'];
     eyebrow: string;
     title: string;
     description: string;

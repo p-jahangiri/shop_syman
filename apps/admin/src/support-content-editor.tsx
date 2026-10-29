@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from './api';
 import { Check, ErrorBox, Field } from './ui';
 import { FormActions } from './forms';
+import { CmsPurchaseDependencyField } from './cms-purchase-dependency-field';
 import type { ContentDocument } from './types';
 import {
   supportContentDraftSchema,
@@ -145,6 +146,11 @@ export function SupportContentEditor({
                 checked={faq.enabled}
                 onChange={(e) => change({ enabled: e.target.checked })}
               />
+              <CmsPurchaseDependencyField
+                label={`وابستگی نمایش پرسش ${number} به نوع خرید`}
+                value={faq.purchaseMethodKind}
+                onChange={(purchaseMethodKind) => change({ purchaseMethodKind })}
+              />
               <Field label={`متن سؤال ${number}`}>
                 <input
                   value={faq.question}
@@ -205,7 +211,8 @@ export function SupportContentEditor({
       </fieldset>
       <FormActions pending={mutation.isPending} onClose={onClose}>
         <small>
-          پرسش غیرفعال از پاسخ عمومی حذف می‌شود. متن‌ها به‌صورت ساده نمایش داده می‌شوند.
+          پرسش غیرفعال یا وابسته به نوع خرید خاموش، در پاسخ عمومی نمایش داده نمی‌شود؛ متن و سابقهٔ
+          آن حفظ می‌شود. متن‌ها به‌صورت ساده نمایش داده می‌شوند.
         </small>
       </FormActions>
     </form>

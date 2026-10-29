@@ -11,7 +11,7 @@ import {
 import { CreditOrderForm } from './credit-order-form';
 import { useShop } from './shop-context';
 import { useCustomerSession } from './auth-provider';
-import { useI18n } from './locale-provider';
+import { useI18n, useStorefront } from './locale-provider';
 import Link from './localized-link';
 import { UsedConditionReport } from './used-condition';
 import { formatToman } from '../lib/money';
@@ -49,12 +49,17 @@ export function CreditCheckoutQuotePanel({
     { locale } = useI18n(),
     owner = auth.status === 'member' ? auth.session!.user.id : null,
     text = (fa: string, en: string) => (locale === 'fa' ? fa : en);
+  const { purchaseMethods } = useStorefront();
   const entry = useSyncExternalStore(
       journal.subscribe,
       () => journal.snapshot(owner),
       () => null,
     ),
     unresolved = entry?.state === 'pending' || entry?.state === 'unknown';
+  const retainedMethodId = entry?.command.body.methodId;
+  const retainedMethodEnabled = purchaseMethods.some(
+    (method) => method.enabled && method.id === retainedMethodId,
+  );
   const [cases, setCases] = useState<CreditApplicationSummary[]>([]),
     [cursor, setCursor] = useState<string | null>(null),
     [listBusy, setListBusy] = useState(false),
@@ -346,6 +351,7 @@ export function CreditCheckoutQuotePanel({
               <CreditCheckoutQuoteSnapshot quote={entry.result.quote} now={now || Date.now()} />
               <CreditOrderForm
                 quote={entry.result.quote}
+                recoveryOnly={!retainedMethodEnabled}
                 disabled={(!recoveryOnly && disabled) || unresolved}
                 onCreated={shop.retry}
               />

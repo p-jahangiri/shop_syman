@@ -11,10 +11,11 @@ import Link from './localized-link';
 import { CreditApplicationsWorkspace } from './credit-applications-workspace';
 import { customerCreditConsentJournal } from '../lib/credit-requirements-journal';
 import { customerCreditApplicationJournal } from '../lib/credit-application-journal';
+import { isPurchaseKindEnabled } from '../lib/purchasing';
 export function CustomerCreditApplications() {
   const auth = useCustomerSession(),
     { locale } = useI18n(),
-    { dataSource } = useStorefront(),
+    { dataSource, purchaseMethods } = useStorefront(),
     text = (fa: string, en: string) => (locale === 'fa' ? fa : en);
   const transport = useCallback(
     async (path: string, init: RequestInit = {}) => {
@@ -73,6 +74,7 @@ export function CustomerCreditApplications() {
         </p>
       ) : auth.status === 'member' && auth.session ? (
         <CreditApplicationsWorkspace
+          canCreate={isPurchaseKindEnabled(purchaseMethods, 'cheque')}
           recoveryLink={
             <Link href="/checkout">{text('بررسی نتیجهٔ سفارش', 'Check order outcome')}</Link>
           }

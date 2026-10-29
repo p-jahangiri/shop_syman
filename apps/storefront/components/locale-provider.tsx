@@ -13,6 +13,7 @@ import {
 import type { Locale } from '@/lib/types';
 import type { StorefrontSnapshot, Product } from '@/lib/types';
 import { localizeData, localeFormat, translate } from '@/lib/i18n';
+import { useRouter } from 'next/navigation';
 const LocaleContext = createContext<Locale>('fa');
 const DataContext = createContext<StorefrontSnapshot | null>(null);
 interface Registry {
@@ -32,6 +33,24 @@ export function LocaleProvider({
   snapshot: StorefrontSnapshot;
   children: ReactNode;
 }) {
+  const router = useRouter();
+  useEffect(() => {
+    if (snapshot.dataSource !== 'api') return;
+    let lastRefresh = 0;
+    const refreshVisible = () => {
+      if (document.visibilityState !== 'visible' || !navigator.onLine) return;
+      const now = Date.now();
+      if (now - lastRefresh < 15000) return;
+      lastRefresh = now;
+      router.refresh();
+    };
+    window.addEventListener('focus', refreshVisible);
+    document.addEventListener('visibilitychange', refreshVisible);
+    return () => {
+      window.removeEventListener('focus', refreshVisible);
+      document.removeEventListener('visibilitychange', refreshVisible);
+    };
+  }, [router, snapshot.dataSource, locale]);
   const data = useMemo(
     () => (snapshot.locale === locale ? snapshot : localizeData(snapshot, locale)),
     [snapshot, locale],

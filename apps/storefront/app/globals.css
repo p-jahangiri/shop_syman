@@ -926,7 +926,7 @@ textarea::placeholder {
 }
 .promo-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
   gap: 22px;
   margin-top: 55px;
 }
@@ -1180,7 +1180,7 @@ textarea::placeholder {
 }
 .confidence {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 22px;
   padding-block: 45px;
   margin-top: 23px;
@@ -3085,7 +3085,7 @@ textarea::placeholder {
 }
 .support-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 20px;
   margin-top: 10px;
 }

@@ -252,7 +252,7 @@ export function ProductDetail({
           </div>
           <div className="detail-divider" />
           <div className="purchase-price">
-            <span>{t('قیمت نمونهٔ نقدی')}</span>
+            <span>{locale === 'fa' ? 'قیمت کالا' : 'Product price'}</span>
             {t(
               off > 0 && (
                 <div className="old-price">

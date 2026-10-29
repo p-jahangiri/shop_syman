@@ -14,13 +14,17 @@ import {
   ShoppingBag,
   Info,
 } from 'lucide-react';
-import { availablePurchaseMethods, eligibleChequePlans } from '@/lib/purchasing';
+import {
+  availablePurchaseMethods,
+  eligibleChequePlans,
+  isPurchaseKindEnabled,
+} from '@/lib/purchasing';
 import { chequeQuote, normalizePersian } from '@/lib/commerce';
 import { tomanInput, parseToman } from '@/lib/money';
 import { Button, groupNavigation } from './ui';
 export function Installments() {
-  const { t, digits, toman } = useI18n();
-  const { products, site, chequePlans, purchaseMethods } = useStorefront();
+  const { locale, t, digits, toman } = useI18n();
+  const { products, site, chequePlans, purchaseMethods, isPreview } = useStorefront();
   const params = useSearchParams();
   const product = products.find((p) => p.slug === params.get('product'));
   const variant =
@@ -43,11 +47,26 @@ export function Installments() {
             (!m.minAmountRial || amountRial >= BigInt(m.minAmountRial)) &&
             (!m.maxAmountRial || amountRial <= BigInt(m.maxAmountRial)),
         );
-  const plans = methodAvailable
-    ? eligibleChequePlans(chequePlans, amountRial, product ? [product] : [])
-    : [];
+  const plans =
+    valid && methodAvailable
+      ? eligibleChequePlans(chequePlans, amountRial, product ? [product] : [])
+      : [];
   const plan = plans.find((p) => p.id === planId) ?? plans[0];
   const quote = plan ? chequeQuote(amountRial, plan) : undefined;
+  if (!isPurchaseKindEnabled(purchaseMethods, 'cheque'))
+    return (
+      <div className="container empty-state page-empty">
+        <h1>{locale === 'fa' ? 'خرید چکی فعلاً فعال نیست' : 'Cheque purchasing is unavailable'}</h1>
+        <p>
+          {locale === 'fa'
+            ? 'کالاها و روش‌های خرید فعال را در فروشگاه ببینید. سوابق سفارش‌های قبلی از حساب شما در دسترس‌اند.'
+            : 'Browse products and their available purchase options. Existing order history remains available in your account.'}
+        </p>
+        <Button asChild>
+          <Link href="/catalog">{t('کشف محصولات')}</Link>
+        </Button>
+      </div>
+    );
   return (
     <div className="container installments-page">
       <div className="page-top">
@@ -72,7 +91,11 @@ export function Installments() {
           </p>
           <div className="sample-label">
             <Info size={14} />
-            {t('طرح‌های فعلی صرفاً نمونهٔ محاسبه‌اند')}
+            {isPreview
+              ? t('طرح‌های فعلی صرفاً نمونهٔ محاسبه‌اند')
+              : locale === 'fa'
+                ? 'برآورد اولیه؛ مبلغ نهایی هنگام ثبت سفارش مشخص می‌شود.'
+                : 'Initial estimate; final amounts are confirmed when placing an order.'}
           </div>
         </div>
         <div className="installment-intro-art">
@@ -94,7 +117,11 @@ export function Installments() {
           <p className="small-note">
             {t(
               product
-                ? t('مبلغ نمونهٔ {0} انتخاب شده است.', [product.name])
+                ? isPreview
+                  ? t('مبلغ نمونهٔ {0} انتخاب شده است.', [product.name])
+                  : locale === 'fa'
+                    ? `مبلغ ${product.name} انتخاب شده است.`
+                    : `The price of ${product.name} is selected.`
                 : t('مبلغ دلخواهت را وارد کن تا نمونهٔ بازپرداخت را ببینی.'),
             )}
           </p>
@@ -154,30 +181,32 @@ export function Installments() {
               )}
             </p>
           )}
-          <div className="plan-details">
-            <span>
-              {t('پیش‌پرداخت:')}
-              <strong>
-                {t(digits(plan?.downPaymentPercent ?? 0))}
-                {t('٪ مبلغ کالا')}
-              </strong>
-            </span>
-            <span>
-              {t('افزودهٔ کل:')}
-              <strong>
-                {t(digits(plan?.markupPercent ?? 0))}
-                {t('٪ مانده پس از پیش‌پرداخت')}
-              </strong>
-            </span>
-            <span>
-              {t('فاصلهٔ چک‌ها:')}
-              <strong>
-                {plan?.intervalMonths === 1
-                  ? t('ماهانه')
-                  : t('هر {0} ماه', [digits(plan?.intervalMonths ?? 1)])}
-              </strong>
-            </span>
-          </div>
+          {plan && (
+            <div className="plan-details">
+              <span>
+                {t('پیش‌پرداخت:')}
+                <strong>
+                  {t(digits(plan.downPaymentPercent))}
+                  {t('٪ مبلغ کالا')}
+                </strong>
+              </span>
+              <span>
+                {t('افزودهٔ کل:')}
+                <strong>
+                  {t(digits(plan.markupPercent))}
+                  {t('٪ مانده پس از پیش‌پرداخت')}
+                </strong>
+              </span>
+              <span>
+                {t('فاصلهٔ چک‌ها:')}
+                <strong>
+                  {plan.intervalMonths === 1
+                    ? t('ماهانه')
+                    : t('هر {0} ماه', [digits(plan.intervalMonths)])}
+                </strong>
+              </span>
+            </div>
+          )}
           <div className="notice">{t(site.chequeDisclaimer)}</div>
         </div>
         <div className="calculator-result card-panel">
@@ -198,7 +227,7 @@ export function Installments() {
                   </p>
                 </div>
                 <div className="info-row">
-                  <span>{t('قیمت نقدی کالا')}</span>
+                  <span>{locale === 'fa' ? 'قیمت کالا' : 'Product price'}</span>
                   <strong>
                     {t(toman(amountRial))} <small>{t('تومان')}</small>
                   </strong>
@@ -253,7 +282,13 @@ export function Installments() {
             ) : (
               <div className="empty-state">
                 <Calculator size={40} />
-                <p>{t('برای محاسبه، یک مبلغ معتبر وارد کن.')}</p>
+                <p>
+                  {t(
+                    valid
+                      ? 'خرید چکی برای این کالا یا مبلغ فعال نیست.'
+                      : 'برای محاسبه، یک مبلغ معتبر وارد کن.',
+                  )}
+                </p>
               </div>
             ),
           )}
@@ -293,7 +328,10 @@ export function Installments() {
               {
                 icon: Check,
                 title: t('نهایی‌سازی سفارش'),
-                text: t('با تأیید نهایی و پیش‌پرداخت، فرایند آماده‌سازی آغاز می‌شود.'),
+                text:
+                  locale === 'fa'
+                    ? 'پس از دریافت پیش‌پرداخت و تأیید دستی همهٔ چک‌ها، فرایند آماده‌سازی آغاز می‌شود.'
+                    : 'Preparation starts after receiving the down payment and manually approving every cheque.',
               },
             ].map((step, i) => (
               <article key={step.title}>
@@ -306,9 +344,13 @@ export function Installments() {
           )}
         </div>
         <div className="notice">
-          {t(
-            'در این نسخه درخواست اعتبار ثبت یا مدرکی دریافت نمی‌شود. طرح واقعی و شرایط پذیرش چک پس از تعیین توسط مدیر فروشگاه منتشر خواهد شد.',
-          )}
+          {isPreview
+            ? t(
+                'در این نسخه درخواست اعتبار ثبت یا مدرکی دریافت نمی‌شود. طرح واقعی و شرایط پذیرش چک پس از تعیین توسط مدیر فروشگاه منتشر خواهد شد.',
+              )
+            : locale === 'fa'
+              ? 'خرید چکی به بررسی فروشگاه نیاز دارد. مبلغ محاسبه‌گر مجوز خرید یا ارسال نیست؛ دریافت پیش‌پرداخت و تأیید دستی همهٔ چک‌ها الزامی است.'
+              : 'Cheque purchases require store review. This estimate does not authorize purchase or shipping; receipt of the down payment and manual approval of every cheque are required.'}
         </div>
       </section>
     </div>

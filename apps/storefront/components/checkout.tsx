@@ -563,7 +563,7 @@ function PreviewCheckout() {
           <div className="info-row">
             <span>{t('روش انتخاب‌شده')}</span>
             <strong>
-              {t(isCheque ? t('چکی {0} ماهه', [digits(plan!.months)]) : t('نقدی آنلاین'))}
+              {isCheque ? t('چکی {0} ماهه', [digits(plan!.months)]) : selectedMethod?.name}
             </strong>
           </div>
           <div className="info-row">
