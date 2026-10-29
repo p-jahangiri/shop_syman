@@ -1,6 +1,6 @@
 {
-  "bytes": 12767075,
-  "fileCount": 1215,
+  "bytes": 12800589,
+  "fileCount": 1222,
   "files": [
     {
       "bytes": 136,
@@ -227,11 +227,11 @@
       "sha256": "2d19979c721107de2e79126ecfa05ffd34389dd3b07611446a8a028f990f8015"
     },
     {
-      "bytes": 27954,
+      "bytes": 28388,
       "mode": 420,
       "origin": "source",
       "path": "apps/admin/src/admin-guides.ts",
-      "sha256": "5d8a7bcd9d3a9d33d7975b1d30eee28c0405f1f584b8c9ad5d65f3ce85b6ae6b"
+      "sha256": "63f8c44567505e1b863464c565ff6e6ab5bee9e279f894da9c96c3390fc62fdd"
     },
     {
       "bytes": 1730,
@@ -407,6 +407,27 @@
       "origin": "source",
       "path": "apps/admin/src/cheque-report.tsx",
       "sha256": "4900fc3e679d972da828f5d6798391e2dd9e336c1239a2ccfae8e1f941dd75b5"
+    },
+    {
+      "bytes": 4190,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/admin/src/cms-appearance-editor.tsx",
+      "sha256": "84aba8820b35c33112b550cc29274c0befdb469e1f3098b119f2e785d2b3c99c"
+    },
+    {
+      "bytes": 2396,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/admin/src/cms-appearance-model.ts",
+      "sha256": "539bf43510d536ca1d1a93a5f478c8940c8074a8efbea2e9e40b118d86c69bc6"
+    },
+    {
+      "bytes": 3708,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/admin/src/cms-appearance.css",
+      "sha256": "123df8749cbbf30b1368c04122306bec1ab9a039047a0ae8cb574f76b485e369"
     },
     {
       "bytes": 24592,
@@ -794,11 +815,11 @@
       "sha256": "9128e00b52bf97c2b12931d4b8b051c4d070fc483f3f072971e4b9b0e82c598e"
     },
     {
-      "bytes": 33149,
+      "bytes": 33496,
       "mode": 420,
       "origin": "source",
       "path": "apps/admin/src/operations.tsx",
-      "sha256": "5fe77df97ec5a9d587292c59e541501e38075419cb10338b657ee6a056cff2f4"
+      "sha256": "54704d3882104727e8c3dcc42546842c79428dbcf9852e511dcea58d1c641993"
     },
     {
       "bytes": 3088,
@@ -1221,11 +1242,18 @@
       "sha256": "ac773e666ff3351933d9da0d2ff3459ace7dcfe2e289c6aa41c2cb09bbfd3d22"
     },
     {
-      "bytes": 418,
+      "bytes": 462,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/storefront/app/[locale]/account/loading.tsx",
+      "sha256": "e2e26ab02e7556955ea7d34d2732beedc465473a78d2f46e041fc567a56acf5c"
+    },
+    {
+      "bytes": 417,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/app/[locale]/account/page.tsx",
-      "sha256": "0d175fc66409e56e0a09146308e225bf146683e689bab1950c5ad091d5babdcd"
+      "sha256": "5cc8dadad22deff498b4e40d1203c6bd13fa29619818c9c4a183a31760d1044f"
     },
     {
       "bytes": 407,
@@ -1235,11 +1263,11 @@
       "sha256": "436400b6e037d5e5363392c15dd8f3ad99d11ca8468c091c450fc4b26c57947a"
     },
     {
-      "bytes": 4066,
+      "bytes": 4141,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/app/[locale]/blog/[slug]/page.tsx",
-      "sha256": "2b07192396d9aa0a56e7f28096e7d9a26625bad95fa881a6c8ae6faf5959a6a0"
+      "sha256": "e55ab15e4342be476eef55e91d72468d9abf8f637eeab2f1426014515666ebe3"
     },
     {
       "bytes": 5578,
@@ -1312,13 +1340,6 @@
       "sha256": "f8c4a0a22a4b8c594bd60e4f3ec8c4fef631dbc333f1ffa05bc0f765a0fd9e23"
     },
     {
-      "bytes": 477,
-      "mode": 420,
-      "origin": "source",
-      "path": "apps/storefront/app/[locale]/loading.tsx",
-      "sha256": "64f62d62709cd6a1898fb5850679f2c53efe1b5344a4e45135de69be03b2f547"
-    },
-    {
       "bytes": 1352,
       "mode": 420,
       "origin": "source",
@@ -1382,18 +1403,18 @@
       "sha256": "f33f6afb905216ea0ad3d8b29a3ed86399c304a8ee244a66eef1c7f8b8b60b02"
     },
     {
-      "bytes": 12024,
+      "bytes": 12494,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/app/[locale]/page.tsx",
-      "sha256": "4f28809bd5eff9f219097a36e4dbcb7cdaa015b40705b0182cf22cdea43ea6a6"
+      "sha256": "36d7c6f580fb955ead9e4c0019f0434f6bd226323a0183ad5da47814b00ab602"
     },
     {
-      "bytes": 1685,
+      "bytes": 1921,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/app/[locale]/pages/[slug]/page.tsx",
-      "sha256": "41866c09ac4b89687a9fedc707672a7114bdd771eaebeae648f5542e3313e6c5"
+      "sha256": "80c912720daf0980d7aeab140ff00b0389f213812baaa605c9f412b591f575b4"
     },
     {
       "bytes": 594,
@@ -1606,11 +1627,11 @@
       "sha256": "84451ab32e87c6e89f00e6870203f7d3ece7ea96716a38918baeb36d6ee0a548"
     },
     {
-      "bytes": 3618,
+      "bytes": 4018,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/app/layout.tsx",
-      "sha256": "20cfd31325a6b263c1343438177a14a749de8a9ad68e542feb0c840daa5c97aa"
+      "sha256": "c62639c4ab4b41c13f6f7d611a6ec294428bf3855a8d14ac7db2393d01ac0c6f"
     },
     {
       "bytes": 3320,
@@ -1662,11 +1683,11 @@
       "sha256": "e14f03a29d7d7e4aebfd61f0232b3913049d8f067036c9cfc9072a06b04e8e4b"
     },
     {
-      "bytes": 41153,
+      "bytes": 48817,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/app/storefront-design.css",
-      "sha256": "c500d8e7fb1f5197fa5c13520e542c9aad966fcee1fedceac76c4aa27a6a07ad"
+      "sha256": "e24a18e6adfe9730f19eaa8a6a13675d0f9356e9492f8c28a069fe62e3d66f0e"
     },
     {
       "bytes": 8385,
@@ -2208,18 +2229,18 @@
       "sha256": "19ea84c3cd3585067aeeccda4cac091686b347b18814aa1c218a8f9cf64e475f"
     },
     {
-      "bytes": 5283,
+      "bytes": 5525,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/product-card.tsx",
-      "sha256": "b7b8beafa6ddf1122d3c59f3aa23be39e14e636f3669a8019ec9a6f002fbd94a"
+      "sha256": "c240aefc49b234c8788fad342d7d146ab6455bad070645a32a602654b660876c"
     },
     {
-      "bytes": 18223,
+      "bytes": 18440,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/product-detail.tsx",
-      "sha256": "d5e5c38fbd2e2183d7c7063c6fad617db123eda4a38197e319940cc820c9b188"
+      "sha256": "8ee279b1381924aa007db0b88a7d813b6bec5ee89cb1821eef3f7a310bd5557c"
     },
     {
       "bytes": 1901,
@@ -2236,11 +2257,11 @@
       "sha256": "bcd899ef9a49cd6e720f84296d8e29bc2df458bc521794a9ccda22cf16922bdb"
     },
     {
-      "bytes": 8485,
+      "bytes": 9693,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/pwa-provider.tsx",
-      "sha256": "88ca6e4ca923991104f1bc68cbf233bcac15404f3ccdf524c02550aa24a8f36c"
+      "sha256": "d60d639a439e343a188573f14c82cd2c6d661591fd9751edf695ecd9c9316d28"
     },
     {
       "bytes": 4459,
@@ -2257,11 +2278,11 @@
       "sha256": "f8c822b87e6115092672fcf0b661b6d7b0033cec96cf8b3ba7362083e57a6e54"
     },
     {
-      "bytes": 28631,
+      "bytes": 28856,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/shell.tsx",
-      "sha256": "4fd86def91f50c58aea69eac82d6ea4d00cd1cbe308ce80fc8fc4d3c69a47715"
+      "sha256": "086763944dd0feeaa050c16b3bec9f8c27b1a098a63d4de4ef75473d39e00a2c"
     },
     {
       "bytes": 1673,
@@ -2381,6 +2402,13 @@
       "origin": "source",
       "path": "apps/storefront/lib/address-proxy.ts",
       "sha256": "a01d99cdb1035815e2ea391301d91b33a7bcf3af227c1e785772de8768f61fea"
+    },
+    {
+      "bytes": 836,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/storefront/lib/appearance.ts",
+      "sha256": "6539153d08018e91f35bfd66d73ae61b29b813a72decf14d7c2ca1f3303d719e"
     },
     {
       "bytes": 1752,
@@ -3342,6 +3370,13 @@
       "sha256": "1ec444cc706876002d472b55ad50dd7894b3c79f03eee1bac1baf22f12150ffd"
     },
     {
+      "bytes": 1832,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/storefront/lib/pwa-catalog-warm.ts",
+      "sha256": "63cffd2779017205a9afc6841da99807b6c84a1502d53cd8d3012d6e6793e8e0"
+    },
+    {
       "bytes": 1224,
       "mode": 420,
       "origin": "source",
@@ -3489,11 +3524,11 @@
       "sha256": "4b58ce132a0a2c36d094f075228e4567c69ee24f6c70ae5c1f7e0c3fce493550"
     },
     {
-      "bytes": 8107,
+      "bytes": 8555,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/lib/seo.ts",
-      "sha256": "51c440cb3034c1f192e05d20fc90c1baa4ceafcb431964ab0bb359110a4bbdd5"
+      "sha256": "8d2ede6fbd0db70e3fd8132f159d80c5c893612be6ba43fa4749a106241d9270"
     },
     {
       "bytes": 563,
@@ -3524,11 +3559,11 @@
       "sha256": "451097bcee0aaa4c2e9a68b9a0d763e44987340c1ca97e15fe1a78f4e5431a42"
     },
     {
-      "bytes": 8234,
+      "bytes": 8651,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/lib/snapshot.ts",
-      "sha256": "19744a5f5662099d97bc7af8f0af41f5165ca26c36f412f7022a2267cacee9b8"
+      "sha256": "a5863f3c28c028e9ffc59b5b9aae97f60e33a217b68fbc6e80ac30e25e9aec89"
     },
     {
       "bytes": 6204,
@@ -3699,11 +3734,11 @@
       "sha256": "47f133ff3356df4febd1797f45860e98e738192b7880bbc9af5551e0b2d11139"
     },
     {
-      "bytes": 4020,
+      "bytes": 4281,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/lib/types.ts",
-      "sha256": "3cb63380e61a417e39972dd471c41b1a8ba75f30746f35d37a82de5ea8e13860"
+      "sha256": "78d2dd242ec39fa1a2cd4172e815d43f5a25076d11deea05bcfb966a0dd2e2ee"
     },
     {
       "bytes": 1311,
@@ -3858,6 +3893,13 @@
       "origin": "source",
       "path": "apps/storefront/public/products/powerbank.svg",
       "sha256": "6e593dc9663069bd132b453bba784d217b0b66c468a0bea0b04efada47ebd4a4"
+    },
+    {
+      "bytes": 6366,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/storefront/public/products/sayman-mark-olive-v1-128.webp",
+      "sha256": "ae2b7ca2ad6915b53007c440356245f5e5bac81817ce50938aee4276c9ab1bed"
     },
     {
       "bytes": 141190,
@@ -6436,11 +6478,11 @@
       "sha256": "40da05a58f0848156a9bbcb296cad79edbb60d6eb974de3353796a3d9cd9d2dd"
     },
     {
-      "bytes": 17805,
+      "bytes": 17850,
       "mode": 420,
       "origin": "source",
       "path": "backend/src/Shop.Modules.Cms/Content.cs",
-      "sha256": "b1c66f1310fec21cf6a74981c4ace4b8f2ca39c29c5f83e06524df2737f0231f"
+      "sha256": "c7a7004a678e279b1da88006328b36d1c444dc760ea8b02a8a387cde814df112"
     },
     {
       "bytes": 98,
@@ -6455,6 +6497,13 @@
       "origin": "source",
       "path": "backend/src/Shop.Modules.Cms/Shop.Modules.Cms.csproj",
       "sha256": "78ad106334d5df1451f01c5a46f2c3a8ac42e765e9d1a1d52bd0c5498463e7a3"
+    },
+    {
+      "bytes": 1513,
+      "mode": 420,
+      "origin": "source",
+      "path": "backend/src/Shop.Modules.Cms/SiteAppearanceRules.cs",
+      "sha256": "dd19b0aeb634c1b043796f082bb72f338e2886658efa26e5b1ce4bd0b0fc4d33"
     },
     {
       "bytes": 6968,
@@ -8510,8 +8559,8 @@
   ],
   "formatVersion": 1,
   "overlayTreeSha256": [],
-  "productionTreeSha256": "23134414bccbb03c31987be3af7e03c6930fc68c49b37a3e7a9cd5940839c60b",
-  "sourceTreeSha256": "4735e6d3917cccf8ee2bc7131da16168085410862212f48e826c72f112fea532",
+  "productionTreeSha256": "2babca6832a6ca1d06d3f7dd833420ea6002748eb5cf7094d8910e6ae9f4d272",
+  "sourceTreeSha256": "652bec47566236e5b96dff3952ca07a057029942d78b168d2ff67d3fac754756",
   "transformations": [
     "package.json: retain production build/start scripts",
     "apps/storefront/package.json: retain production build/start scripts",

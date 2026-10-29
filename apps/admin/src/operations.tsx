@@ -16,6 +16,8 @@ import { ProductPicker } from './product-picker';
 import { Area, Text } from './forms';
 import { nameOf, type Catalog, type Content, type ContentDocument } from './types';
 import { CmsMenuEditor, type CmsMenuItem } from './cms-menu-editor';
+import { CmsAppearanceEditor } from './cms-appearance-editor';
+import type { SiteAppearance } from '../../storefront/lib/types';
 interface Promo {
   eyebrow: string;
   title: string;
@@ -67,6 +69,7 @@ interface SiteData {
   logoUrl?: string;
   font?: 'vazirmatn' | 'system';
   palette?: { primaryLight?: string; primaryDark?: string; heroLight?: string; heroDark?: string };
+  appearance?: SiteAppearance;
   contact?: { phone?: string; email?: string; address?: string; hours?: string };
 }
 export function ContentPage({
@@ -705,6 +708,11 @@ function ContentForm({
                 بازگشت به رنگ‌های پیش‌فرض
               </button>
             </fieldset>
+            <CmsAppearanceEditor
+              value={site.appearance}
+              name={site.name}
+              onChange={(appearance) => set({ ...site, appearance })}
+            />
             <Area
               label="دربارهٔ فروشگاه"
               value={site.about}

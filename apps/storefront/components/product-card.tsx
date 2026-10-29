@@ -39,7 +39,17 @@ export function ProductCard({
           href={`/product/${product.slug}${variantId || variant.usedCondition ? `?variant=${variant.id}` : ''}`}
           aria-label={product.name}
         >
-          <Image src={product.image} alt={product.name} width={350} height={280} />
+          <Image
+            src={product.image}
+            alt={product.name}
+            width={350}
+            height={280}
+            sizes={
+              compact
+                ? '(max-width: 600px) 45vw, 240px'
+                : '(max-width: 600px) 45vw, (max-width: 1024px) 30vw, 300px'
+            }
+          />
         </Link>
         <div className="card-tools">
           <button

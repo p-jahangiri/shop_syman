@@ -1,4 +1,12 @@
 import type { UsedCondition } from './used-condition-contract';
+export interface SiteAppearance {
+  surface?: 'glass' | 'solid';
+  density?: 'comfortable' | 'compact';
+  corners?: 'soft' | 'rounded';
+  motion?: 'subtle' | 'none';
+  heroLayout?: 'split' | 'compact';
+  stickyHeader?: boolean;
+}
 export type CategoryKey = string;
 export type MoneyRial = `${bigint}`;
 export interface Variant {
@@ -146,6 +154,7 @@ export interface SiteContent {
   about: string;
   logoUrl?: string;
   font?: 'vazirmatn' | 'system';
+  appearance?: SiteAppearance;
   palette?: { primaryLight?: string; primaryDark?: string; heroLight?: string; heroDark?: string };
   contact?: { phone?: string; email?: string; address?: string; hours?: string };
 }

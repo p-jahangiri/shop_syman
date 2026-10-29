@@ -1,5 +1,7 @@
 'use client';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useI18n } from './locale-provider';
+import { createCatalogWarmup } from '@/lib/pwa-catalog-warm';
 type InstallEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
@@ -24,6 +26,7 @@ const sensitive = () =>
     window.location.pathname,
   );
 export function PwaProvider({ enabled, children }: { enabled: boolean; children: ReactNode }) {
+  const { locale } = useI18n();
   const [phase, setPhase] = useState<Phase>('checking');
   const [installed, setInstalled] = useState(false);
   const [ios, setIos] = useState(false);
@@ -57,13 +60,43 @@ export function PwaProvider({ enabled, children }: { enabled: boolean; children:
     window.addEventListener('beforeinstallprompt', before);
     window.addEventListener('appinstalled', installedEvent);
     media.addEventListener('change', installation);
-    const warm = () => {
-      if (!navigator.serviceWorker.controller || !owns(navigator.serviceWorker.controller)) return;
-      for (const locale of ['fa', 'en'])
-        void fetch(`/pwa/catalog/${locale}.json`, { credentials: 'omit', cache: 'no-cache' }).catch(
-          () => {},
+    const warmer = createCatalogWarmup(locale, {
+      loaded: () => document.readyState === 'complete',
+      afterLoad(task) {
+        window.addEventListener('load', task, { once: true });
+        return () => window.removeEventListener('load', task);
+      },
+      idle(task) {
+        if ('requestIdleCallback' in window) {
+          const id = window.requestIdleCallback(task, { timeout: 5000 });
+          return () => window.cancelIdleCallback(id);
+        }
+        const id = setTimeout(task, 1500);
+        return () => clearTimeout(id);
+      },
+      eligible() {
+        const connection = (
+          navigator as Navigator & {
+            connection?: { saveData?: boolean; effectiveType?: string };
+          }
+        ).connection;
+        return (
+          enabled &&
+          !cancelled &&
+          !sensitive() &&
+          document.visibilityState !== 'hidden' &&
+          !connection?.saveData &&
+          !['slow-2g', '2g'].includes(connection?.effectiveType ?? '') &&
+          owns(navigator.serviceWorker?.controller)
         );
-    };
+      },
+      async fetcher(path, init) {
+        const response = await fetch(path, init);
+        if (!response.ok) throw Error('Offline catalog refresh unavailable');
+      },
+    });
+    const warm = () => warmer.request();
+    const online = () => warmer.request(true);
     const controller = () => {
       if (cancelled) return;
       if (owns(navigator.serviceWorker.controller)) {
@@ -139,7 +172,7 @@ export function PwaProvider({ enabled, children }: { enabled: boolean; children:
       navigator.serviceWorker.addEventListener('controllerchange', controller);
       navigator.serviceWorker.addEventListener('controllerchange', reload);
       window.addEventListener('sayman-activate-update', activate);
-      window.addEventListener('online', warm);
+      window.addEventListener('online', online);
       try {
         const registration = await navigator.serviceWorker.register('/sw.js', {
           scope: '/',
@@ -168,20 +201,21 @@ export function PwaProvider({ enabled, children }: { enabled: boolean; children:
     void ready();
     return () => {
       cancelled = true;
+      warmer.dispose();
       updateWorker?.removeEventListener('statechange', activated);
       clearTimeout(updateTimer);
       updateChannel?.port1.close();
       window.removeEventListener('beforeinstallprompt', before);
       window.removeEventListener('appinstalled', installedEvent);
       media.removeEventListener('change', installation);
-      window.removeEventListener('online', warm);
+      window.removeEventListener('online', online);
       window.removeEventListener('sayman-activate-update', activate);
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.removeEventListener('controllerchange', controller);
         navigator.serviceWorker.removeEventListener('controllerchange', reload);
       }
     };
-  }, [enabled]);
+  }, [enabled, locale]);
   const install = async () => {
     if (!prompt) return;
     await prompt.prompt();

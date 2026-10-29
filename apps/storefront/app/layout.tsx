@@ -19,6 +19,7 @@ import { translate } from '@/lib/i18n';
 import { AuthProvider } from '@/components/auth-provider';
 import { ShopProvider } from '@/components/shop-provider';
 import { Header, Footer, MobileNav, CartDrawer, CompareTray } from '@/components/shell';
+import { resolveAppearance } from '@/lib/appearance';
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const { site } = await getStorefront(locale);
@@ -54,6 +55,7 @@ export default async function RootLayout({
   const locale = segment === 'en' ? 'en' : segment === 'fa' ? 'fa' : await getLocale();
   const snapshot = await getStorefront(locale);
   const palette = snapshot.site.palette;
+  const appearance = resolveAppearance(snapshot.site.appearance);
   const branding = {
     '--shop-primary-light': palette?.primaryLight,
     '--shop-primary-dark': palette?.primaryDark,
@@ -67,6 +69,12 @@ export default async function RootLayout({
       lang={locale}
       dir={locale === 'fa' ? 'rtl' : 'ltr'}
       data-scroll-behavior="smooth"
+      data-shop-surface={appearance.surface}
+      data-shop-density={appearance.density}
+      data-shop-corners={appearance.corners}
+      data-shop-motion={appearance.motion}
+      data-shop-hero={appearance.heroLayout}
+      data-shop-sticky={String(appearance.stickyHeader)}
       suppressHydrationWarning
     >
       <body className="storefront-design">
