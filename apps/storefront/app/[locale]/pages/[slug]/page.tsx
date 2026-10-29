@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import NextLink from 'next/link';
 import { serverI18n } from '@/lib/server-locale';
 import { fetchCmsPage } from '@/lib/cms-page-fetch';
@@ -6,11 +7,12 @@ import { pageMetadata } from '@/lib/seo';
 import { localeHref } from '@/lib/i18n';
 import { CmsPageView } from '@/components/cms-page-view';
 export const dynamic = 'force-dynamic';
-const load = (slug: string, locale: 'fa' | 'en') =>
+const load = cache((slug: string, locale: 'fa' | 'en') =>
   fetchCmsPage(slug, locale, {
     SHOP_DATA_MODE: process.env.SHOP_DATA_MODE,
     SHOP_API_URL: process.env.SHOP_API_URL,
-  });
+  }),
+);
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const snapshot = await serverI18n(),
     { slug } = await params,
@@ -22,7 +24,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     `/pages/${slug}`,
     result.page.title,
     result.page.description,
-    { noindex: result.page.isDemo },
+    // Only this published translation is verified here. The sitemap adds pairs
+    // from its publication projection without another metadata request chain.
+    { noindex: result.page.isDemo, availableLocales: [snapshot.locale] },
   );
 }
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {

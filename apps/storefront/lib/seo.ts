@@ -85,11 +85,15 @@ export function publicMedia(
 export function localizedUrl(origin: string, locale: Locale, path: string) {
   return `${origin}/${locale}${path === '/' ? '' : path}`;
 }
-export function languageUrls(origin: string, path: string) {
+export function languageUrls(
+  origin: string,
+  path: string,
+  availableLocales: readonly Locale[] = ['fa', 'en'],
+) {
+  const available = [...new Set(availableLocales)];
   return {
-    fa: localizedUrl(origin, 'fa', path),
-    en: localizedUrl(origin, 'en', path),
-    'x-default': localizedUrl(origin, 'fa', path),
+    ...Object.fromEntries(available.map((locale) => [locale, localizedUrl(origin, locale, path)])),
+    ...(available.includes('fa') ? { 'x-default': localizedUrl(origin, 'fa', path) } : {}),
   };
 }
 export function pageMetadata(
@@ -98,7 +102,7 @@ export function pageMetadata(
   path: string,
   title: string,
   description: string,
-  options: { noindex?: boolean; image?: string } = {},
+  options: { noindex?: boolean; image?: string; availableLocales?: readonly Locale[] } = {},
   env: SeoEnvironment = deploymentEnvironment(),
 ): Metadata {
   const origin = publicOrigin(env);
@@ -113,7 +117,7 @@ export function pageMetadata(
       ? {
           alternates: {
             canonical: localizedUrl(origin, locale, path),
-            languages: languageUrls(origin, path),
+            languages: languageUrls(origin, path, options.availableLocales),
           },
           openGraph: {
             title: fullTitle,
@@ -122,7 +126,9 @@ export function pageMetadata(
             type: 'website' as const,
             url: localizedUrl(origin, locale, path),
             locale: locale === 'fa' ? 'fa_IR' : 'en_US',
-            alternateLocale: locale === 'fa' ? 'en_US' : 'fa_IR',
+            alternateLocale: (options.availableLocales ?? ['fa', 'en'])
+              .filter((available) => available !== locale)
+              .map((available) => (available === 'fa' ? 'fa_IR' : 'en_US')),
             ...(image ? { images: [image] } : {}),
           },
           twitter: {
@@ -161,7 +167,7 @@ export function productStructuredData(
   env: SeoEnvironment = deploymentEnvironment(),
 ): Record<string, unknown>[] {
   const origin = publicOrigin(env);
-  if (!origin || snapshot.isPreview || snapshot.dataSource !== 'api') return [];
+  if (!origin || !canIndex(snapshot, env)) return [];
   const path = `/product/${encodeURIComponent(product.slug)}`;
   const url = localizedUrl(origin, locale, path);
   const category = snapshot.categories.find((c) => c.key === product.category);
@@ -183,6 +189,7 @@ export function productStructuredData(
         name: v.label,
         priceCurrency: 'IRR',
         price: v.priceRial,
+        itemCondition: `https://schema.org/${v.usedCondition ? 'UsedCondition' : 'NewCondition'}`,
         availability: `https://schema.org/${v.stock > 0 ? 'InStock' : 'OutOfStock'}`,
         url: `${url}?variant=${encodeURIComponent(v.id)}`,
         seller: { '@type': 'Organization', name: snapshot.site.name },

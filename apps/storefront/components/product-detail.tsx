@@ -123,7 +123,15 @@ export function ProductDetail({
             aria-label={t('بزرگنمایی تصویر محصول')}
             onClick={() => setZoom(true)}
           >
-            <Image src={selectedImage} alt={product.name} width={700} height={560} priority />
+            <Image
+              src={selectedImage}
+              alt={product.name}
+              width={700}
+              height={560}
+              sizes="(max-width: 767px) calc(100vw - 48px), (max-width: 1100px) 45vw, 540px"
+              loading="eager"
+              fetchPriority="high"
+            />
             <span className="gallery-expand">
               <Expand size={17} />
             </span>

@@ -84,13 +84,13 @@ export default async function HomePage() {
     <ProductsScope products={products}>
       <div className="home-page">
         <div className="container">
-          <section className="hero">
+          <section className="hero" aria-labelledby="home-hero-title">
             <div className="hero-copy">
               <span className="hero-eyebrow">
                 <span />
                 {site.hero.eyebrow}
               </span>
-              <h1>
+              <h1 id="home-hero-title">
                 {site.hero.title.split('\n').map((line, i) => (
                   <Fragment key={i}>
                     {i > 0 && <br />}
@@ -113,7 +113,7 @@ export default async function HomePage() {
               </div>
               {site.hero.footnote && (
                 <div className="hero-bottom">
-                  <div className="hero-mini-icons">
+                  <div className="hero-mini-icons" aria-hidden="true">
                     <span>
                       <Check size={14} />
                     </span>
@@ -129,8 +129,8 @@ export default async function HomePage() {
               )}
             </div>
             <div className="hero-visual">
-              <span className="hero-orbit orbit-one" />
-              <span className="hero-orbit orbit-two" />
+              <span className="hero-orbit orbit-one" aria-hidden="true" />
+              <span className="hero-orbit orbit-two" aria-hidden="true" />
               {site.hero.visualTitle && (
                 <span className="hero-word" aria-hidden="true">
                   {lines(site.hero.visualTitle)}
@@ -142,7 +142,9 @@ export default async function HomePage() {
                   alt={site.hero.title.replaceAll('\n', ' ')}
                   width={700}
                   height={560}
-                  priority
+                  loading="eager"
+                  fetchPriority="high"
+                  sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 1344px) 46vw, 620px"
                 />
               )}
               {site.hero.floatingTitle && (
@@ -156,7 +158,7 @@ export default async function HomePage() {
                   </div>
                 </div>
               )}
-              <span className="hero-index">
+              <span className="hero-index" aria-hidden="true">
                 01 <i />
                 {site.latinName}
               </span>
@@ -188,7 +190,7 @@ export default async function HomePage() {
                               <ArrowUpLeft size={20} />
                             </span>
                           </div>
-                          <Image src={c.image} alt="" width={230} height={184} />
+                          <Image src={c.image} alt="" width={230} height={184} sizes="160px" />
                         </Link>
                       ))}
                     </div>
@@ -222,7 +224,13 @@ export default async function HomePage() {
                           <ArrowUpLeft size={18} />
                         </span>
                       </div>
-                      <Image src={item.image} alt="" width={420} height={336} />
+                      <Image
+                        src={item.image}
+                        alt=""
+                        width={420}
+                        height={336}
+                        sizes="(max-width: 600px) 260px, 420px"
+                      />
                       <span className="promo-watermark" aria-hidden="true">
                         {item.watermark}
                       </span>

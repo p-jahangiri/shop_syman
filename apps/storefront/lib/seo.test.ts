@@ -11,6 +11,7 @@ import {
   productStructuredData,
   sitemapEntries,
   publicMedia,
+  languageUrls,
 } from './seo.ts';
 const env = { SHOP_PUBLIC_URL: 'https://shop.example', SHOP_ENABLE_INDEXING: 'true' };
 function live(locale: 'fa' | 'en' = 'fa'): StorefrontSnapshot {
@@ -100,6 +101,32 @@ test('public metadata uses CMS content, locales and only unsigned public images'
   ])
     assert.equal(publicMedia(path, env.SHOP_PUBLIC_URL), undefined);
 });
+test('CMS metadata can advertise only its verified published translation without invented alternate pages', () => {
+  const metadata = pageMetadata(
+    live('en'),
+    'en',
+    '/pages/english-only',
+    'Published page',
+    'Only the English translation is published.',
+    { availableLocales: ['en'] },
+    env,
+  );
+  assert.deepEqual(metadata.alternates?.languages, {
+    en: 'https://shop.example/en/pages/english-only',
+  });
+  assert.equal(metadata.alternates?.canonical, 'https://shop.example/en/pages/english-only');
+  assert.deepEqual(
+    metadata.openGraph && 'alternateLocale' in metadata.openGraph
+      ? metadata.openGraph.alternateLocale
+      : undefined,
+    [],
+  );
+  assert.deepEqual(languageUrls(env.SHOP_PUBLIC_URL, '/blog/guide', ['fa', 'fa']), {
+    fa: 'https://shop.example/fa/blog/guide',
+    'x-default': 'https://shop.example/fa/blog/guide',
+  });
+  assert.deepEqual(languageUrls(env.SHOP_PUBLIC_URL, '/blog/guide', []), {});
+});
 test('product structured data preserves Int64 money, stock, current locale and contains no invented reviews', () => {
   const s = live();
   const p = s.products[0];
@@ -117,9 +144,51 @@ test('product structured data preserves Int64 money, stock, current locale and c
   assert.equal(offers[0].availability, 'https://schema.org/OutOfStock');
   assert.equal(offers[0].url.startsWith('https://shop.example/en/product/'), true);
   assert.equal(data[0].aggregateRating, undefined);
+  assert.equal(
+    (data[0].offers as { itemCondition: string }[])[0].itemCondition,
+    'https://schema.org/NewCondition',
+  );
   assert.equal(data[1]['@type'], 'BreadcrumbList');
   assert.deepEqual(productStructuredData({ ...s, isPreview: true }, p, 'fa', env), []);
   assert.deepEqual(productStructuredData(s, p, 'fa', {}), []);
+});
+test('product schema honors public deployment and published indexing gates, including localhost', () => {
+  const snapshot = live();
+  for (const configuration of [
+    {},
+    { ...env, SHOP_ENABLE_INDEXING: 'false' },
+    { ...env, SHOP_PUBLIC_URL: 'http://127.0.0.1:3000' },
+    { ...env, SHOP_PUBLIC_URL: 'https://localhost' },
+  ])
+    assert.deepEqual(
+      productStructuredData(snapshot, snapshot.products[0], 'fa', configuration),
+      [],
+    );
+  snapshot.site.seo!.allowIndexing = false;
+  assert.deepEqual(productStructuredData(snapshot, snapshot.products[0], 'fa', env), []);
+});
+test('used-device offers declare their actual condition without inventing ratings or health claims', () => {
+  const snapshot = live();
+  const product = snapshot.products[0];
+  product.variants[0].usedCondition = {
+    inspectionId: '11111111111111111111111111111111',
+    technicalState: 'unknown',
+    batteryState: 'unknown',
+    batteryHealthPercent: null,
+    screenState: 'unknown',
+    bodyState: 'unknown',
+    repairState: 'unknown',
+    notesFa: '',
+    notesEn: '',
+    inspectedAt: '2026-10-29T00:00:00Z',
+  };
+  const data = productStructuredData(snapshot, product, 'fa', env);
+  assert.equal(
+    (data[0].offers as { itemCondition: string }[])[0].itemCondition,
+    'https://schema.org/UsedCondition',
+  );
+  assert.equal(data[0].aggregateRating, undefined);
+  assert.equal(JSON.stringify(data).includes('batteryHealth'), false);
 });
 test('CMS script delimiters and Unicode separators cannot escape the JSON-LD script', () => {
   const input = { name: '</script><img src=x onerror=alert(1)> & \u2028\u2029' };

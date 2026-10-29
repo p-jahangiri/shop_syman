@@ -47,7 +47,15 @@ export function Brand() {
   return (
     <Link href="/" className="brand" aria-label={t('سایمان، صفحه اصلی')}>
       <span className={`brand-mark${saymanMark ? ' brand-mark--sayman' : ''}`}>
-        <Image src={logoUrl} alt="" width={50} height={50} unoptimized loading="eager" />
+        <Image
+          src={saymanMark ? '/products/sayman-mark-olive-v1-128.webp' : logoUrl}
+          alt=""
+          width={50}
+          height={50}
+          sizes="50px"
+          unoptimized={saymanMark}
+          loading="eager"
+        />
       </span>
       <span>
         {t(site.name)}
@@ -183,6 +191,8 @@ export function Header() {
             <form className="search-box" onSubmit={submit} role="search">
               <Search size={20} />
               <input
+                id="storefront-search"
+                name="q"
                 maxLength={200}
                 aria-label={t('جست‌وجوی محصولات')}
                 placeholder={t('دنبال چه چیزی می‌گردی؟')}

@@ -100,6 +100,7 @@ public sealed class ContentService(CmsDbContext db) : ISiteContentReader
         if (hero["image"] is not null) ValidateImage(hero["image"]);
         if (value["logoUrl"] is not null) ValidateImage(value["logoUrl"]);
         if (value["font"] is not null && value["font"]!.ToString() is not ("vazirmatn" or "system")) throw new BusinessException("invalid_branding", "Select a supported local font.");
+        SiteAppearanceRules.Validate(value);
         if (value["palette"] is JsonObject palette) {
             foreach (var pair in palette) if (pair.Key is not ("primaryLight" or "primaryDark" or "heroLight" or "heroDark") || pair.Value is not JsonValue colorNode || !colorNode.TryGetValue<string>(out var color) || !System.Text.RegularExpressions.Regex.IsMatch(color, "^#[0-9a-fA-F]{6}$")) throw new BusinessException("invalid_branding", "Use six-digit hex colors in supported palette fields.");
             if (palette["primaryLight"] is not null && Contrast(palette["primaryLight"]!.ToString(), "#ffffff") < 4.5 || palette["primaryDark"] is not null && Contrast(palette["primaryDark"]!.ToString(), "#253321") < 4.5) throw new BusinessException("invalid_branding_contrast", "Primary colors must keep readable button text in both themes.");

@@ -27,6 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const p = result.post;
   return pageMetadata(snapshot, snapshot.locale, '/blog/' + p.slug, p.title, p.description, {
     noindex: p.isDemo,
+    availableLocales: [snapshot.locale],
     ...(p.cover ? { image: p.cover } : {}),
   });
 }
@@ -94,6 +95,7 @@ export default async function Article({ params }: { params: Promise<{ slug: stri
                   src={p.cover}
                   alt={p.coverAlt ?? ''}
                   decoding="async"
+                  loading="eager"
                   fetchPriority="high"
                 />
               </div>

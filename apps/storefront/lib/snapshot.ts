@@ -121,6 +121,17 @@ export const snapshotSchema = z.object({
     homeBlocks: z.array(homeBlockSchema).max(20).optional(),
     logoUrl: imagePath.optional(),
     font: z.enum(['vazirmatn', 'system']).optional(),
+    appearance: z
+      .object({
+        surface: z.enum(['glass', 'solid']).optional(),
+        density: z.enum(['comfortable', 'compact']).optional(),
+        corners: z.enum(['soft', 'rounded']).optional(),
+        motion: z.enum(['subtle', 'none']).optional(),
+        heroLayout: z.enum(['split', 'compact']).optional(),
+        stickyHeader: z.boolean().optional(),
+      })
+      .strict()
+      .optional(),
     palette: z
       .object({
         primaryLight: color.optional(),
