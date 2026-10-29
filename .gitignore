@@ -1,0 +1,11 @@
+**/node_modules/
+**/.next*/
+**/dist/
+**/bin/
+**/obj/
+.env*
+**/.env*
+**/.vercel/
+*.pfx
+*.pem
+*.key

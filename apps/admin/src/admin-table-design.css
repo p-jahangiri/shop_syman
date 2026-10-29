@@ -1,0 +1,571 @@
+/* Shared record tables. Scrolling belongs to the cells, so tools stay reachable. */
+.workspace .table-wrap:has(> .admin-record-grid) {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  scrollbar-gutter: auto;
+}
+.record-grid-v2 {
+  --record-line: color-mix(in oklch, var(--foreground) 10%, var(--surface));
+  --record-soft: color-mix(in oklch, var(--foreground) 2.5%, var(--surface));
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--record-line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.admin-record-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--record-line);
+}
+.record-toolbar-main {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.admin-record-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 340px;
+  color: var(--muted);
+}
+.admin-record-search input {
+  min-width: 0;
+  width: 100%;
+  min-height: 40px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 6px 0;
+  font-size: 12px;
+}
+.admin-record-search input:focus-visible {
+  outline-offset: 4px;
+}
+.record-result-summary {
+  color: var(--muted);
+  font-size: 12px;
+}
+.record-result-summary strong {
+  color: var(--foreground);
+  margin-inline-end: 4px;
+  font-size: 14px;
+}
+.admin-record-tools {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.record-menu {
+  position: static;
+  font-size: 12px;
+}
+.record-menu > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid var(--record-line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--foreground);
+  list-style: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.record-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.record-menu[open] > summary,
+.record-menu > summary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--record-soft);
+}
+.record-menu-badge {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  font-size: 10px;
+}
+.record-menu-panel {
+  position: absolute;
+  z-index: 30;
+  inset-block-start: calc(100% + 8px);
+  inset-inline-end: 0;
+  width: min(320px, calc(100vw - 56px));
+  max-height: min(510px, 65vh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+  border: 1px solid var(--record-line);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 12px 40px oklch(0.2 0.015 130 / 0.14);
+}
+.record-menu-heading {
+  display: grid;
+  gap: 5px;
+  margin-block-end: 16px;
+}
+.record-menu-heading strong {
+  font-size: 13px;
+}
+.record-menu-heading > span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.record-filter-fields {
+  display: grid;
+  gap: 12px;
+}
+.record-filter-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 11px;
+}
+.record-filter-field input,
+.record-filter-field select {
+  min-height: 40px;
+  font-size: 12px;
+  background: var(--record-soft);
+}
+.record-menu-clear {
+  width: 100%;
+  margin-block-start: 14px;
+  font-size: 12px;
+}
+.record-density-control {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 9px;
+  background: var(--record-soft);
+  margin-block-end: 12px;
+}
+.record-density-control button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+.record-density-control button[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: 0 1px 4px oklch(0.2 0.015 130 / 0.1);
+}
+.admin-columns-options {
+  display: grid;
+  gap: 3px;
+}
+.admin-columns-options label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.admin-columns-options input {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  accent-color: var(--primary);
+}
+.record-menu-icon > summary {
+  border-color: transparent;
+  padding-inline: 7px;
+  color: var(--muted);
+}
+.record-scope-description {
+  margin: 0;
+  color: var(--muted);
+  line-height: 2;
+  font-size: 12px;
+}
+.record-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--record-line);
+}
+.workspace .record-active-filters button {
+  min-height: 32px;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  background: var(--record-soft);
+  border: 0;
+  border-radius: 6px;
+  color: var(--primary);
+}
+.admin-record-viewport {
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  border-radius: 0 0 10px 10px;
+}
+.workspace .record-grid-v2 table {
+  min-width: 600px;
+  font-size: 12px;
+}
+.workspace .record-grid-v2 thead th {
+  padding: 6px 18px;
+  background: var(--record-soft);
+  border-bottom: 1px solid var(--record-line);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+.admin-record-column-heading {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+}
+.workspace .record-grid-v2 .admin-table-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0;
+  font-weight: 500;
+  border: 0;
+  background: transparent;
+}
+.admin-table-sort svg {
+  opacity: 0.4;
+  flex: none;
+}
+th[aria-sort] .admin-table-sort svg,
+.admin-table-sort:hover svg {
+  opacity: 1;
+  color: var(--primary);
+}
+.workspace .record-grid-v2 tbody td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--record-line);
+  background: var(--surface);
+  line-height: 1.7;
+}
+.workspace .record-grid-v2 tbody tr:last-child td {
+  border-bottom: 0;
+}
+.workspace .record-grid-v2 tbody tr:hover td {
+  background: color-mix(in oklch, var(--primary) 3%, var(--surface));
+}
+.workspace .record-grid-v2.is-compact tbody td {
+  padding-block: 7px;
+}
+.workspace .record-grid-v2 .record-action-column {
+  position: sticky;
+  inset-inline-end: 0;
+  border-inline-start: 1px solid var(--record-line);
+  width: 1%;
+  white-space: nowrap;
+  z-index: 1;
+}
+.workspace .record-grid-v2 .row-action {
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  padding: 6px 10px;
+  font-size: 11px;
+  border-radius: 7px;
+}
+.workspace .record-grid-v2 .row-action:hover {
+  background: color-mix(in oklch, var(--primary) 8%, var(--surface));
+}
+.record-grid-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 22px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--record-line);
+  font-size: 11px;
+  color: var(--muted);
+}
+.record-visible-range {
+  margin-inline-end: auto;
+}
+.record-page-size,
+.record-page-navigation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.record-page-size select {
+  width: 64px;
+  min-height: 36px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.workspace .record-page-navigation button {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 6px;
+  border: 1px solid var(--record-line);
+  border-radius: 7px;
+  background: var(--surface);
+}
+.record-page-navigation span {
+  min-width: 80px;
+  text-align: center;
+}
+.admin-filter-form.is-live .admin-filter-actions button.primary:not([type='button']) {
+  display: none;
+}
+.product-workspace-v2 .section-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 19px;
+}
+.product-result-badge {
+  display: inline-grid;
+  place-items: center;
+  padding: 3px 8px;
+  border-radius: 7px;
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 8%, var(--surface));
+  font-size: 12px;
+  font-weight: 500;
+}
+.product-state-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--border);
+  margin-block-start: 22px;
+  overflow-x: auto;
+}
+.product-state-tabs button {
+  position: relative;
+  flex: none;
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+  border-radius: 0;
+  padding: 12px 2px;
+  font-size: 12px;
+}
+.product-state-tabs button[aria-pressed='true'] {
+  color: var(--primary);
+  box-shadow: inset 0 -2px var(--primary);
+  font-weight: 700;
+}
+.product-workspace-v2 .admin-filter-form {
+  margin-block: 18px;
+}
+.admin-filter-layout.is-inline {
+  display: grid;
+  grid-template-columns: minmax(210px, 1.3fr) minmax(260px, 1fr);
+  gap: 12px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.is-inline .admin-filter-main {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+.is-inline .admin-filter-search {
+  flex-basis: auto;
+}
+.is-inline .admin-filter-actions,
+.is-inline .admin-filter-actions button {
+  flex: none;
+}
+.is-inline .admin-filter-search .field > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.is-inline .admin-filter-search input {
+  border-radius: 9px;
+  min-height: 44px;
+  font-size: 12px;
+}
+.is-inline .admin-filter-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.is-inline .admin-filter-options .field {
+  position: relative;
+}
+.is-inline .admin-filter-options .field > span {
+  position: absolute;
+  inset-block-start: -6px;
+  inset-inline-start: 10px;
+  background: var(--surface);
+  padding-inline: 5px;
+  font-size: 10px;
+  z-index: 1;
+}
+.is-inline .admin-filter-options select {
+  min-height: 44px;
+  padding-inline: 14px;
+  border-radius: 9px;
+  font-size: 12px;
+}
+.is-inline .admin-filter-applied {
+  grid-column: 1 / -1;
+  padding-block-start: 0;
+}
+.product-clear-filter {
+  font-size: 11px;
+  padding-inline: 9px;
+}
+.product-workspace-v2 .record-grid-v2 table {
+  min-width: 780px;
+}
+.product-table-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 240px;
+}
+.product-table-symbol {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 48px;
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 5%, var(--surface));
+  border: 1px solid color-mix(in oklch, var(--primary) 10%, var(--surface));
+  border-radius: 10px;
+}
+.product-table-identity strong {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-weight: 500;
+  font-size: 12px;
+}
+.workspace .product-table-identity small {
+  font-size: 10px;
+  direction: ltr;
+  text-align: start;
+}
+.product-featured-star {
+  color: oklch(0.62 0.13 80);
+  fill: color-mix(in oklch, oklch(0.62 0.13 80) 16%, transparent);
+  flex: none;
+}
+.product-category-label {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.product-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 10px;
+  white-space: nowrap;
+  background: var(--record-soft);
+  color: var(--muted);
+}
+.product-status::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.product-status-published {
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 8%, var(--surface));
+}
+.product-status-draft {
+  color: light-dark(oklch(0.46 0.09 75), oklch(0.8 0.09 75));
+  background: color-mix(in oklch, oklch(0.7 0.09 75) 10%, var(--surface));
+}
+.product-variant-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 27px;
+  height: 27px;
+  border: 1px solid var(--record-line);
+  border-radius: 7px;
+  font-size: 11px;
+}
+@media (max-width: 1000px) {
+  .admin-filter-layout.is-inline {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .admin-record-toolbar,
+  .record-grid-footer {
+    padding: 10px 12px;
+  }
+  .record-toolbar-main {
+    flex-basis: 100%;
+  }
+  .admin-record-tools {
+    position: relative;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .record-menu > summary,
+  .workspace .record-page-navigation button,
+  .record-page-size select,
+  .workspace .record-active-filters button {
+    min-height: 44px;
+  }
+  .record-menu-panel {
+    position: fixed;
+    inset: auto 24px 20px;
+    width: auto;
+    max-height: 65vh;
+  }
+  .record-filter-field input,
+  .record-filter-field select {
+    min-height: 44px;
+  }
+  .product-clear-filter span {
+    display: none;
+  }
+  .product-clear-filter {
+    min-width: 44px;
+  }
+  .product-state-tabs {
+    gap: 18px;
+  }
+  .record-visible-range {
+    flex-basis: 100%;
+  }
+  .record-page-navigation {
+    margin-inline-start: auto;
+  }
+  .record-page-size {
+    gap: 5px;
+  }
+}

@@ -1,0 +1,13 @@
+**/node_modules/
+**/.next*/
+**/dist/
+**/bin/
+**/obj/
+.env*
+**/.env*
+**/.vercel/
+*.pfx
+*.pem
+*.key
+.git/
+production-source-manifest.json

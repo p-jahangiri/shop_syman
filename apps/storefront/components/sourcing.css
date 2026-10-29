@@ -1,0 +1,326 @@
+.sourcing-cart {
+  margin-block: 32px;
+  min-width: 0;
+  scroll-margin-top: 25px;
+}
+.sourcing-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 16px;
+}
+.sourcing-heading h2 {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 20px;
+}
+.sourcing-cart > .notice {
+  display: flex;
+  gap: 10px;
+  align-items: start;
+  margin-block: 15px;
+  font-size: 12px;
+}
+.sourcing-cart > .notice svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.sourcing-cart-line {
+  padding-block: 22px;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+.sourcing-model {
+  display: flex;
+  gap: 20px;
+  align-items: start;
+  min-width: 0;
+}
+.sourcing-model > img {
+  width: 100px;
+  height: 90px;
+  object-fit: contain;
+  flex-shrink: 0;
+  background: var(--surface-soft);
+  border-radius: 10px;
+  padding: 8px;
+}
+.sourcing-model > div {
+  min-width: 0;
+  flex: 1;
+}
+.sourcing-model h3 {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.sourcing-model p,
+.sourcing-model small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.sourcing-model details {
+  margin-top: 12px;
+  font-size: 12px;
+}
+.sourcing-model summary {
+  color: var(--primary);
+  cursor: pointer;
+}
+.sourcing-specs {
+  margin-block: 12px;
+  font-size: 12px;
+}
+.sourcing-specs > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 15px;
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.sourcing-specs dt {
+  color: var(--muted);
+}
+.sourcing-specs dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.sourcing-source {
+  margin-block: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  line-height: 2;
+}
+.sourcing-source a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.sourcing-source > .market-demo-label {
+  display: inline-block;
+  margin-bottom: 5px;
+}
+.sourcing-line-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.sourcing-line-actions > .button {
+  padding: 8px;
+  min-height: 35px;
+}
+.sourcing-selection {
+  margin-top: 15px;
+}
+.sourcing-selection > p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-block: 10px;
+}
+.sourcing-selection label {
+  display: block;
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+.sourcing-selection > input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: var(--surface);
+  color: inherit;
+}
+.sourcing-selection [role='status'] a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.sourcing-cart textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: inherit;
+  resize: vertical;
+}
+.sourcing-cart .check-label {
+  gap: 10px;
+  align-items: start;
+  font-size: 12px;
+}
+.sourcing-cart .order-action-row {
+  margin-top: 20px;
+}
+.sourcing-error {
+  margin-block: 12px;
+}
+.sourcing-request-page {
+  padding-block: 30px 60px;
+}
+.sourcing-request-page > .notice {
+  margin-block: 18px;
+}
+.sourcing-request-list {
+  display: grid;
+  gap: 12px;
+  margin-block: 20px;
+}
+.sourcing-request-row {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr auto;
+  gap: 18px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  font-size: 12px;
+}
+.sourcing-request-row:hover {
+  border-color: var(--primary);
+}
+.sourcing-request-row time {
+  color: var(--muted);
+}
+.sourcing-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 22px;
+  margin-top: 25px;
+  align-items: start;
+}
+.sourcing-detail-grid > section {
+  min-width: 0;
+}
+.sourcing-detail-grid h2 {
+  font-size: 19px;
+  margin-bottom: 14px;
+}
+.sourcing-history {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin-block: 15px;
+}
+.sourcing-history li {
+  border-inline-start: 2px solid var(--border);
+  padding-inline-start: 12px;
+  min-width: 0;
+}
+.sourcing-history p {
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.sourcing-history time,
+.sourcing-history small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.sourcing-request-page code,
+.sourcing-cart code {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+@media (max-width: 700px) {
+  .sourcing-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+  .sourcing-heading h2 {
+    font-size: 18px;
+  }
+  .sourcing-model {
+    gap: 12px;
+  }
+  .sourcing-model > img {
+    width: 75px;
+    height: 75px;
+  }
+  .sourcing-model h3 {
+    font-size: 13px;
+  }
+  .sourcing-specs > div {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+    gap: 10px;
+  }
+  .sourcing-request-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+  }
+  .sourcing-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sourcing-request-page .page-top {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .sourcing-cart .order-action-row {
+    flex-direction: column;
+    align-items: start;
+  }
+}
+.sourcing-recovery {
+  margin-block: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 15px;
+  min-width: 0;
+}
+.sourcing-recovery summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--primary);
+}
+.sourcing-recovery form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-block: 14px;
+}
+.sourcing-recovery input,
+.sourcing-recovery select {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: inherit;
+  border-radius: 8px;
+}
+.sourcing-recovery label {
+  font-size: 11px;
+}
+.sourcing-drawer-link {
+  margin-bottom: 18px;
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .sourcing-recovery form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sourcing-recovery .button {
+    font-size: 11px;
+  }
+}
+.sourcing-cart-indicator {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  inset-inline-start: 0;
+  top: 3px;
+  border: 1px solid var(--surface);
+}
+.mobile-bottom button:has(.sourcing-cart-indicator) {
+  position: relative;
+}
+.sourcing-purchase-title {
+  font-size: 18px;
+  margin-block: 0 18px;
+}

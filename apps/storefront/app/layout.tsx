@@ -1,0 +1,91 @@
+import type { Metadata, Viewport } from 'next';
+import type { CSSProperties } from 'react';
+import '@fontsource/vazirmatn/400.css';
+import '@fontsource/vazirmatn/500.css';
+import '@fontsource/vazirmatn/600.css';
+import '@fontsource/vazirmatn/700.css';
+import '@fontsource/vazirmatn/800.css';
+import '@sayman/design-tokens/tokens.css';
+import './globals.css';
+import './catalog-filters.css';
+import '../components/ticket-workspace.css';
+import './storefront-design.css';
+import { PwaProvider } from '@/components/pwa-provider';
+import { LocaleProvider } from '@/components/locale-provider';
+import { getLocale } from '@/lib/server-locale';
+import { getStorefront } from '@/lib/storefront-data';
+import { publicOrigin } from '@/lib/seo';
+import { translate } from '@/lib/i18n';
+import { AuthProvider } from '@/components/auth-provider';
+import { ShopProvider } from '@/components/shop-provider';
+import { Header, Footer, MobileNav, CartDrawer, CompareTray } from '@/components/shell';
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const { site } = await getStorefront(locale);
+  const origin = publicOrigin();
+  return {
+    metadataBase: origin ? new URL(origin) : null,
+    title: {
+      default: site.seo?.title ?? `${site.name} | ${site.tagline}`,
+      template: `%s | ${site.name}`,
+    },
+    description: site.seo?.description ?? site.about,
+    robots: { index: false, follow: false },
+    manifest: `/${locale}/manifest.webmanifest`,
+    appleWebApp: { capable: true, title: site.name, statusBarStyle: 'default' },
+    icons: { icon: '/icon.svg', apple: `/pwa/icons/${locale}/180.png` },
+  };
+}
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#4b6040' };
+export default async function RootLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale?: string }>;
+}) {
+  const { locale: segment } = await params;
+  const locale = segment === 'en' ? 'en' : segment === 'fa' ? 'fa' : await getLocale();
+  const snapshot = await getStorefront(locale);
+  const palette = snapshot.site.palette;
+  const branding = {
+    '--shop-primary-light': palette?.primaryLight,
+    '--shop-primary-dark': palette?.primaryDark,
+    '--shop-hero-light': palette?.heroLight,
+    '--shop-hero-dark': palette?.heroDark,
+    '--shop-font': snapshot.site.font === 'system' ? 'system-ui, sans-serif' : undefined,
+  } as CSSProperties;
+  return (
+    <html
+      style={branding}
+      lang={locale}
+      dir={locale === 'fa' ? 'rtl' : 'ltr'}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
+      <body className="storefront-design">
+        <LocaleProvider key={locale} locale={locale} snapshot={snapshot}>
+          <PwaProvider
+            enabled={
+              process.env.NODE_ENV === 'production' && process.env.SHOP_PWA_ENABLED !== 'false'
+            }
+          >
+            <AuthProvider>
+              <ShopProvider>
+                <a className="skip-link" href="#main">
+                  {translate('رفتن به محتوای اصلی', locale)}
+                </a>
+                <Header />
+                <main id="main">{children}</main>
+                <Footer />
+                <MobileNav />
+                <CartDrawer />
+                <CompareTray />
+              </ShopProvider>
+            </AuthProvider>
+          </PwaProvider>
+        </LocaleProvider>
+      </body>
+    </html>
+  );
+}
