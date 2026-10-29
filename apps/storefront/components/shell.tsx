@@ -42,18 +42,12 @@ import { Button, Modal } from './ui';
 export function Brand() {
   const { t } = useI18n();
   const { site } = useStorefront();
+  const logoUrl = site.logoUrl || '/products/sayman-mark-olive-v1.png';
+  const saymanMark = logoUrl === '/products/sayman-mark-olive-v1.png';
   return (
     <Link href="/" className="brand" aria-label={t('سایمان، صفحه اصلی')}>
-      <span className="brand-mark">
-        {site.logoUrl ? (
-          <Image src={site.logoUrl} alt="" width={50} height={50} />
-        ) : (
-          <>
-            <span />
-            <span />
-            <span />
-          </>
-        )}
+      <span className={`brand-mark${saymanMark ? ' brand-mark--sayman' : ''}`}>
+        <Image src={logoUrl} alt="" width={50} height={50} unoptimized loading="eager" />
       </span>
       <span>
         {t(site.name)}

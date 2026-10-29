@@ -33,7 +33,13 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: { index: false, follow: false },
     manifest: `/${locale}/manifest.webmanifest`,
     appleWebApp: { capable: true, title: site.name, statusBarStyle: 'default' },
-    icons: { icon: '/icon.svg', apple: `/pwa/icons/${locale}/180.png` },
+    icons: {
+      icon: [
+        { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/favicon-192.png', sizes: '192x192', type: 'image/png' },
+      ],
+      apple: `/pwa/icons/${locale}/180.png`,
+    },
   };
 }
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#4b6040' };

@@ -4,11 +4,11 @@
 
 ## بازبینی D51
 
-اعتبارسنجی عمومیURLبینکالا وCMSیکسان شد؛مسیرصادرشده وCMSpageدیگرnewlineانتهایی نمی‌پذیرند. پنل علاوه برکالا/برند/دسته/بازار، لوگو/hero/تصویراشتراک/بنر،بلوک تصویر صفحه و تصویرمقاله uploader دارد. پیش‌نمایش پنل مسیرصادرشده را به/apiمی‌برد ولیمقدارذخیره‌شدهcanonicalمی‌ماند. ذخیره/انتشارهنگامuploadقفل است؛ پاسخ سه‌اندازه وlimitsاعتبارسنجی وارسال/تغییرتکراری مهار می‌شوند. وضعیت انتشار و مرورگر درSTATUS ثبت می‌شود.
+قواعد پایهٔURLبینکالا وCMSمشترک شد؛ صفحات/مقالاتCMSقراردادمحلی محدودتر دارند. مسیرصادرشده وCMSpageدیگرnewlineانتهایی نمی‌پذیرند. پنل علاوه برکالا/برند/دسته/بازار، لوگو/hero/تصویراشتراک/بنر،بلوک تصویر صفحه و تصویرمقاله uploader دارد. پیش‌نمایش پنل مسیرصادرشده را به/apiمی‌برد ولیمقدارذخیره‌شدهcanonicalمی‌ماند. ذخیره/انتشارهنگامuploadقفل است؛ پاسخ سه‌اندازه وlimitsاعتبارسنجی وارسال/تغییرتکراری مهار می‌شوند. رویاصلیD51فعال است؛ دوآپلودواقعیChromeباSQLReady/سه‌اندازه/18مسیرHTTPوپیش‌نمایشCMSپذیرفته‌اند (`media51-main-live-acceptance.json`). فرم‌هابدونذخیره/انتشاربستهشدند؛دوassetReadyبدونارجاعنمونهعمداًحفظشدند.
 
 وابستگی محلی واقعی با `docker compose -f compose.media.yaml up -d scanner` روی127.0.0.1:13310 وvolumeمختصامضاها اجرا می‌شود. `scripts/serve-main-api.py` فقطدرصورتوجودتنظیمدقیق `tmp/public-media-local.json`،Filesystemخارجwebroot در `tmp/public-media-objects` را درDevelopmentفعال می‌کند. این دایرکتوری **دادهٔ تصویر** است؛cache نیست و باید همراهSQLوکلیدهادرbackup/restoreهماهنگ حفظ شود. پاک‌سازیtmpنبایدآن را حذف کند. S3تولید ازاینموفقیتنتیجهگرفته نمی‌شود. حافظهٔاسکنربه4GiBمحدوداست،مطابق[راهنمایرسمیClamAV](https://docs.clamav.net/manual/Installing/Docker.html).
 
-اسکنPNGواقعی وامضایبی‌خطرآنتی‌ویروسدرحافظه پاس شد. ClamAV1.5.4بانک28164مورخ2026-10-25رادارد؛CDNبانک28168راتبلیغمی‌کندولیFreshClamپاسخ403ودورهٔcooldownتا2026-10-30می‌گیرد. آخرینتصویررسمیدریافت‌شده هم28164دارد؛تلاشبی‌پایان/خاموش‌کردناسکن/ادعایامضایروزانجامنشد. نیازشبکهدرFINAL-REVIEWبازاست.
+درمشاهدهٔ2026-10-29اسکنPNGواقعی وامضایبی‌خطرآنتی‌ویروسدرحافظه پاس شد. ClamAV1.5.4بانک28164مورخ2026-10-25داشت؛CDNبانک28168رااعلامکردولیFreshClamپاسخ403ودورهٔcooldownتا2026-10-30گرفت. آخرینتصویررسمیدریافت‌شدهٔهمانمشاهدههم28164داشت؛تلاشبی‌پایان/خاموش‌کردناسکن/ادعایامضایروزانجامنشد. نیازشبکهدرFINAL-REVIEWبازاست.
 
 گزارش‌هایقبلیپایین،سابقهٔآزمون‌اند. کتابخانهٔرسانه/حذفReadyبدونارجاع،گرافمرجعCMSوپذیرشS3/Linux/load/restoreباobjectهنوزبازند. مدارکخصوصیازاینمسیرمنتشرنمی‌شوند.
 
@@ -30,11 +30,13 @@ Catalog مالک `PublicImages` و `PublicImageVariants` است. پیش از ن�
 
 Next مسیر `/media/catalog/...` را فقط به API تنظیم‌شده proxy می‌کند. cookie، Authorization و Range مشتری ارسال نمی‌شوند؛ redirect دنبال نمی‌شود. MIME/marker/طول/هش/امضای WebP کنترل می‌شوند و پاسخ دارای Set-Cookie، Vary Cookie/Authorization یا cache خصوصی رد می‌شود. خطا 404/503 با no-store است و fixture جایگزین نمی‌شود.
 
+پنل نیزGETمحدود `/api/media/catalog/{32lowerhex}/{thumb|card|zoom}.webp` را به همان مسیرAPIمی‌برد. query/Range/bodyومسیرهای دیگر رد می‌شوند؛ Cookie/Authorization/Originارسال نمی‌شوند. سقف8MiB/10s/8خواندن هم‌زمان تاپایانپاسخ است؛ MIME/marker/طول/ETag/SHA256وRIFF/WebPبایدتأییدشوند. بازکردن این مسیر عمومی،مسیر API خصوصی را عمومی نمی‌کند. 42تستپراکسی و18خواندن واقعی تصویر درD51قبول‌اند.
+
 PWA فقط همین مسیر ثابت را با marker و MIME صحیح وارد کش عمومی می‌کند؛ تصویر خصوصی، اصل، URL امضاشده و پاسخ خطا وارد آن نمی‌شوند. DTO آفلاین تنها thumbnail عمومی را نگه می‌دارد و قیمت/موجودی/گالری خصوصی اضافه نمی‌کند. تصاویر HTTPS قبلی همچنان مستقیم توسط مرورگر خوانده می‌شوند و توسط سرور Next fetch نمی‌شوند.
 
 ## پیکربندی
 
-پیش‌فرض `Media__Storage=Disabled` است. `GET /api/admin/media/capabilities` با مجوز کاتالوگ، حدود و آماده‌بودن تنظیمات را می‌دهد؛ این پاسخ تضمین سلامت لحظه‌ای سرویس بیرونی نیست. UI تا پیکربندی ذخیره‌ساز و اسکنر، upload را غیرفعال نشان می‌دهد.
+پیش‌فرض `Media__Storage=Disabled` است. `GET /api/admin/media/capabilities` با همان مجوزstaff/MFAوcatalog.writeیاcms.write، حدود و آماده‌بودن تنظیمات را می‌دهد؛ این پاسخ تضمین سلامت لحظه‌ای سرویس بیرونی نیست. UI تا پیکربندی ذخیره‌ساز و اسکنر، upload را غیرفعال نشان می‌دهد. رویاصلیDevelopmentپیکربندیواقعیD51فعالاست؛Productionازآننتیجهنمی‌شود.
 
 | متغیر | کاربرد |
 |---|---|
@@ -56,7 +58,7 @@ Filesystem در محیط غیر Development هنگام startup رد می‌شو�
 - ۲۹ مورد تازه در مجموعهٔ ۹۶ تست بک‌اند: codec واقعی سه فرمت/جهت EXIF/حذف metadata، حدود و جعل MIME، شکست اسکن، پاک‌سازی نوشتن ناقص، عدم حذف پس از Ready نامعلوم، tamper و پروتکل framed. اسکنر پروتکل و SDK S3 در این تست‌ها stub/capture صریح‌اند؛ شاهد سرویس واقعی نیستند.
 - سه سناریوی رسانه در مجموعهٔ شش تست SQL واقعی، Staged/Ready، منع ارجاع زودهنگام، rowversion/Failed، دو worker همزمان، تعارض Ready و cleanup، lease منقضی و retry فاصله‌دار خطای حذف را آزمودند. دادهٔ مصنوعی آن آزمون codec/scan نیست.
 - دو تست runtime پنل و ۱۴ تست HTTP تولیدی Next برای مسیر عمومی، مرز خصوصی، عدم ارسال اعتبار ورود و خطای upstream پاس شدند (`media-gateway-smoke.json`). یک تست PWA کش مجاز و رد marker/MIME/private/query را پوشش می‌دهد.
-- build تولیدی دو رابط و۹۶ تست stage Linux موفق‌اند؛ runtime image هنوز جدا باید بررسی شود. پذیرش UI upload پس از ورود اصلی مدیر، ClamAV واقعی با signature تازه، S3 واقعی، runtime Linux، سیاست Ready بدون ارجاع، پایش و load همچنان باقی‌اند. uploader CMS و مدیریت/حذف رسانهٔ استفاده‌نشده هنوز متصل نشده‌اند.
+- این شمارنده‌ها سابقهٔ برش نخست‌اند. درD51uploaderCMSوپذیرشواقعیلوکالمدیر/ClamAVانجامشدند؛ signatureتازه،S3واقعی،runtimeLinux،سیاستReadyبدونارجاع/گرافCMS،بازیابیobject،پایش وloadهمچنانبازند.
 
 منابع: [ClamAV scanning](https://docs.clamav.net/manual/Usage/Scanning.html)، [SKCodec](https://learn.microsoft.com/en-us/dotnet/api/skiasharp.skcodec?view=skiasharp)، [SkiaSharp 4.153.1](https://www.nuget.org/packages/SkiaSharp/4.153.1)، [Linux native assets](https://www.nuget.org/packages/SkiaSharp.NativeAssets.Linux.NoDependencies/4.153.1)، [AWS SDK S3](https://www.nuget.org/packages/AWSSDK.S3/4.0.104.6).
 

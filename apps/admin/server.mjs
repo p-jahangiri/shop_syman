@@ -1,5 +1,6 @@
 import http from 'node:http';
 import https from 'node:https';
+import { createHash } from 'node:crypto';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -34,12 +35,105 @@ function body(request, maximum = limit) {
     request.on('error', reject);
   });
 }
+async function publicCatalogImage(request, response, destination) {
+  const stop = new AbortController();
+  const abort = () => stop.abort();
+  request.once('aborted', abort);
+  response.once('close', abort);
+  let remote;
+  const reject = (status = 503) => {
+    if (!response.destroyed && !response.headersSent) {
+      response.writeHead(status, { 'Cache-Control': 'no-store' });
+      response.end();
+    }
+  };
+  try {
+    remote = await new Promise((resolve, fail) => {
+      const proxy = (destination.protocol === 'https:' ? https : http).request(
+        destination,
+        {
+          method: 'GET',
+          headers: { Accept: 'image/webp' },
+          signal: AbortSignal.any([stop.signal, AbortSignal.timeout(10000)]),
+        },
+        resolve,
+      );
+      proxy.once('error', fail);
+      proxy.end();
+    });
+    if (remote.statusCode === 404) {
+      reject(404);
+      return;
+    }
+    const tag = remote.headers.etag ?? '',
+      size = Number(remote.headers['content-length']);
+    if (
+      remote.statusCode !== 200 ||
+      remote.headers['content-type'] !== 'image/webp' ||
+      remote.headers['x-shop-public-resource'] !== 'catalog-image-v1' ||
+      remote.headers['set-cookie'] ||
+      remote.headers['content-encoding'] ||
+      /(?:^|,)\s*(?:cookie|authorization)\s*(?:,|$)/i.test(remote.headers.vary ?? '') ||
+      !/\bpublic\b/i.test(remote.headers['cache-control'] ?? '') ||
+      /private|no-store/i.test(remote.headers['cache-control'] ?? '') ||
+      !/^"[a-f0-9]{64}"$/.test(tag) ||
+      !Number.isSafeInteger(size) ||
+      size < 12 ||
+      size > 8 * 1024 * 1024
+    ) {
+      reject();
+      return;
+    }
+    const chunks = [];
+    let received = 0;
+    for await (const chunk of remote) {
+      received += chunk.length;
+      if (received > size || received > 8 * 1024 * 1024) {
+        reject();
+        return;
+      }
+      chunks.push(chunk);
+    }
+    if (received !== size) {
+      reject();
+      return;
+    }
+    const bytes = Buffer.concat(chunks);
+    if (
+      bytes.subarray(0, 4).toString('ascii') !== 'RIFF' ||
+      bytes.subarray(8, 12).toString('ascii') !== 'WEBP' ||
+      createHash('sha256').update(bytes).digest('hex') !== tag.slice(1, -1)
+    ) {
+      reject();
+      return;
+    }
+    response.writeHead(200, {
+      'Content-Type': 'image/webp',
+      'Content-Length': String(size),
+      ETag: tag,
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'X-Shop-Public-Resource': 'catalog-image-v1',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'none'; sandbox",
+    });
+    response.end(bytes);
+  } catch {
+    reject();
+  } finally {
+    request.removeListener('aborted', abort);
+    response.removeListener('close', abort);
+    stop.abort();
+    remote?.destroy();
+  }
+}
+
 export function createAdminServer({
   root = fileURLToPath(new URL('./dist/', import.meta.url)),
   apiUrl = process.env.ADMIN_API_URL,
   publicUrl = process.env.ADMIN_PUBLIC_URL,
 } = {}) {
-  let activeUploads = 0,
+  let activePublicImages = 0,
+    activeUploads = 0,
     activeDownloads = 0;
   const directory = path.resolve(root);
   if (process.env.NODE_ENV === 'production' && !publicUrl)
@@ -85,6 +179,57 @@ export function createAdminServer({
       };
       try {
         const incoming = new URL(request.url ?? '/', 'http://localhost');
+        if (incoming.pathname.startsWith('/api/media/')) {
+          if (
+            !/^\/api\/media\/catalog\/[a-f0-9]{32}\/(?:thumb|card|zoom)\.webp$/.test(
+              incoming.pathname,
+            )
+          ) {
+            response.writeHead(404);
+            response.end();
+            request.resume();
+            return;
+          }
+          if (request.method !== 'GET') {
+            response.writeHead(405, { Allow: 'GET' });
+            response.end();
+            request.resume();
+            return;
+          }
+          if (
+            incoming.search ||
+            incoming.hash ||
+            request.headers.range ||
+            request.headers['transfer-encoding'] ||
+            Number(request.headers['content-length'] ?? 0) !== 0
+          ) {
+            response.writeHead(400);
+            response.end();
+            request.resume();
+            return;
+          }
+          if (!upstream) {
+            problem(503);
+            return;
+          }
+          if (activePublicImages >= 8) {
+            response.writeHead(429, { 'Retry-After': '2' });
+            response.end();
+            return;
+          }
+          activePublicImages++;
+          response.once('close', () => {
+            activePublicImages--;
+          });
+          const destination = new URL(upstream);
+          destination.pathname = incoming.pathname;
+          destination.search = '';
+          destination.hash = '';
+          destination.username = '';
+          destination.password = '';
+          await publicCatalogImage(request, response, destination);
+          return;
+        }
         if (incoming.pathname.startsWith('/api/')) {
           response.setHeader('Cache-Control', 'private, no-store');
           response.setHeader('X-Robots-Tag', 'noindex, nofollow');
@@ -783,10 +928,13 @@ export function createAdminServer({
                   remote.destroy();
                   if (!response.headersSent && !response.destroyed) problem(503);
                 };
+                const jsonResponse = /^application\/(?:problem\+)?json(?:\s*;|$)/i.test(
+                  remote.headers['content-type'] ?? '',
+                );
+                const errorResponse = (remote.statusCode ?? 503) >= 400;
                 if (
                   Number(remote.headers['content-length']) > 32768 ||
-                  (remote.statusCode !== 204 &&
-                    !/^application\/json(?:\s*;|$)/i.test(remote.headers['content-type'] ?? ''))
+                  (remote.statusCode !== 204 && !jsonResponse && !errorResponse)
                 ) {
                   reject();
                   return;
@@ -800,11 +948,27 @@ export function createAdminServer({
                 remote.once('aborted', reject);
                 remote.once('end', () => {
                   if (finished) return;
-                  const content = Buffer.concat(chunks);
+                  let content = Buffer.concat(chunks);
                   try {
-                    if (remote.statusCode !== 204)
+                    // ASP.NET bearer challenges/forbids may deliberately have no
+                    // body or Content-Type. Keep their status so clients can
+                    // distinguish an invalid session from an unavailable API.
+                    if (!content.length && errorResponse) {
+                      result['Content-Type'] = 'application/json';
+                      content = Buffer.from(
+                        JSON.stringify({
+                          title:
+                            remote.statusCode === 401
+                              ? 'invalid_credentials'
+                              : remote.statusCode === 403
+                                ? 'forbidden'
+                                : 'unavailable',
+                        }),
+                      );
+                    } else if (remote.statusCode !== 204) {
+                      if (!jsonResponse) throw Error('Unexpected auth content type');
                       JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(content));
-                    else if (content.length) throw Error('Unexpected auth body');
+                    } else if (content.length) throw Error('Unexpected auth body');
                   } catch {
                     reject();
                     return;

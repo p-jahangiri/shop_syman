@@ -12,6 +12,10 @@ const CORE_URLS = [
   '/pwa/offline.css',
   '/pwa/fonts/vazirmatn-arabic.woff2',
   '/pwa/fonts/vazirmatn-latin.woff2',
+  '/products/sayman-mark-olive-v1.png',
+  '/pwa/icons/sayman-olive-v1-180.png',
+  '/pwa/icons/sayman-olive-v1-192.png',
+  '/pwa/icons/sayman-olive-v1-512.png',
 ];
 const MAX_ASSETS = 80;
 const MAX_CATALOG_AGE = 7 * 24 * 60 * 60 * 1000;

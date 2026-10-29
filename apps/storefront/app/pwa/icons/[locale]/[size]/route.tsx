@@ -1,54 +1,36 @@
-import { ImageResponse } from 'next/og';
-import { getStorefront } from '@/lib/storefront-data';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+
+export const runtime = 'nodejs';
+
+const iconFiles = new Map([
+  ['180.png', 'sayman-olive-v1-180.png'],
+  ['192.png', 'sayman-olive-v1-192.png'],
+  ['512.png', 'sayman-olive-v1-512.png'],
+]);
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ locale: string; size: string }> },
 ) {
   const { locale, size } = await params;
-  if ((locale !== 'fa' && locale !== 'en') || !['180.png', '192.png', '512.png'].includes(size))
-    return new Response(null, { status: 404 });
-  const pixels = Number.parseInt(size, 10);
-  const { site } = await getStorefront(locale);
-  // Render the repository's geometric brand mark directly from code; no remote image fetch.
-  return new ImageResponse(
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        background: site.palette?.primaryLight ?? '#425b36',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: pixels * 0.045,
-          width: pixels * 0.48,
-          transform: 'rotate(-12deg)',
-        }}
-      >
-        {[1, 0.8, 0.6].map((width, i) => (
-          <div
-            key={i}
-            style={{
-              display: 'flex',
-              width: pixels * 0.48 * width,
-              height: pixels * 0.09,
-              background: '#f4f6ed',
-              borderRadius: pixels * 0.015,
-              marginLeft: i * pixels * 0.04,
-            }}
-          />
-        ))}
-      </div>
-    </div>,
-    {
-      width: pixels,
-      height: pixels,
-      headers: { 'Cache-Control': 'public, max-age=300', 'X-Robots-Tag': 'noindex' },
-    },
-  );
+  const filename = iconFiles.get(size);
+  if ((locale !== 'fa' && locale !== 'en') || !filename) return new Response(null, { status: 404 });
+  try {
+    // Next's standalone entry sets cwd to the app directory, where public is copied.
+    const image = await readFile(path.join(process.cwd(), 'public/pwa/icons', filename));
+    return new Response(new Uint8Array(image), {
+      headers: {
+        'Content-Type': 'image/png',
+        'Content-Length': String(image.length),
+        'Cache-Control': 'public, max-age=300',
+        'X-Robots-Tag': 'noindex',
+      },
+    });
+  } catch {
+    return new Response(null, {
+      status: 503,
+      headers: { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
+    });
+  }
 }

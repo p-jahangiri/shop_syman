@@ -9,6 +9,7 @@ import { ErrorBox, Field } from './ui';
 import { InitialStaffPassword } from './initial-staff-password';
 import { RecoverMfaForm } from './recover-mfa-form';
 import { normalizeMfaCode } from './mfa-recovery-contract';
+import { AdminBrandIdentity } from './admin-brand';
 import {
   authenticatorUri,
   mfaSetupSchema,
@@ -172,9 +173,14 @@ export function Login({ onSession }: { onSession: (session: Session) => void }) 
   return (
     <main className="login">
       <div className="login-story">
-        <a className="brand" href={`${storefrontUrl}/fa`} target="_blank" rel="noreferrer">
-          S<span>AYMAN</span>
-          <i />
+        <a
+          className="admin-brand admin-brand-login"
+          href={`${storefrontUrl}/fa`}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="سایمان؛ رفتن به فروشگاه"
+        >
+          <AdminBrandIdentity />
         </a>
         <div>
           <span className="eyebrow">فضای مدیریت فروشگاه</span>

@@ -9,6 +9,7 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import HTTPRedirectHandler, ProxyHandler, build_opener
 import argparse
+from collections import Counter
 import fcntl
 import json
 import os
@@ -29,11 +30,18 @@ PREPARED = ROOT / 'tmp/public-media-backend-prepared.json'
 MEDIA = ROOT / 'tmp/public-media-local.json'
 AUDIT = CHECKS / 'admin-d51-backend-media-audit.json'
 SQL_REPORT = CHECKS / 'admin-d51-media-sql-report.json'
-SQL_DISCOVERY = CHECKS / 'admin-d51-media-sql-before.json'
+SQL_DISCOVERY = CHECKS / 'admin-d51-final-staff-sql-discovery.json'
 API_BIN = ROOT / 'backend/src/Shop.Api/bin/Debug/net10.0'
 UNIT_BIN = ROOT / 'backend/tests/Shop.Tests/bin/Debug/net10.0'
 SQL_BIN = ROOT / 'backend/tests/Shop.SqlTests/bin/Debug/net10.0'
 API_URL = 'http://127.0.0.1:5080'
+UNIT_CASES = 1293
+SQL_CASES = 902
+STAFF_SOURCE = 'backend/tests/Shop.SqlTests/StaffSqlTests.cs'
+STAFF_PREFIX = 'Shop.SqlTests.StaffSqlTests.'
+STAFF_FAILED_CASE = STAFF_PREFIX + 'GrantRequiresVerifiedExistingAccountRevokesCustomerSessionsAndForcesMfa'
+STAFF_OLD_REQUEST = 'oldRefresh.DefaultRequestHeaders.Remove("X-Sayman-Client");oldRefresh.DefaultRequestHeaders.Remove("Origin");'
+STAFF_FIXED_REQUEST = 'oldRefresh.DefaultRequestHeaders.Remove("X-Sayman-Client");oldRefresh.DefaultRequestHeaders.Remove("X-Sayman-Admin");oldRefresh.DefaultRequestHeaders.Remove("Origin");'
 
 
 class PublishError(RuntimeError):
@@ -115,22 +123,64 @@ def source_inventory():
     return result
 
 
-def accepted_trx(file, expected):
+def trx_rows(file, expected, failed=0):
     document = ET.parse(file).getroot()
     counters = document.find('{*}ResultSummary/{*}Counters').attrib
-    require(all(int(counters[key]) == expected for key in ['total', 'executed', 'passed']), 'Test count differs from the accepted complete run.')
+    require(all(int(counters[key]) == expected for key in ['total', 'executed'])
+            and int(counters['passed']) == expected - failed and int(counters['failed']) == failed,
+            'Test count differs from the documented complete run.')
     require(all(int(counters.get(key, '0')) == 0 for key in
-                ['failed', 'error', 'timeout', 'aborted', 'notRunnable', 'notExecuted', 'disconnected', 'inconclusive']),
+                ['error', 'timeout', 'aborted', 'notRunnable', 'notExecuted', 'disconnected', 'inconclusive']),
             'Tests failed, skipped or did not execute.')
     results = document.findall('{*}Results/{*}UnitTestResult')
-    names = [row.attrib['testName'] for row in results]
     # xUnit truncates some long theory display names; distinct test/execution
     # IDs establish cases without treating equal truncated labels as skips.
     require(len(results) == len({row.attrib['testId'] for row in results})
             == len({row.attrib['executionId'] for row in results}) == expected
-            and all(row.attrib['outcome'] == 'Passed' for row in results),
+            and Counter(row.attrib['outcome'] for row in results) == Counter({'Passed': expected - failed, **({'Failed': failed} if failed else {})}),
             'Actual distinct test results do not match the accepted count.')
-    return names
+    return results
+
+
+def accepted_trx(file, expected):
+    return [row.attrib['testName'] for row in trx_rows(file, expected)]
+
+
+def sql_acceptance(sql, discovery, audit):
+    expected_names = discovery['names']
+    require(len(expected_names) == len(set(expected_names)) == SQL_CASES, 'SQL discovery count/case labels changed.')
+    mode = sql.get('acceptanceMode', 'single-trx')
+    if mode == 'single-trx':
+        file = relative_path(sql['trx'], ROOT / 'backend/tests/Shop.SqlTests/TestResults')
+        names = accepted_trx(file, SQL_CASES)
+        require(set(names) == set(expected_names), 'SQL discovery and executed theory cases differ.')
+        return [file]
+    require(mode == 'full-plus-test-only-staff-correction', 'Unsupported SQL acceptance mode.')
+    require(discovery.get('fullSuite') is True and discovery.get('filterApplied') is False,
+            'Composite acceptance requires fresh discovery of the entire SQL suite.')
+    full = relative_path(sql['originalFullTrx'], ROOT / 'backend/tests/Shop.SqlTests/TestResults')
+    retest = relative_path(sql['staffRetestTrx'], ROOT / 'backend/tests/Shop.SqlTests/TestResults')
+    rows = trx_rows(full, SQL_CASES, failed=1)
+    require(Counter(row.attrib['testName'] for row in rows) == Counter(expected_names), 'The original full SQL run omitted discovered cases.')
+    failures = [row.attrib['testName'] for row in rows if row.attrib['outcome'] != 'Passed']
+    require(failures == [STAFF_FAILED_CASE], 'The full SQL run has a failure outside the one documented staff fixture.')
+    staff_names = {name for name in expected_names if name.startswith(STAFF_PREFIX)}
+    require(len(staff_names) == 7, 'The entire known staff SQL class must be retested.')
+    staff_rows = trx_rows(retest, len(staff_names))
+    require({row.attrib['testName'] for row in staff_rows} == staff_names, 'Staff retest omitted class cases or included unrelated cases.')
+    outcomes = {row.attrib['testName']: row.attrib['outcome'] for row in rows}
+    outcomes.update({row.attrib['testName']: row.attrib['outcome'] for row in staff_rows})
+    require(len(outcomes) == SQL_CASES and all(value == 'Passed' for value in outcomes.values()), 'The immutable case-wise SQL union is incomplete.')
+    before_file = relative_path(sql['sourceBefore'], CHECKS)
+    before = read(before_file)
+    original_staff = relative_path(sql['staffSourceBefore'], CHECKS)
+    require(sha(original_staff) == before[STAFF_SOURCE], 'Preserved pre-correction staff source does not match the full-run snapshot.')
+    text = original_staff.read_text()
+    require(text.count(STAFF_OLD_REQUEST) == 1 and (ROOT / STAFF_SOURCE).read_text() == text.replace(STAFF_OLD_REQUEST, STAFF_FIXED_REQUEST, 1),
+            'Only the documented customer-request header correction is allowed.')
+    expected_source = {**before, STAFF_SOURCE: sha(ROOT / STAFF_SOURCE)}
+    require(audit['sourceSha256'] == expected_source, 'Another backend product/test file changed after the full SQL run.')
+    return [full, retest, before_file, original_staff]
 
 
 def acceptance():
@@ -139,19 +189,19 @@ def acceptance():
     discovery = read(SQL_DISCOVERY)
     require(audit.get('apiUnitAssemblyParity') is True and sql.get('sourceUnchanged') is True,
             'D51 backend source/module acceptance is missing.')
+    require({name: value for name, value in source_inventory().items() if name.startswith('backend/')}
+            == audit['sourceSha256'], 'The complete accepted backend source file set changed.')
     for name, expected in audit['sourceSha256'].items():
         file = relative_path(name, ROOT / 'backend')
         require(sha(file) == expected, 'Accepted D51 backend source changed: ' + name)
-    unit_trx = relative_path(audit['tests']['admin-d51-backend-unit-full']['trx'], ROOT / 'backend/tests/Shop.Tests/TestResults')
-    sql_trx = relative_path(sql['trx'], ROOT / 'backend/tests/Shop.SqlTests/TestResults')
-    accepted_trx(unit_trx, 1264)
-    names = accepted_trx(sql_trx, 41)
-    require(sql.get('expectedCount') == sql.get('executedCount') == sql.get('passed') == 41
+    unit = audit.get('acceptedFullUnit') or audit['tests']['admin-d51-backend-unit-full']
+    unit_trx = relative_path(unit['trx'], ROOT / 'backend/tests/Shop.Tests/TestResults')
+    accepted_trx(unit_trx, UNIT_CASES)
+    require(sql.get('expectedCount') == sql.get('executedCount') == sql.get('passed') == SQL_CASES
             and sql.get('failed') == sql.get('notExecuted') == sql.get('disposableDatabasesRemaining') == 0
             and sql.get('exactDiscoveryExecutionMatch') is True and sql.get('allSelectedClassCasesIncluded') is True,
             'D51 SQL acceptance/cleanup is incomplete.')
-    require(len(discovery['names']) == len(set(discovery['names'])) == 41 and set(names) == set(discovery['names']),
-            'SQL discovery and executed theory cases differ.')
+    sql_evidence = sql_acceptance(sql, discovery, audit)
     expected = {}
     require(len(audit['assemblies']) == len(sql['module14parity']) == 14, 'Expected14 matching backend assemblies.')
     for name, hashes in audit['assemblies'].items():
@@ -161,8 +211,19 @@ def acceptance():
         require(all(sha(folder / name) == wanted for folder in [API_BIN, UNIT_BIN, SQL_BIN]), 'Backend module changed after its accepted tests.')
         expected[name] = wanted
     require({file.name for file in API_BIN.glob('Shop.*.dll')} == set(expected), 'Unexpected API module file set.')
-    evidence = [AUDIT, SQL_REPORT, SQL_DISCOVERY, unit_trx, sql_trx]
+    evidence = [AUDIT, SQL_REPORT, SQL_DISCOVERY, unit_trx, *sql_evidence]
     return expected, {str(file.relative_to(ROOT)): sha(file) for file in evidence}
+
+
+def test_summary():
+    # The failed original TRX is retained. Only the customer-request fixture
+    # header changed before all seven Staff cases passed on identical product
+    # DLLs; the 902 distinct case acceptance is an explicit two-TRX union.
+    return {'unitPassed': UNIT_CASES, 'sqlDistinctPassed': SQL_CASES, 'sqlPassed': SQL_CASES,
+            'fullSqlRunThisRelease': True, 'fullSqlSingleRunPassed': False,
+            'sqlAcceptanceMode': 'full-plus-test-only-staff-correction',
+            'initialFullSqlPassed': 901, 'initialFullSqlFailed': 1,
+            'staffSqlRetestPassed': 7, 'sqlTestExecutions': SQL_CASES + 7}
 
 
 def private_configuration():
@@ -312,7 +373,7 @@ def prepare():
     write(CHECKS / ('admin-d51-backend-' + run + '-prepared.json'), {
         'prepared': True, 'runId': run, 'runtimeDirectory': state['runtimeDirectory'],
         'artifactManifest': state['artifactManifest'], 'artifactFiles': len(source_files),
-        'unitPassed': 1264, 'sqlDistinctPassed': 41, 'module14Parity': True,
+        **test_summary(), 'module14Parity': True,
         'publicMediaConfigurationPresent': state['publicMediaConfigurationPresent'],
         'scanProviderAccepted': False, 'mainChanged': False, 'newMigrations': 0, 'newTables': 0})
     print(json.dumps({'prepared': True, 'runId': run, 'runtimeDirectory': state['runtimeDirectory'],
@@ -338,15 +399,15 @@ def apply():
     state = {**previous, 'runtimeDirectory': prepared['runtimeDirectory'], 'apiPid': None,
              'moduleSha256': expected, 'artifactManifest': prepared['artifactManifest'],
              'artifactManifestSha256': prepared['artifactManifestSha256'],
-             'slice': 'D51 public images and CMS upload authorization', 'codeOnly': True,
+             'slice': 'Integrated D51 public media/CMS/security and D52 bootstrap compatibility', 'codeOnly': True,
              'newMigrations': 0, 'newTables': 0, 'previousRuntimeDirectory': previous['runtimeDirectory'],
              'restartCommand': 'python3 scripts/serve-main-api.py', 'runtimeSet': str(PREPARED.relative_to(ROOT)),
-             'unitPassed': 1264, 'targetedSqlPassed': 41, 'fullSqlRunThisRelease': False,
+             **test_summary(),
              'historicalFullSqlPassed': previous.get('sqlPassed', previous.get('historicalFullSqlPassed')),
              'mainSeedPerformed': False, 'publicMediaConfigurationPresent': prepared['publicMediaConfigurationPresent'],
              'scanProviderAccepted': False, 'fullProjectComplete': False}
     state.pop('sessionId', None)
-    state.pop('sqlPassed', None)
+    state.pop('targetedSqlPassed', None)
     check_runtime(state)
     require(database_shape() == prepared['databaseShape'], 'Canonical schema changed; code-only apply stopped.')
     previous_aggregate = aggregate_state()
@@ -359,7 +420,7 @@ def apply():
     state['promotedAtUtc'] = datetime.now(timezone.utc).isoformat()
     report = {'passed': False, 'runId': run, 'database': 'Sayman', 'codeOnly': True,
               'runtimeDirectory': prepared['runtimeDirectory'], 'newMigrations': 0, 'newTables': 0,
-              'unitPassed': 1264, 'sqlDistinctPassed': 41, 'fullSqlRunThisRelease': False,
+              **test_summary(),
               'mainSeedPerformed': False, 'databaseWritesPerformedByPublisher': False,
               'publicMediaConfigurationPresent': prepared['publicMediaConfigurationPresent'],
               'scanProviderAccepted': False, 'fullProjectComplete': False}

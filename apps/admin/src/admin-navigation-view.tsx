@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { ChevronLeft, LogOut, Search, ShieldCheck, X } from 'lucide-react';
 import { filteredNavigationGroups, type Page } from './admin-navigation';
+import { AdminBrandIdentity } from './admin-brand';
 
 type Props = {
   selected: Page;
@@ -78,13 +79,7 @@ function NavigationContent({
           aria-label="سایمان؛ نمای کلی"
           onClick={() => onNavigate('dashboard')}
         >
-          <span className="admin-brand-mark" aria-hidden="true">
-            S
-          </span>
-          <span>
-            <b>SAYMAN</b>
-            <small>فضای مدیریت فروشگاه</small>
-          </span>
+          <AdminBrandIdentity />
         </button>
         {mobile && (
           <button type="button" className="icon" aria-label="بستن منو" onClick={onClose}>

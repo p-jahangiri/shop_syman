@@ -1,0 +1,42 @@
+{
+  "created": "2026-10-29",
+  "generator": "built-in image_gen",
+  "status": "owner-selected-concept-01",
+  "deployed": true,
+  "assets": [
+    {
+      "concept": "01-olive-ribbon",
+      "file": "01-olive-ribbon.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1161145,
+      "sha256": "1260bc7dc00d92bdceb897a27a5a746a3eb7435f8def13bb781a7da2dc305fd1"
+    },
+    {
+      "concept": "02-blue-spark",
+      "file": "02-blue-spark.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1058162,
+      "sha256": "2826adc45fc875888704f7723b545fc43317579374dfb6abd353ddbde787f9e6"
+    },
+    {
+      "concept": "03-coral-bridge",
+      "file": "03-coral-bridge.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1107471,
+      "sha256": "ca3783bc1803d209e0cead2d4f13882a2f87735c796935f3db2b00b58d57d34c"
+    },
+    {
+      "concept": "04-purple-orbit",
+      "file": "04-purple-orbit.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1112008,
+      "sha256": "51da3fdab82d215cc300c6b615c2a98dbccf3e71d42156b7d47e710a7fba91bd"
+    }
+  ],
+  "selected": "01-olive-ribbon",
+  "localRelease": "3b8666ffe657435993874407f2ca89ec"
+}

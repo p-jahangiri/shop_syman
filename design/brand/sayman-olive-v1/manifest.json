@@ -1,0 +1,62 @@
+{
+  "decision": "D54-owner-selected-concept-01",
+  "generator": "built-in image_gen",
+  "derivedWith": "Sharp trim/resize/padding/PNG only",
+  "assets": [
+    {
+      "file": "apps/storefront/public/products/sayman-mark-olive-v1.png",
+      "bytes": 141190,
+      "width": 512,
+      "height": 512,
+      "hasAlpha": true,
+      "sha256": "09f5869d916d6cfbf1fc68c33ffc4e7225c4c1b65140371b203780e3b5da8571"
+    },
+    {
+      "file": "apps/storefront/public/favicon-32.png",
+      "bytes": 1903,
+      "width": 32,
+      "height": 32,
+      "hasAlpha": false,
+      "sha256": "1d8cadb06eadfa1e354a10e9f35360db069fd8118da23cf59010532dc8d7fc1c"
+    },
+    {
+      "file": "apps/storefront/public/favicon-192.png",
+      "bytes": 22960,
+      "width": 192,
+      "height": 192,
+      "hasAlpha": false,
+      "sha256": "eb2fd182a3490fcc848c3b84204876a84454f5311018ddee8cfecd83979f74dc"
+    },
+    {
+      "file": "apps/storefront/public/pwa/icons/sayman-olive-v1-180.png",
+      "bytes": 15139,
+      "width": 180,
+      "height": 180,
+      "hasAlpha": true,
+      "sha256": "f0571566a2c02bc43e61e1cafd40f5ab9c16306b21658d2139a9f9ec747662c2"
+    },
+    {
+      "file": "apps/storefront/public/pwa/icons/sayman-olive-v1-192.png",
+      "bytes": 16831,
+      "width": 192,
+      "height": 192,
+      "hasAlpha": true,
+      "sha256": "6951908ca29493fa985dfacd8e5b2b0199dfa13ae9fa3709855de2a41f4f963e"
+    },
+    {
+      "file": "apps/storefront/public/pwa/icons/sayman-olive-v1-512.png",
+      "bytes": 64821,
+      "width": 512,
+      "height": 512,
+      "hasAlpha": true,
+      "sha256": "b01827efb5c406b05e8a93ba52cb270d65f2cec927a86fc59fe53e70dd3c8cb0"
+    }
+  ],
+  "maskable": {
+    "canvas": 512,
+    "safeCircleRadius": 204.8,
+    "artworkMaxRadius": 169.82490983362834,
+    "passed": true
+  },
+  "svgMaster": false
+}
