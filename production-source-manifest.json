@@ -1,6 +1,6 @@
 {
-  "bytes": 12503045,
-  "fileCount": 1209,
+  "bytes": 12767075,
+  "fileCount": 1215,
   "files": [
     {
       "bytes": 136,
@@ -31,11 +31,11 @@
       "sha256": "e3e9111a8e75974ff9ed08b6d373bf7efbbde89831523a0b198a5888b46e5e9d"
     },
     {
-      "bytes": 376,
+      "bytes": 454,
       "mode": 420,
       "origin": "source",
       "path": "apps/admin/index.html",
-      "sha256": "c9b88aab07a0e214122ab0288c471c1e5b4a192cafd4e878b4d7a387c4e47326"
+      "sha256": "7a971abaa0cd8b3dcffee83963e56c04ff9b2bb1bc0b76fab34228e8c9925b79"
     },
     {
       "bytes": 772,
@@ -134,6 +134,13 @@
       "origin": "source",
       "path": "apps/admin/src/admin-auth-boundary.ts",
       "sha256": "1f118d40f58f6dc14ad6ed51d0e1850408fde4410c11be2e122d44b62c32c864"
+    },
+    {
+      "bytes": 467,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/admin/src/admin-brand.tsx",
+      "sha256": "93ead8263595ac9e4793caa8476780728ad46b4279e22923114dc194a1014a7a"
     },
     {
       "bytes": 157,
@@ -241,11 +248,11 @@
       "sha256": "79a0649b7b0019b3add85edb2b2c6c05805347c57888526dda063ee34011c608"
     },
     {
-      "bytes": 4976,
+      "bytes": 4839,
       "mode": 420,
       "origin": "source",
       "path": "apps/admin/src/admin-navigation-view.tsx",
-      "sha256": "abbde5ea8f7e9510c2576c7e8607f3cafc882bf35a3526cf01638f3160581a89"
+      "sha256": "ef3a97533a1be575bbeb32beea73639a1ad21e53d6b6df79dc81b573a60103c3"
     },
     {
       "bytes": 5284,
@@ -311,11 +318,11 @@
       "sha256": "318a38ef0c551234a5d03b7b0a5286b3f77315519f78388915de9ad3ee0f77fd"
     },
     {
-      "bytes": 15302,
+      "bytes": 16055,
       "mode": 420,
       "origin": "source",
       "path": "apps/admin/src/admin-theme.css",
-      "sha256": "f09a88fe3293a82e07e462cdbd81913ebf6c6c9da39e4ea4330e3a29fddeb41c"
+      "sha256": "0145d244341a454f94adb620559258ae0366617ef9216e14020d10765fb1ee0e"
     },
     {
       "bytes": 482,
@@ -612,11 +619,11 @@
       "sha256": "fbabf6aaa27c0239ea54249e2020e191682979737b830ad79dd510fbbd2d5609"
     },
     {
-      "bytes": 14644,
+      "bytes": 14823,
       "mode": 420,
       "origin": "source",
       "path": "apps/admin/src/login.tsx",
-      "sha256": "b5754118fd8d77278b0f94d42b04a20080e48faa07f0b59e6001cef5e8ac54df"
+      "sha256": "a4e0f6de593a21fe3a76641db321fde41c66864d44a027ae6427d099639f1bc6"
     },
     {
       "bytes": 1284,
@@ -1592,18 +1599,18 @@
       "sha256": "f7fccefdf2c3f8b88c69eea597d57f77030afba8efdb918579f3e0a3f6b43043"
     },
     {
-      "bytes": 126323,
+      "bytes": 126147,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/app/globals.css",
-      "sha256": "cb4df42a0ee24cd55e5f631ccc9c2687b44ac41398d8ced2727a0629d61d3542"
+      "sha256": "84451ab32e87c6e89f00e6870203f7d3ece7ea96716a38918baeb36d6ee0a548"
     },
     {
-      "bytes": 3458,
+      "bytes": 3618,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/app/layout.tsx",
-      "sha256": "6ae65953a3d0020f0f63b5ff337cf946acd1a0159e7115a9e11ebb1289f8d336"
+      "sha256": "20cfd31325a6b263c1343438177a14a749de8a9ad68e542feb0c840daa5c97aa"
     },
     {
       "bytes": 3320,
@@ -1627,11 +1634,11 @@
       "sha256": "4e6d3d5dd498faa0eaece737dbecadb3bcc7cdaaa612467ea85fc689b2ae835e"
     },
     {
-      "bytes": 1614,
+      "bytes": 1159,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/app/pwa/icons/[locale]/[size]/route.tsx",
-      "sha256": "e6323cf5bb79721517ffa98a3959d4748f919f49333c90ce9327c1c62c314861"
+      "sha256": "1f20067d2225d9d76c63b81b545ddd278c9da6918e88aed6d7455a48ae224a40"
     },
     {
       "bytes": 1066,
@@ -1655,11 +1662,11 @@
       "sha256": "e14f03a29d7d7e4aebfd61f0232b3913049d8f067036c9cfc9072a06b04e8e4b"
     },
     {
-      "bytes": 41088,
+      "bytes": 41153,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/app/storefront-design.css",
-      "sha256": "3a2adaef2e6fbef3f2e6f26466574af860acae7b58280464c65c382132d3a009"
+      "sha256": "c500d8e7fb1f5197fa5c13520e542c9aad966fcee1fedceac76c4aa27a6a07ad"
     },
     {
       "bytes": 8385,
@@ -2250,11 +2257,11 @@
       "sha256": "f8c822b87e6115092672fcf0b661b6d7b0033cec96cf8b3ba7362083e57a6e54"
     },
     {
-      "bytes": 28564,
+      "bytes": 28631,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/components/shell.tsx",
-      "sha256": "3cde97a9a64cb0f76463b7c2f5f93556476d0a668881c7e5aedb917fff7f817b"
+      "sha256": "4fd86def91f50c58aea69eac82d6ea4d00cd1cbe308ce80fc8fc4d3c69a47715"
     },
     {
       "bytes": 1673,
@@ -3496,11 +3503,11 @@
       "sha256": "50962abd90927aefdab57c2acebf518d68f059902805425d87a2c9bb19951433"
     },
     {
-      "bytes": 9993,
+      "bytes": 10153,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/lib/service-worker.js",
-      "sha256": "087521567cbfda1f2192df74d3919cf9a48a9a5df20718be0e1e47a3f2898913"
+      "sha256": "d26fa3c0d23637ba1b515b2da6e247f8f55ebf883c1c828201fb17920d5df019"
     },
     {
       "bytes": 4560,
@@ -3762,11 +3769,18 @@
       "sha256": "5d770de5e366bed3dbfbc2e1529052880cb091934e81cfd63cffb068d39da3b4"
     },
     {
-      "bytes": 184,
+      "bytes": 22960,
       "mode": 420,
       "origin": "source",
-      "path": "apps/storefront/public/icon.svg",
-      "sha256": "86b4739127b13f85fd6e8c384d23078fd2590fcfc963c028d36d09e06b904aaa"
+      "path": "apps/storefront/public/favicon-192.png",
+      "sha256": "eb2fd182a3490fcc848c3b84204876a84454f5311018ddee8cfecd83979f74dc"
+    },
+    {
+      "bytes": 1903,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/storefront/public/favicon-32.png",
+      "sha256": "1d8cadb06eadfa1e354a10e9f35360db069fd8118da23cf59010532dc8d7fc1c"
     },
     {
       "bytes": 1624,
@@ -3846,25 +3860,53 @@
       "sha256": "6e593dc9663069bd132b453bba784d217b0b66c468a0bea0b04efada47ebd4a4"
     },
     {
-      "bytes": 1753,
+      "bytes": 141190,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/storefront/public/products/sayman-mark-olive-v1.png",
+      "sha256": "09f5869d916d6cfbf1fc68c33ffc4e7225c4c1b65140371b203780e3b5da8571"
+    },
+    {
+      "bytes": 15139,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/storefront/public/pwa/icons/sayman-olive-v1-180.png",
+      "sha256": "f0571566a2c02bc43e61e1cafd40f5ab9c16306b21658d2139a9f9ec747662c2"
+    },
+    {
+      "bytes": 16831,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/storefront/public/pwa/icons/sayman-olive-v1-192.png",
+      "sha256": "6951908ca29493fa985dfacd8e5b2b0199dfa13ae9fa3709855de2a41f4f963e"
+    },
+    {
+      "bytes": 64821,
+      "mode": 420,
+      "origin": "source",
+      "path": "apps/storefront/public/pwa/icons/sayman-olive-v1-512.png",
+      "sha256": "b01827efb5c406b05e8a93ba52cb270d65f2cec927a86fc59fe53e70dd3c8cb0"
+    },
+    {
+      "bytes": 1794,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/public/pwa/offline-en.html",
-      "sha256": "552fafed715021829993e2d023882096bd97efa86d13a1bb8fa9d1f72d1f27d6"
+      "sha256": "e8285559fb1b15dca358ad26ddd4d9b4878dceae13c3484cdc7abfefafd6f281"
     },
     {
-      "bytes": 2014,
+      "bytes": 2055,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/public/pwa/offline-fa.html",
-      "sha256": "7ba7e313b04c10e07cd0ad9a1e9c504618fb8daa905fc3d716d2736fd1fd5544"
+      "sha256": "f8601b694ae58972e56e844738c573b754bd8705868b11360a00868a2e05d91c"
     },
     {
-      "bytes": 3931,
+      "bytes": 3874,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/public/pwa/offline.css",
-      "sha256": "7688a68fc021a28468c7d6ff89e5fecaf001ab76f6f0d39aac07f96f71b1c009"
+      "sha256": "0dd106cd95e8f375c8fb8598ee9545c30be74fef8ed16c0db9d2ec2127643169"
     },
     {
       "bytes": 6171,
@@ -3874,11 +3916,11 @@
       "sha256": "c59ff2f9542935a3d22ae3187ab56af61218545facf155970cc432f3ff6e14d6"
     },
     {
-      "bytes": 1649,
+      "bytes": 1833,
       "mode": 420,
       "origin": "source",
       "path": "apps/storefront/scripts/build-pwa.mjs",
-      "sha256": "05c3757e1c120007a04f526fd3b01b82bf6ab9c99683e56691704bb1356d7214"
+      "sha256": "76bcaa486599a2ea98b56206dd827e4c68dab7ea62dd898b07446f89c9954500"
     },
     {
       "bytes": 754,
@@ -8468,8 +8510,8 @@
   ],
   "formatVersion": 1,
   "overlayTreeSha256": [],
-  "productionTreeSha256": "4a36809e0a4fb6103ceda2f441756804590524461785a9b3bd55b4362e32a198",
-  "sourceTreeSha256": "5327c7b4c726247c37cbf124f0b1bd6a83088f17c11108ae950d277f72e0da76",
+  "productionTreeSha256": "23134414bccbb03c31987be3af7e03c6930fc68c49b37a3e7a9cd5940839c60b",
+  "sourceTreeSha256": "4735e6d3917cccf8ee2bc7131da16168085410862212f48e826c72f112fea532",
   "transformations": [
     "package.json: retain production build/start scripts",
     "apps/storefront/package.json: retain production build/start scripts",

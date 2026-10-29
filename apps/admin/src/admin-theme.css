@@ -92,6 +92,7 @@ textarea::placeholder {
 }
 .admin-brand {
   display: flex;
+  align-items: center;
   justify-content: flex-start;
   text-align: start;
   background: transparent;
@@ -99,6 +100,10 @@ textarea::placeholder {
   padding: 0;
   gap: 12px;
   color: var(--admin-sidebar-text);
+  width: max-content;
+  max-width: 100%;
+  flex-shrink: 0;
+  direction: rtl;
 }
 .admin-brand:hover:not(:disabled) {
   background: transparent;
@@ -106,27 +111,40 @@ textarea::placeholder {
 .admin-brand-mark {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 43px;
-  border-radius: 12px;
-  background: var(--admin-highlight);
-  color: var(--admin-sidebar);
-  font:
-    800 27px/1 Arial,
-    sans-serif;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  border: 1px solid oklch(0.94 0.025 105 / 0.28);
+  border-radius: 14px;
+  background: #f4f3e8;
+  box-shadow: 0 3px 12px oklch(0.1 0.02 145 / 0.12);
 }
-.admin-brand b {
+.admin-brand-mark img {
   display: block;
-  font:
-    700 18px/1.5 Arial,
-    sans-serif;
-  letter-spacing: 2px;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
 }
-.admin-brand small {
+.admin-brand-wordmark {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+.admin-brand-wordmark b {
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.6px;
+}
+.admin-brand-wordmark small {
   display: block;
   color: var(--admin-sidebar-muted);
-  font-size: 10px;
-  margin-block-start: 3px;
+  font:
+    700 9px/1.2 Arial,
+    sans-serif;
+  letter-spacing: 3px;
+  white-space: nowrap;
 }
 .admin-nav-search {
   display: flex;
@@ -534,8 +552,25 @@ body:has(dialog[open]) {
   background: var(--admin-sidebar);
   padding: 56px;
 }
-.login-story .brand {
+.login-story .admin-brand {
   color: var(--admin-sidebar-text);
+}
+.admin-brand-login .admin-brand-mark {
+  width: 56px;
+  height: 56px;
+  flex-basis: 56px;
+  border-radius: 17px;
+}
+.admin-brand-login .admin-brand-mark img {
+  width: 44px;
+  height: 44px;
+}
+.admin-brand-login .admin-brand-wordmark b {
+  font-size: 29px;
+}
+.admin-brand-login .admin-brand-wordmark small {
+  font-size: 10px;
+  letter-spacing: 4px;
 }
 .login-story h1 {
   font-size: clamp(26px, 3vw, 40px);

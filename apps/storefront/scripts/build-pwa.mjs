@@ -28,6 +28,10 @@ const inputs = [
   'public/pwa/offline.css',
   'public/pwa/fonts/vazirmatn-arabic.woff2',
   'public/pwa/fonts/vazirmatn-latin.woff2',
+  'public/products/sayman-mark-olive-v1.png',
+  'public/pwa/icons/sayman-olive-v1-180.png',
+  'public/pwa/icons/sayman-olive-v1-192.png',
+  'public/pwa/icons/sayman-olive-v1-512.png',
 ];
 const hash = createHash('sha256');
 for (const filename of inputs) {
