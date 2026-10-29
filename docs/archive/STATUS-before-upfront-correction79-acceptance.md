@@ -1,0 +1,63 @@
+# وضعیت و نقطهٔ ادامه — 2026-10-28
+
+## حساب مشتری درخواستی مالک — D37
+
+حساب `sayman-test` برای ورود به `/fa/account` روی اصلی3000 ساخته و با password200/me200/logout204 تأیید شد؛ بدون نقش یا مجوز کارکنان، با تماس کاملاً مصنوعی و فقط در Development محلی. رمز در `tmp/local-customer-login.json` خصوصی0600 است و در مستندات ثبت نمی‌شود. فقط یک کاربر و audit ساخت آن افزوده شد؛ نشست بررسی خارج شده، runtime73/source79/تنظیمات تجاری/providerها تغییر نکردند. شواهد `artifacts/checks/local-customer-login.json`؛ درخواست مستقل ورود، تکمیل برش79 یا کل پروژه نیست. ابزار یک‌باره ابتدا SqlClient مرجع ناسازگار پلتفرم را پیش از اتصال رد کرد؛ ارجاع به runtime/unix اصلاح و ساخت/ورود واقعی موفق شد.
+
+**D34 ادامه دارد؛ کل پروژه کامل نیست. اصلی محلی73 روشن است (D36). source73 گزارش منتشر شد؛75 یادآوری دستی و76 تنظیم/worker پذیرفته ولی منتشر نشده‌اند. source77 اصلاح HTTP محصول وsource78 بلاگ هم پذیرفته و منتشر نشده‌اند.** شواهد قبلی در[آرشیو](archive/STATUS-before-reminder-policy76-acceptance.md)،PLAN/PRD/DECISIONS مرجع‌اند.
+
+## اجرای اصلی73 — D36 منتشر و تأیید شد
+
+`tmp/{api,storefront,admin}-runtime-current.json` مرجع است. API5080 PID26244/session60305؛Next3000 PID26298/session52443؛admin3173 PID26377/session3305. restartهای API/Next `python3 tmp/cheque-report73-release.py serve-api|serve-storefront` و admin `node tmp/serve-cheque-report73-main-admin.mjs` هستند. runtimeSet `tmp/cheque-report73-ui-runtime-set.json`،Next build `vvvG67jZmTTKh8oXHriX9`. پیش هرعمل PID جاری دوباره بررسی شود.
+
+مالک D36 صریحاً توقف کوتاه/بکاپ/ایندکس/restart73 را مجاز کرد. فقط سه PID72 با تأیید descriptor/port/command وcwd دقیقNext graceful متوقف شدند. بکاپ متوقف23191552B SHA`2b576b4c828b8ef423f81d552eb2e1af3e77406288cd57fd34cbd636ddc83dfb`،COPY_ONLY/CHECKSUM/VERIFYONLY و1key opaque؛فقطsamehost،restore/offsite پذیرفته نیست. گزارش `artifacts/checks/main-pre-cheque-report73-stopped-backup.json` و `cheque-report73-main-release.json` مرجع‌اند.
+
+73migration/193جدول/12schema؛فقطindex`IX_ReceivedCheques_DueDate_Id` ویکhistoryentry افزوده شد. تمام72migrationقبلی،ستون‌ها/indexهایقبلی/check/FK/view و192جدول غیرhistory قبل/بعد exact؛پس1975HTTP نیز192غیرsession exact،sessionlifecycle بدونreset محفوظ. stock101/0/0 وorders/reservations/policy/settings/sourcing/مالی0؛هیچseed/role/provider/indexing/CMSpublication اصلی فعال نشد. 1935HTTP قبلی و1141admin+354Nextasset محفوظ. helper ابتدا نبودبخشtriggers درbaselineقدیم را خطا گرفت؛فقط4بخش واقعاً ثبت‌شده مقایسه می‌شوند،preMigrationTriggerBaselineCaptured=false صریح است و ادعای تطبیقtrigger نشده. گزارشاولstop صرفاً رویtitleNext رد شد؛پیشstop واقعی cwd دقیق frozen72 تأیید شد. sourcebin78 هرگز برایmain73استفاده نشد.
+
+D36 اعتبارسازمانی فعلاً لازم نیست/خارج محدوده،فروش چکی شخصی کافی؛هر دو سؤال قبلی پاسخ دارند و تکرار نشوند. source75/76/77/78 درmainمنتشرنشده‌اند. D16 درگاه/SMS/email وD30 هلوواقعی اطلاعات ندارند/خاموش؛D21فقطQA،D32Redisپارسهعمداًrunning/دست‌نخورده. D33tmpکاملپاکنشود؛current73 وrollback72/70/69/68/67/66 وcandidate75/76/77/78/helper/key/backup/evidence محفوظ. هیچDockerrestart/cleanupتازه انجام نشد.
+
+## source73/75 پذیرفته — منتشرنشده
+
+CHEQUE-REPORT/A85:1109unit/766SQL/517front/217admin/23proxy،9SQL+9browserwire؛FinanceMFAdateTehran≤366روز/page20/DPactorfiltercursor15min/ledger+receipt+Salescontract،BigIntegerفقطهمینصفحهبدونبانک. final`tmp/cheque-report73-ui-runtime-set.json`،prepare`tmp/cheque-report73-main-prepared.json`. migration73فقطیکDueDate/Idindex/0جدولتازه. QAجمع/191دیگرexact.
+
+CHEQUE-REMINDERS/A87:1123unit/771SQL/523front/217admin/24proxy،28SQLwire(7actualbody)/42browserwire؛2manualPOST/2cut→2GET/0duplicate،FAEN/read/count/logout،QA196جدول/190دیگرexact/مهلت100nsمحفوظ،QAجمع. final`tmp/credit-reminders75-ui-runtime-set.json`. 74/75سهجدولCreditReminderEvents/Commands وNotificationsCreditInbox؛append-onlyDP/rootIdentitySalesCreditNotifications/audit/dailydedup،onlycommittedCreditApproved/Fulfilled+Held. guardCSS7bannerاصلاح،دومینglobalrecoveryپاس؛خطایrecorderJsonContentفقطتستاصلاحوتمام5caseکلاسدوبارهپاس.
+
+## source76 policy/worker پذیرفته — A88/A90، منتشرنشده
+
+CHEQUE-REMINDER-POLICYمرجع. explicit31offset[-365,365]/HH:mmTehran/disable[]+null/no-default؛append-onlyrevision/relationaloffsets/rowversion/DP/actorUUID/replayقبلCAS/audit/history20. `Credit:AutomaticRemindersEnabled` واقعی درDTOWorkerEnabled آشکار؛unset/off0send. worker20/60s/cursorresetpolicy+day/wrap،sharedpolicygate→owner→commandتاcommit،همانmanual75+uniquecheque/day،بدونbackfill/تضمینارسالآن‌دقیقه. systemactorداخلیبدونrole/login،auditAUTOMATIC+noteDPpolicyid/version،customerهمانقراردادخصوصی75.
+
+1130unit/777SQLfreshدقیقاًیک‌بارکلاس‌کامل389(6:37)+388(5:17)/527front/217admin/25proxy؛14DLLAPI/unit/SQL/harness/frozenبرابر. 48SQLwire با7manual/11policyactualbodybindings و45browserwireبا3policyPOST/1cut→Dashboardpointerhit→1GET/0duplicate. targetاولfixtureReceived→collectionمستلزمDepositبود؛فقطfixtureاصلاح،10پاس؛case11manual/auto/daynextدرfullAپاس. proxyیک‌باردرشاخهredirectاشتباهinsertشد،تستگرفت/شاخهقبلیrestore وcreditpathاصلاح/25پاس. rawfailuresمحفوظ/قیودمحصولضعیفنشد.
+
+25NativeHTTPفقطپیش‌نیاز/0policy+reminderقبلbrowser؛workerواقعیQA3event/3command/3inbox/3autoAudit،پس127ثانیههمان3،3policyhistory/finaldisabled. CustomerFAEN/read1/unread2/mobile375=scroll375،adminmobile375/dialog330/reviewfalse؛logoutچندتب/4console0. DOMarticlemetric0چونcardsliاست،خامarticleElementsمحفوظ؛3ENازمتنDOMواقعی+wire+SQL،logoutازlogin-onlytext/0ownedlinksپاس. Wcag/device/perfکلیپذیرفتهنیست.
+
+QA_GUID159952ac1b5448d7800cfc8d73cc9ac4/199جدول/9تغییرمجاز/190دیگرexact؛ledger/upfront/approval/clearance/Sales/Inventory/scope/سیاستقبلی/deadline100nsمحفوظ/Paid0/stock101/1/0. GUID/key/credential/session/پورت5181/5182/3105/3175/تب143–146جمع،viewportreset،تمامQA0 وRedisrunningپسfullBتأییدشد. `artifacts/checks/credit-reminder-policy76-{source-acceptance,sql-full-acceptance,qa-cleanup}.json` وbrowser-ui/final-sql/second-tick/wireacceptance مراجع‌اند. final`tmp/credit-reminder-policy76-runtime-set.json`؛flagpendingتاریخیcandidateمرجعپذیرش نیست. **Storefrontدقیق75reused/manifestverified چونappمشتریتغییرنکرد.** migration76سهجدولافزایشی/Downباhistoryرد؛هیچmainmigrationنیست.
+
+## source77 PRODUCT-HTTP/A89/A91 پذیرفته — منتشرنشده
+
+فقطstorefront؛backend14DLL/migrationهمان76. پیشstream`/fa|en/product/{slug}` ازهمانlookupعمومیbounded1MiB/JSONUTF8/sluglocale/حدیکproductخوانده:missing404rewrite/no-store/noindex،خرابی503بدونfallback. CMSredirectمقدم،صفرstock404نیست،previewProductionفقطexplicit. 530front/typecheck/Nextisolatedproductionbuild و28HTTPواقعیAPI+preview/lookupfault/productionflag پاس؛FAENmobile375/2console0/بازگشتcatalog24link. HEAD/RSC/querymissing404،zeroStock200،503بدونfallback. QA_GUID62e19b20ad7342acb5878762322fd666هر199جدولexact و0writeمالی/تنظیم؛GUID/key/credential/پنجپورت/تب147–148جمع/QA0/main72همان. finaltmp/product-http77-runtime-set.json وartifacts/checks/product-http77-{source-acceptance,public-smoke,browser-ui,final-sql,qa-cleanup}.jsonمرجع‌اند. backend/admin76دقیقreused/14DLL+manifestبرابر؛قبولی1130unit/777SQL/217admin/25proxyتازه‌اجرانشدچونبیت‌هاهمان‌اند. .next-qaخروجی77است،source76ازNext75فروزناستفادهمیکند.
+
+D36: اعتبار سازمانی فعلاً لازم نیست و از محدوده خارج شد؛ فروش چکی شخصی کافی است. سؤال مدل شرکت/کارمند پاسخ گرفته و تکرار نشود. سپسupfrontcorrection/refund/creditباقی،CMSblog/SEO،partial/digitalshipping/returns/search/alerts/bundle/compatibility/tradein/loyalty/opsWCAG/perf/CI/Linux/offsiteو12معیارPDF. پایانبرشپایانD34نیست.
+
+## source78 بلاگ پذیرفته — A94، منتشرنشده
+
+`docs/BLOG.md` و `artifacts/checks/blog78-source-acceptance.json` مرجع‌اند. final `tmp/blog78-final-runtime-set.json`،runtimeRevision78 و sourceMigrations77 (source77 محصول migration تازه نداشت). چهار جدول CMS مستقل BlogPosts/Revisions/Commands/RevisionTags،draft/publish/unpublish/restore/CAS/actorUUID/receipt/audit،FirstPublishedAt ثابت،authorKind و byline عمومی صریح،cover باalt دو زبان،حد8tag رابطه‌ای باJSONhash،page20/cursor مقید15min ساخته و پذیرفته شد. API عمومی ناشناس وبدون دادهٔ خصوصی؛API پنل MFA+CMSread/write،rootIdentityCmsSerializable،نمونه درProduction مخفی وindexing فعال نشده است. HTML آزاد یا author از حساب خصوصی نمی‌آید. صفحه‌های ثابت، CMS و منوی قبلی محفوظ‌اند.
+
+1138unit،786SQL با discovery تازه دقیقاً یک‌بار در393+393کلاس‌کامل،539front،217admin،26proxy؛14DLL بینAPI/unit/SQL/harness/frozen برابر.137SQLwire با77actualbodybinding و1receipt،199browserwire با7actualbodybinding و2receipt.21Create+21Publish نمونهٔ native فقط درQA؛7فرمان واقعیUI/2cut پسcommit→2GET/0duplicate.55HTTP نهایی+4actual404 پسUnpublish،HEAD/RSC/invalidfilters/شناختAPIنصب‌نشده/503بدونfallback،303cursor منقضی باorigin معتبر وHostنامعتبر پاس. انقضایواقعیcursorباSQLclock تست و409Injectedفقطآزمونtransport صریح است.
+
+FA/EN/mobile375=scroll375،22دکمهٔ پنل بدونسرریز،dialog330،Dashboard بدونselectedarticle→globalguard→receipt،draftبعدrestore محفوظ،20+2صفحه‌بندی/برچسب/تعویض‌زبانcursorپاکوtagمحفوظ،خروجچندتب وپاک‌شدن اطلاعاتخصوصی/3consoleنهایی0 پاس. Wcagکامل/دستگاهفیزیکی/perf پذیرفته نیست؛adminbundle هشدارchunk>500KB دارد.
+
+آزمون واقعی سه ایراد محصول را گرفت و اصلاح شد: nullable metadata زیرHttpIgnoreNull بایدصریحnull می‌ماند (JsonIgnoreNever+regression)،row-buttons طولانی بایدwrap وmobilemenu بالاتر ازguard35 باشد (CSS؛JSبعدnormalizationفقطassetrefs برابر)،NextResponse Location نسبی خطای500 داشت (303باpublicOriginمعتبر وbuild/HTTPتازه اصلاح شد). خطاهای ابزار هم شفاف‌اند: واحد درsandbox socketpermissionaborted/همانfullsuiteescalatedپاس؛parser یکtheory decimal راclassشمرد،AپیشاجراباMSB4177رد/اصلاح/393+393دقیق؛smoke نامDTOsitemap اشتباه داشت/فقطhelper اصلاح؛تطبیق خامJS به‌علتcascadehash رد/فقطassetrefsnormalize و برابریlogicتأییدشد. rawfailures/candidateهای اولیه محفوظ‌اند.
+
+QA_GUIDf2a5d32f962f44d9a52a7ea55013786b،203جدول/7تغییرمجاز(blog4+Identityuser/session/audit)/196دیگرexact شامل تمام مالی/Inventory/policy/CMSقدیم؛22demoPost/26revision/49command/26tag/49audit،headbrowserPublication5 واولینتاریخ22پست دقیقاًمحفوظ. stock101/0/0 وorders/policies0. GUID/keys/credentials/session/ششپورت5181/5182/5183/3105/3106/3175 و تب149–152 جمع،viewportreset،تمامQA0،main73descriptorهمان وRedisD32runningدست‌نخورده. هیچmainmigration77/انتشاربلاگ/منویاصلی/role/policy/provider فعال نشده.
+
+## نقطهٔ ادامه
+
+D34 ادامه دارد. اعتبار سازمانی باD36 فعلاً خارج محدوده وپرسش‌بازندارد. برش بعدی اصلاح صریح گواهی پیش‌پرداخت پس CreditApproved وپیش dispatch است؛لغو/تأییدمجدد فقطهمان مبلغ محفوظ،بی‌اعتبارشدنclearance قبلی ونیازبهبازبینیFinance،بدونآزادکردنموجودی/تمدیدdeadline/احیایscope/بازپرداختیاپرداخت بانکی. انتقال واقعی وجه بهD16 وابسته وخاموش می‌ماند. سپسpartial/digitalshipping/returns/tracking،searchفارسی،wishlist/alerts/tradein/bundle/compatibility/loyalty و عملیاتCI/Linux/offsite/WCAG/perf/12معیارPDF ادامه دارند. پایانبرش پایانپروژه نیست.
+
+## source79 شروع شد — A95، هنوز پذیرفته نیست
+
+CREDIT-UPFRONT-CORRECTIONS طرح است. SharedStage/Sales-onlyreader باownergate وبدونInventoryDb،شرطCreditApprovedپیشdispatch،AcknowledgedCommittedOrderصریح/Note/Version،falseomitبرایحفظcanonicalhashlegacy وsealedeventoptionalfalse،OccurredAtواقعیقدیمی‌ترفقطبرایاصلاحتعهدی،RecordedAt/sequenceصعودی ساخته شد؛draftUIfalse/reset/preview/history وTSbindingپرچم اضافه شد. اصلی73 وfrozen78پذیرفته دست‌نخورده‌اند؛source79code-onlyهمان77migration/0جدولجدید است.
+
+APIbuild0warning،1140fullunit،542fullfront،217admincontract/typecheck/build وNextisolatedbuild پاس؛proxyهمانبایت78/26قبلیاست(برای79تازه‌اجرانشده). 13SQLکلاسClearance(7قبلی+6جدید)پاس1:53 با26wire/9actualPOSTbinding/2receipt؛zeroNoFundsDue/legacyDPreceiptfalseomitted/replayپسcommit/auditrollback/reconfirmrace/dispatchrace/postdispatchdeliveryblocked/stock/deadline/scopeمحفوظ. ابزارتستاولhelpermissingawait داشت،فقطتستاصلاح/11کلاس‌اولپاس وپس2caseاضافی/recorderکل13پاس. UIpreviewدرreviewکدابتداپرچمcommittedرابهbodyاضافهنمی‌کرد،پیشbrowserاصلاح وtypecheck/buildپاس؛هنوز UIقبولی نیست.
+
+fullSQLfresh792دردوگروه396کلاس‌کاملدرحالاجرا،sessions64842/82581؛runtimecandidate`tmp/upfront-correction79-runtime-set.json`فروزن/14DLLAPI/unit/SQL/harnessبرابر. QAموقتGUID65ad2ddc8c0e498988f236580604e56d باflagsoperations/applications/requirements/quote/order/clearance،workerfalse،هیچmainrole/policy/providerتغییرندارد. API5181/session1533،gateway5182/session31793،Next3105/session8419،admin3175/session86422. prep`tmp/prepare-upfront-correction79-browser.py`فقطNativeprereq باcommittedCorrectionWrites=0می‌سازد؛run/before/prereqartifactهاهمینprefixاند. tab153adminساخته‌شده،ورودهنوزانجامنشده. ادامهUI:financeازrequirements.json (finance.jsonReviewerاست)،revokeباcheckboxصریح و1cut→Dashboard/globalreceipt،customerFAENsummary،reconfirmوclearanceRefreshUI،Warehouseازorders.jsonفقطRead قبل/بعد،financialfacts/snapshot196دیگر وcleanupلازم. هیچ79sourceپذیرش/mainpublication انجامنشده؛QA را رها نکنید.

@@ -1,0 +1,21 @@
+{
+  "name": "@sayman/code-quality",
+  "private": true,
+  "type": "module",
+  "description": "Isolated lint tooling; the application keeps its own TypeScript compiler.",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@next/eslint-plugin-next": "16.4.2",
+    "eslint": "9.39.5",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1"
+  }
+}

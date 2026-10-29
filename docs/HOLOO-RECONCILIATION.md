@@ -1,0 +1,15 @@
+# تطبیق انبار و واحدهای هلو
+
+سورس/اصلی۴۶ با شواهد SQL/پنل/مرورگر/حفظداده پذیرفته و منتشر است. این قابلیت از فایل استاندارد و immutable مرحلهٔ staging استفاده می‌کند؛ vendor API یا قالب بومی هلو را حدس نمی‌زند. نسخه/ماژول هلو طبقD30نامعلوم است و سؤال تکراری پرسیده نمی‌شود.
+
+Inventory اکنون یک ماندهٔ کل برای هر SKU دارد. نگاشت انبار فقط با انتخاب صریح مدیر می‌تواند یک شرکت/انبار مبدأ را نمایندهٔ «کل ماندهٔ فیزیکی فروشگاه» اعلام کند؛ انبار جزئی یا available پس از تعهدات این معنی را ندارد. فقط یک نگاشت می‌تواند فعال باشد. این محدودیت، ظرفیت فنی مدل فعلی است، نه ادعای تک‌انباربودن واقعی مالک. اگر فایل این قرارداد را ندارد، نگاشت فعال نشود و preview فقط برای بررسی باقی بماند. هیچ نگاشت پیش‌فرض فعال، تبدیل۱:۱، زمان یا تعداد فرضی ساخته نمی‌شود.
+
+WarehouseLinks هویت immutable/BIN2 و rowversion دارند؛ WarehouseCommands رسید همان actor+UUID/hash و نتیجهٔ تاریخی مستقل از ویرایش بعدی را نگه می‌دارد. rootSerializable/audit و lockglobal قبل از lookup از رقابت دو منبع فعال جلوگیری می‌کند؛ indexfilteredیکتایSQL نیز آن را تضمین می‌کند. Down با وجود هر نگاشت یا رسید متوقف می‌شود.
+
+نگاشت واحد از ReceivingUnitMappings موجود با originSystemدقیق holoo و شرکت/انبار/واحد/SKU استفاده می‌کند. مقدار خام نامنفی با حداکثر۸رقم اعشار و نسبت integerصریح با BigInteger محاسبه می‌شود. فقط نتیجهٔ صحیح۰تا۱۰۰۰۰۰۰ پذیرفته می‌شود؛ rounding یا تبدیل مقدار غایب به صفر ممنوع است. صفر، گزارش صریح است و منفی/توان/جداکننده/مقدار نامعتبر به عدد قابل‌اعمال تبدیل نمی‌شود. قیمت در staging/کاتالوگ همچنان صحیحریال/JSONرشته‌ای و مستقل است.
+
+GETreconciliation به catalog.read و inventory.read و MFA نیاز دارد و یک readtransactionSerializable بین مالکیت Catalog/Inventory هماهنگ می‌کند؛ هیچ DbContextماژول دیگری از داخل ماژول خوانده یا نوشته نمی‌شود. حداکثر۲۰۰ردیف، فقط۲۰۰شناسهٔ نگاشت دقیق، Stock/versions/آخرینگردش/رزروهایهرنوع/نگاشت فعلی و hashfactsگرفته می‌شود. کمبودزیرتعهدات،گردشپساززمانفایل،واحد/انبارنامعلوم،SKUنامعتبر،دستگاهرهگیری‌شده وکارکرده صریح‌اند. CanApplyManual/CanSyncLiveدراینبرشfalseاند؛ فرمانapplyباconsent/versions/receiptمستقل مرحلهٔبعداست. قیمت/محتوا/Stock/رزرو/هلو تغییری نمی‌کنند. منبع غایب از فایل حذف یا صفر نمی‌شود.
+
+مسیرهای سایت: GETwarehouses?companyKey/cursor (۲۰تایی)، GETwarehouses/{id} باinventory.read؛ PUTwarehouses/{id} و GETwarehouse-commands/{N-UUID} باinventory.write؛ همگی زیر /api/admin/accounting/holoo. ورودی warehouseدارایcommandId/N-UUID/شرکت/کلیدانبار/نامFAEN/isActive/acknowledgeWholeStorePhysical/versionnullable است. GETimports/{id}/reconciliation فقطخواندنی است. رابط پنل به نگاشت واحدهای موجود هدایت می‌کند. journalRAMبهحسابومجوزبسته‌است،درناوبریحفظوپساخطرازخروجپاک‌می‌شود؛unknownفقطباهمانفرمان/GETرسیدپیگیری‌می‌شود.
+
+پذیرش:۸۶۱واحد/۲۰۱پنل وtypecheck/build موفق‌اند؛ ۱۹SQLهدفمند/کل۵۴۳SQLواقعی و۵rawresponse/decoder موفق‌اند؛بستهimmutable۴۶ساخته‌شد. مرورگرartifactنهایی/cleanup/backupتازه/حفظداده/۱۳۹۵HTTPپذیرفته‌اند. ابهاممتنبررسیخامبا نتیجهٔنگاشتاصلاح‌وبیلدنهاییجداپذیرفتهشد؛API/SQLبدونتغییرند. mobileوmanualapplyوliveهنوزبازند. STATUSمرجعجاری است. کلPDF وapply/live هلو کامل معرفی نمی‌شوند.

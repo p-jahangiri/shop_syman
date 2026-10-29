@@ -1,0 +1,509 @@
+.support-tickets-page {
+  padding-block: 28px 64px;
+}
+.support-tickets-page > h1 {
+  margin-block: 18px 28px;
+}
+.support-ticket-entry {
+  display: flex;
+  justify-content: center;
+  margin-block: 20px;
+}
+.support-ticket-entry a {
+  padding: 14px 22px;
+  background: var(--primary, #314e36);
+  color: var(--primary-foreground, #fff);
+  border-radius: 12px;
+  font-weight: 600;
+}
+.ticket-workspace {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.85fr) minmax(0, 1.5fr);
+  gap: 24px;
+  align-items: start;
+  min-width: 0;
+}
+.ticket-panel {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--border, #dce3d5);
+  background: var(--surface, #fff);
+  border-radius: 18px;
+}
+.ticket-panel h2 {
+  font-size: 20px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.ticket-panel p {
+  line-height: 1.9;
+  margin-block: 12px;
+  overflow-wrap: anywhere;
+}
+.ticket-workspace button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 10px 15px;
+  border: 1px solid var(--border, #dce3d5);
+  border-radius: 10px;
+  background: var(--surface-soft, #f4f6ee);
+  color: inherit;
+  font: inherit;
+  line-height: 1.7;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.ticket-workspace button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ticket-workspace button:focus-visible,
+.ticket-workspace input:focus-visible,
+.ticket-workspace textarea:focus-visible,
+.ticket-workspace select:focus-visible {
+  outline: 3px solid var(--primary, #506749);
+  outline-offset: 3px;
+}
+.ticket-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ticket-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ticket-field {
+  display: grid;
+  gap: 8px;
+  margin-block: 18px;
+}
+.ticket-field input,
+.ticket-field textarea,
+.ticket-field select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid var(--border, #dce3d5);
+  border-radius: 10px;
+  background: var(--background, #fff);
+  color: inherit;
+  font: inherit;
+}
+.ticket-field textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.9;
+}
+.ticket-list,
+.ticket-messages {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+  display: grid;
+  gap: 12px;
+}
+.ticket-list button {
+  width: 100%;
+  display: grid;
+  justify-content: stretch;
+  text-align: start;
+  gap: 6px;
+}
+.ticket-list button[aria-current='page'] {
+  border-color: var(--primary, #506749);
+  box-shadow: inset 3px 0 0 var(--primary, #506749);
+}
+.ticket-list span,
+.ticket-list small {
+  display: block;
+  font-size: 12px;
+}
+.ticket-tracking,
+.ticket-list bdi {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.ticket-message {
+  padding: 18px;
+  border: 1px solid var(--border, #dce3d5);
+  border-radius: 14px;
+  background: var(--background, #fafbf7);
+}
+.ticket-message.support {
+  border-inline-start: 4px solid var(--primary, #506749);
+}
+.ticket-message > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ticket-message time {
+  font-size: 12px;
+}
+.ticket-message p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-block-end: 0;
+}
+.ticket-command {
+  padding: 18px;
+  margin-block: 20px;
+  border: 1px solid var(--border, #dce3d5);
+  border-radius: 12px;
+}
+.ticket-command > bdi {
+  overflow-wrap: anywhere;
+}
+.ticket-command > button {
+  margin-inline-end: 8px;
+  margin-block: 6px;
+}
+.ticket-conversation > button {
+  margin-block-start: 18px;
+}
+.ticket-conversation form {
+  margin-block: 24px;
+}
+.ticket-panel form {
+  max-width: 100%;
+}
+@media (max-width: 900px) {
+  .ticket-workspace {
+    grid-template-columns: 1fr;
+  }
+  .ticket-panel {
+    padding: 18px;
+  }
+  .ticket-heading > h2 {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticket-workspace * {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}
+
+.ticket-attachments ul {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+.ticket-attachments li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  border: 1px solid var(--border, #dce3d5);
+  border-radius: 1rem;
+  padding: 0.8rem;
+}
+.ticket-attachments li > span {
+  overflow-wrap: anywhere;
+  flex: 1 1 12rem;
+}
+.ticket-attachments small {
+  opacity: 0.75;
+}
+.ticket-field input[type='file'] {
+  max-width: 100%;
+  overflow: hidden;
+}
+.ticket-field > span {
+  overflow-wrap: anywhere;
+}
+.ticket-workspace > .private-realtime-status {
+  grid-column: 1/-1;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  padding: 0.6rem 0;
+}
+.ticket-workspace > .private-realtime-status > span {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--muted-foreground, #77816f);
+}
+.ticket-workspace > .private-realtime-status > span.connected {
+  background: var(--primary, #506749);
+}
+.credit-workspace-notice {
+  grid-column: 1/-1;
+  line-height: 1.9;
+  padding: 16px;
+  border: 1px solid var(--border, #dce3d5);
+  border-radius: 12px;
+}
+.credit-terms {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-block: 20px;
+}
+.credit-terms dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.credit-consent-panel {
+  margin-block-start: 1.5rem;
+  padding-block-start: 1.25rem;
+  border-block-start: 1px solid var(--border);
+}
+.credit-terms-copy {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.9;
+}
+.credit-requirements-text bdi,
+.credit-consent-history bdi {
+  overflow-wrap: anywhere;
+}
+.credit-requirements-text ul {
+  padding-inline-start: 1.25rem;
+}
+.credit-requirements-text li {
+  margin-block: 0.8rem;
+}
+.credit-requirements-text li p {
+  margin-block: 0.25rem;
+}
+.credit-consent-history {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 1rem);
+  padding: 1rem;
+  margin-block: 1rem;
+}
+.credit-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  line-height: 1.8;
+  margin-block: 1rem;
+}
+.credit-check input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  margin-block-start: 0.35rem;
+  accent-color: var(--primary);
+}
+.credit-consent-note {
+  font-size: 0.875rem;
+  opacity: 0.8;
+  line-height: 1.8;
+}
+.credit-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.credit-rule-grid > * {
+  min-width: 0;
+}
+.credit-rule-grid textarea {
+  width: 100%;
+  min-height: 8rem;
+  resize: vertical;
+  line-height: 1.8;
+}
+.credit-rule-document {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  margin-block: 1rem;
+  min-width: 0;
+}
+.credit-rule-document fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.credit-rule-document .credit-check {
+  display: inline-flex;
+  margin-inline-end: 1rem;
+}
+.credit-rule-current {
+  margin-block: 1rem;
+}
+.credit-rule-history {
+  list-style: none;
+  padding: 0;
+}
+.credit-rule-history li {
+  border-block-start: 1px solid var(--border);
+  padding-block: 1rem;
+}
+@media (max-width: 700px) {
+  .credit-rule-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .credit-consent-panel .ticket-heading {
+    flex-wrap: wrap;
+  }
+}
+.credit-documents-panel {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+  border-block-start: 1px solid var(--border);
+  margin-block-start: 20px;
+  padding-block-start: 20px;
+}
+.credit-documents-panel form {
+  display: grid;
+  gap: 12px;
+}
+.credit-document-checklist,
+.credit-document-history {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+}
+.credit-document-checklist li,
+.credit-document-history li {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+.credit-document-checklist li > span,
+.credit-document-history small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.credit-document-filename,
+.credit-documents-panel bdi {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.credit-documents-panel input[type='file'] {
+  max-width: 100%;
+  width: 100%;
+  font-size: 12px;
+}
+.credit-documents-panel input[type='file']::file-selector-button {
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 8px;
+  background: var(--surface-soft);
+  color: var(--foreground);
+  margin-inline-end: 8px;
+}
+.credit-documents-panel details > summary {
+  cursor: pointer;
+  padding: 10px 0;
+}
+.credit-document-history button {
+  justify-self: start;
+  min-height: 44px;
+}
+.credit-document-filename button {
+  display: block;
+  min-height: 44px;
+}
+@media (max-width: 700px) {
+  .credit-documents-panel .ticket-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .credit-documents-panel .ticket-heading button {
+    width: 100%;
+  }
+}
+
+.credit-submission-panel {
+  border-block-start: 1px solid var(--border);
+  padding-block-start: 1.25rem;
+  margin-block-start: 1.5rem;
+}
+.credit-submission-panel bdi {
+  overflow-wrap: anywhere;
+}
+.credit-submission-snapshot {
+  margin-block-start: 1rem;
+}
+.credit-submission-panel textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+.credit-review-panel {
+  border-block-start: 1px solid var(--border);
+  padding-block-start: 1.25rem;
+  margin-block-start: 1.5rem;
+  min-width: 0;
+}
+.credit-review-panel bdi,
+.credit-review-note {
+  overflow-wrap: anywhere;
+}
+.credit-review-note {
+  white-space: pre-wrap;
+  line-height: 1.9;
+}
+.credit-review-decision {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-block: 16px;
+}
+.credit-review-panel input[type='datetime-local'] {
+  direction: ltr;
+  text-align: start;
+}
+
+.credit-scope-panel {
+  border-block-start: 1px solid var(--border);
+  padding-block-start: 1.25rem;
+  margin-block-start: 1.25rem;
+  min-width: 0;
+}
+.credit-scope-panel form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  margin-block: 1rem;
+}
+.credit-scope-panel .credit-confirmation {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+}
+.credit-scope-panel .credit-confirmation input[type='checkbox'] {
+  flex: 0 0 1.1rem;
+  width: 1.1rem;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  min-height: 1.1rem;
+  padding: 0;
+  margin-block-start: 0.25rem;
+  accent-color: var(--primary, #506749);
+}
+.credit-scope-panel .credit-confirmation > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.credit-scope-panel .credit-terms dd {
+  overflow-wrap: anywhere;
+}

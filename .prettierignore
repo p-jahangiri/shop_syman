@@ -1,0 +1,14 @@
+**/node_modules/**
+tmp/**
+artifacts/**
+backend/**
+**/.next*/**
+**/dist/**
+**/out/**
+**/coverage/**
+**/package-lock.json
+apps/storefront/next-env.d.ts
+apps/storefront/public/sw.js
+
+# Public image/font assets and the generated service worker are not source formatting targets.
+apps/storefront/public/**

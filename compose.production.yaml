@@ -1,0 +1,131 @@
+# Standalone production stack. Never combine this file with compose.yaml.
+name: sayman-production
+services:
+  api:
+    image: ${API_IMAGE:?Use the release bundle and deploy-production.sh}
+    platform: linux/amd64
+    init: true
+    restart: unless-stopped
+    env_file: ['${PRODUCTION_ENV_FILE:?Set the absolute shared/production.env path}']
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      DOTNET_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: '8080'
+      ConnectionStrings__Shop: ${ConnectionStrings__Shop:?Configure the production SQL Server connection}
+      Auth__SigningKey: ${Auth__SigningKey:?Set a unique production signing key}
+      DataProtection__KeyDirectory: /var/lib/sayman/keys
+      DataProtection__CertificatePath: /run/secrets/identity-encryption.pfx
+      DataProtection__CertificatePassword: ${DataProtection__CertificatePassword:?Set the PFX password}
+      AllowedHosts: api;localhost;127.0.0.1
+      Cors__Origins__0: https://${SHOP_DOMAIN:?Set SHOP_DOMAIN}
+      Cors__AdminOrigins__0: https://${ADMIN_DOMAIN:?Set ADMIN_DOMAIN}
+      Media__Storage: ${Media__Storage:-Disabled}
+      Files__Storage: ${Files__Storage:-Disabled}
+      Bootstrap__AdminPassword: ''
+    volumes:
+      - type: bind
+        source: ${SHARED_DIRECTORY:?Set the absolute shared directory}/identity-keys
+        target: /var/lib/sayman/keys
+        bind: { create_host_path: false }
+      - type: bind
+        source: ${SHARED_DIRECTORY}/identity-encryption.pfx
+        target: /run/secrets/identity-encryption.pfx
+        read_only: true
+        bind: { create_host_path: false }
+    expose: ['8080']
+    healthcheck:
+      test: ['CMD', 'dotnet', 'Shop.Api.dll', '--health-probe']
+      interval: 15s
+      timeout: 10s
+      start_period: 30s
+      retries: 12
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
+    logging: { driver: json-file, options: { max-size: 10m, max-file: '5' } }
+
+  storefront:
+    image: ${STOREFRONT_IMAGE:?Use the release bundle}
+    platform: linux/amd64
+    init: true
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: '1'
+      SHOP_DATA_MODE: api
+      SHOP_API_URL: http://api:8080
+      SHOP_ENABLE_PREVIEW: 'false'
+      SHOP_PUBLIC_URL: https://${SHOP_DOMAIN}
+      SHOP_ENABLE_INDEXING: ${SHOP_ENABLE_INDEXING:-false}
+      SHOP_PWA_ENABLED: ${SHOP_PWA_ENABLED:-true}
+    expose: ['3000']
+    depends_on: { api: { condition: service_healthy } }
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/pwa/offline-fa.html').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 8
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
+    logging: { driver: json-file, options: { max-size: 10m, max-file: '5' } }
+
+  admin:
+    image: ${ADMIN_IMAGE:?Use the release bundle}
+    platform: linux/amd64
+    init: true
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      ADMIN_API_URL: http://api:8080
+      ADMIN_PUBLIC_URL: https://${ADMIN_DOMAIN}
+    expose: ['8080']
+    depends_on: { api: { condition: service_healthy } }
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:8080/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      start_period: 15s
+      retries: 8
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
+    logging: { driver: json-file, options: { max-size: 10m, max-file: '5' } }
+
+  nginx:
+    image: ${NGINX_IMAGE:?Pin an approved official nginx image with @sha256 in production.env}
+    platform: linux/amd64
+    restart: unless-stopped
+    ports: ['80:80', '443:443']
+    environment:
+      SHOP_DOMAIN: ${SHOP_DOMAIN}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN}
+      NGINX_ENVSUBST_FILTER: '^(SHOP_DOMAIN|ADMIN_DOMAIN)$$'
+    volumes:
+      - ./deploy/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - type: bind
+        source: ${SHARED_DIRECTORY}/tls
+        target: /etc/nginx/tls
+        read_only: true
+        bind: { create_host_path: false }
+    depends_on:
+      storefront: { condition: service_healthy }
+      admin: { condition: service_healthy }
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1/healthz']
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+    security_opt: ['no-new-privileges:true']
+    logging: { driver: json-file, options: { max-size: 10m, max-file: '5' } }

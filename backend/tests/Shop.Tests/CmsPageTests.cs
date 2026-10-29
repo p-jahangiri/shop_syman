@@ -1,0 +1,19 @@
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Shop.Modules.Cms;
+using Shop.SharedKernel;
+using Xunit;
+namespace Shop.Tests;
+public sealed class CmsPageTests
+{
+    public static CmsPageContent Content()=>new(new("صفحهٔ نمونه","توضیح مستقل",[new(new string('a',32),"Text","All","عنوان","<b>متن ساده</b>\nخط دوم 🎮")]),new("Sample page","Synthetic content",[new(new string('b',32),"Callout","Mobile","Heading","Sample copy")]));
+    [Fact]public void DraftMayBeIncompleteButBothLanguagesAreRequiredForPublishing(){var c=Content();CmsPageRules.Content(c,true);var empty=c with{En=new("","",[])};CmsPageRules.Content(empty,false);Assert.Throws<BusinessException>(()=>CmsPageRules.Content(empty,true));Assert.Equal(CmsPageRules.Serialize(c),CmsPageRules.Serialize(CmsPageRules.Read<CmsPageContent>(CmsPageRules.Serialize(c))));}
+    [Theory][InlineData("//evil.test")][InlineData("javascript:alert(1)")][InlineData("/\\evil")][InlineData("/%2f%2fevil")][InlineData("/hello world")][InlineData("/\u0000")]
+    public void LinksRejectExternalEscapedAndControlTargets(string path)=>Assert.False(CmsPageRules.InternalPath(path));
+    [Theory][InlineData("https://evil/image.png")][InlineData("/media/../image.png")][InlineData("/products/a.svg?x=1")][InlineData("/pwa/offline.js")][InlineData("/products/a.webp\n")][InlineData("/media/catalog/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/card.webp\n")]
+    public void ImagesMustUseBoundedPublicCatalogMedia(string path)=>Assert.False(CmsPageRules.PublicImage(path));
+    [Fact]public void ApprovedBlocksHaveExclusiveFieldsUniqueIdsAndVisibleDeviceRules(){var c=Content();foreach(var b in new[]{c.Fa.Blocks[0] with{Kind="Html"},c.Fa.Blocks[0] with{Visibility="Hidden"},c.Fa.Blocks[0] with{Image="/products/a.svg"},c.Fa.Blocks[0] with{Text="\u202ehidden"},c.Fa.Blocks[0] with{Text="\ud800"}})Assert.Throws<BusinessException>(()=>CmsPageRules.Content(c with{Fa=c.Fa with{Blocks=[b]}},true));Assert.Throws<BusinessException>(()=>CmsPageRules.Content(c with{Fa=c.Fa with{Blocks=[c.Fa.Blocks[0],c.Fa.Blocks[0]]}},true));}
+    [Fact]public void UnknownFieldsTypesAndExcessSizeAreRejected(){Assert.Throws<JsonException>(()=>JsonSerializer.Deserialize<CmsPageWrite>("{\"action\":\"Publish\",\"paid\":true}",CmsPageRules.Json));var c=Content();Assert.Throws<BusinessException>(()=>CmsPageRules.Content(c with{Fa=c.Fa with{Blocks=Enumerable.Range(0,21).Select(_=>c.Fa.Blocks[0] with{Id=Guid.NewGuid().ToString("N")}).ToArray()}},false));var big=c with{Fa=c.Fa with{Blocks=Enumerable.Range(0,10).Select(_=>c.Fa.Blocks[0] with{Id=Guid.NewGuid().ToString("N"),Text=new string('a',8000)}).ToArray()}};Assert.Throws<BusinessException>(()=>CmsPageRules.Content(big,false));}
+    [Fact]public void OperationHasNoImplicitPublicationOrMutableAddress(){CmsPageRules.Input(new("Create",Slug:"about-sayman",IsDemo:true,Content:Content()),true);var version=Convert.ToBase64String(new byte[8]);CmsPageRules.Input(new("Save",version,Content:Content()),false);CmsPageRules.Input(new("Publish",version,Confirmed:true),false);foreach(var i in new[]{new CmsPageWrite("Publish",version),new("Publish",version,Content:Content(),Confirmed:true),new("Save",version,Slug:"changed",Content:Content()),new("Restore",version,Confirmed:true),new("Create",Slug:"UPPER",IsDemo:true,Content:Content())})Assert.Throws<BusinessException>(()=>CmsPageRules.Input(i,i.Action=="Create"));}
+    [Fact]public void PageOriginsAndHistoryAreImmutableBeforeAnyDatabaseWrite(){using var db=new CmsDbContext(new DbContextOptionsBuilder<CmsDbContext>().UseSqlServer("Server=unused;Database=unused").Options);var c=new CmsPageCommand{ActorId="staff",CommandId=Guid.NewGuid().ToString("N"),PageId=Guid.NewGuid().ToString("N")};db.Attach(c);db.Remove(c);Assert.Equal("cms_page_immutable",Assert.Throws<BusinessException>(()=>db.SaveChanges()).Code);}
+}

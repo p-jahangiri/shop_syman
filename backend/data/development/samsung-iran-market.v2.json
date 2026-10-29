@@ -1,0 +1,683 @@
+{
+  "schemaVersion": 1,
+  "datasetId": "samsung-iran-market-2026-10-29-v2",
+  "isDemo": true,
+  "allowedEnvironments": [
+    "Development"
+  ],
+  "checkedOn": "2026-10-29",
+  "scope": "Four additional real Samsung model families; reviewed regional configurations, not an availability feed.",
+  "stockAndSupplyGuarantee": false,
+  "referencePricesIncluded": false,
+  "publicProvenanceAllowed": false,
+  "configurationIdRecipe": "First 32 lowercase hex characters of SHA256 UTF-8 market-phone-config:v1:<model.key>:<configuration.key>.",
+  "models": [
+    {
+      "key": "samsung-galaxy-s25-plus",
+      "categoryId": "phones",
+      "brandId": "samsung",
+      "slug": "samsung-galaxy-s25-plus",
+      "modelCode": "SM-S936B",
+      "nameFa": "گوشی سامسونگ Galaxy S25+",
+      "nameEn": "Samsung Galaxy S25+",
+      "descriptionFa": "نمایشگر ۶٫۷ اینچی و باتری با ظرفیت معمول ۴۹۰۰ میلی‌آمپرساعت، همراه تراشهٔ Snapdragon 8 Elite for Galaxy.",
+      "descriptionEn": "6.7-inch display, 4900 mAh typical battery and Snapdragon 8 Elite for Galaxy.",
+      "isDemo": true,
+      "referencePriceRial": null,
+      "availability": "unknown",
+      "imageUrls": [
+        "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_navy_plus_PC.png",
+        "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_icyBlue_plus_PC.png",
+        "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_silverShadow_plus_PC.png",
+        "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_mint_plus_PC.png"
+      ],
+      "defaultConfigurationKey": "12-256-navy",
+      "specifications": {
+        "screenInches": "6.7",
+        "resolution": "3120 × 1440",
+        "processor": "Snapdragon 8 Elite for Galaxy",
+        "rearCameraMp": [
+          "50",
+          "10",
+          "12"
+        ],
+        "frontCameraMp": "12",
+        "batteryTypicalMah": "4900",
+        "weightG": "190",
+        "chargingMaxW": "45",
+        "protection": "IP68",
+        "dimensionsMm": "158.4 × 75.8 × 7.3",
+        "display": "Dynamic AMOLED 2X",
+        "refreshRateHz": "120",
+        "network": "5G"
+      },
+      "colors": [
+        {
+          "key": "navy",
+          "nameFa": "سرمه‌ای",
+          "nameEn": "Navy",
+          "hex": "#35465d",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_navy_plus_PC.png"
+        },
+        {
+          "key": "icyblue",
+          "nameFa": "آبی یخی",
+          "nameEn": "Icyblue",
+          "hex": "#d5e2e9",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_icyBlue_plus_PC.png"
+        },
+        {
+          "key": "silver-shadow",
+          "nameFa": "نقره‌ای",
+          "nameEn": "Silver Shadow",
+          "hex": "#c8c8c6",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_silverShadow_plus_PC.png"
+        },
+        {
+          "key": "mint",
+          "nameFa": "سبز نعنایی",
+          "nameEn": "Mint",
+          "hex": "#b9d7c6",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_mint_plus_PC.png"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "e49b61f4a58b2414c483c5035c2cf3b3",
+          "key": "12-256-navy",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "navy",
+          "colorNameFa": "سرمه‌ای",
+          "colorNameEn": "Navy",
+          "colorHex": "#35465d",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_navy_plus_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "fc036ca87fa82c6277488c3d5096b686",
+          "key": "12-256-icyblue",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "icyblue",
+          "colorNameFa": "آبی یخی",
+          "colorNameEn": "Icyblue",
+          "colorHex": "#d5e2e9",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_icyBlue_plus_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "f4d3af99d0fd3cc5c5de48ea3f647653",
+          "key": "12-256-silver-shadow",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "silver-shadow",
+          "colorNameFa": "نقره‌ای",
+          "colorNameEn": "Silver Shadow",
+          "colorHex": "#c8c8c6",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_silverShadow_plus_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "3e4f13daee5f45ca021208cd3908e3c7",
+          "key": "12-256-mint",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "mint",
+          "colorNameFa": "سبز نعنایی",
+          "colorNameEn": "Mint",
+          "colorHex": "#b9d7c6",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_mint_plus_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "30c228baddbfeb04ddee1e46c5781c79",
+          "key": "12-512-navy",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "navy",
+          "colorNameFa": "سرمه‌ای",
+          "colorNameEn": "Navy",
+          "colorHex": "#35465d",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_navy_plus_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "f6c2208fa4dd7e32fd589f68c988981c",
+          "key": "12-512-icyblue",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "icyblue",
+          "colorNameFa": "آبی یخی",
+          "colorNameEn": "Icyblue",
+          "colorHex": "#d5e2e9",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_icyBlue_plus_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "1f7c3002f7ea45cb9cfb099d0ec74cbe",
+          "key": "12-512-silver-shadow",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "silver-shadow",
+          "colorNameFa": "نقره‌ای",
+          "colorNameEn": "Silver Shadow",
+          "colorHex": "#c8c8c6",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_silverShadow_plus_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "8c476e5bcb479b06bf2ecbc7c473cc4a",
+          "key": "12-512-mint",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "mint",
+          "colorNameFa": "سبز نعنایی",
+          "colorNameEn": "Mint",
+          "colorHex": "#b9d7c6",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-s25/buy/product_color_mint_plus_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        }
+      ]
+    },
+    {
+      "key": "samsung-galaxy-s25-edge",
+      "categoryId": "phones",
+      "brandId": "samsung",
+      "slug": "samsung-galaxy-s25-edge",
+      "modelCode": "SM-S937B",
+      "nameFa": "گوشی سامسونگ Galaxy S25 Edge",
+      "nameEn": "Samsung Galaxy S25 Edge",
+      "descriptionFa": "بدنهٔ ۵٫۸ میلی‌متری، نمایشگر ۶٫۷ اینچی و دوربین اصلی ۲۰۰ مگاپیکسلی.",
+      "descriptionEn": "5.8 mm body, 6.7-inch display and 200 MP main camera.",
+      "isDemo": true,
+      "referencePriceRial": null,
+      "availability": "unknown",
+      "imageUrls": [
+        "https://images.samsung.com/is/image/samsung/assets/ae/p6_gro2/product_color_titaniumSilver_PC1.png",
+        "https://images.samsung.com/is/image/samsung/assets/ae/p6_gro2/product_color_titaniumJetblack_PC.jpg",
+        "https://images.samsung.com/is/image/samsung/assets/ae/p6_gro2/product_color_titaniumIcyblue_PC1.png"
+      ],
+      "defaultConfigurationKey": "12-256-titanium-silver",
+      "specifications": {
+        "screenInches": "6.7",
+        "resolution": "3120 × 1440",
+        "processor": "Snapdragon 8 Elite for Galaxy",
+        "rearCameraMp": [
+          "200",
+          "12"
+        ],
+        "frontCameraMp": "12",
+        "batteryTypicalMah": "3900",
+        "weightG": "163",
+        "chargingMaxW": "25",
+        "protection": "IP68",
+        "dimensionsMm": "158.2 × 75.6 × 5.8",
+        "display": "Dynamic AMOLED 2X",
+        "refreshRateHz": "120",
+        "network": "5G"
+      },
+      "colors": [
+        {
+          "key": "titanium-silver",
+          "nameFa": "نقره‌ای تیتانیومی",
+          "nameEn": "Titanium Silver",
+          "hex": "#bfc4c7",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/assets/ae/p6_gro2/product_color_titaniumSilver_PC1.png"
+        },
+        {
+          "key": "titanium-jetblack",
+          "nameFa": "مشکی تیتانیومی",
+          "nameEn": "Titanium Jetblack",
+          "hex": "#414649",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/assets/ae/p6_gro2/product_color_titaniumJetblack_PC.jpg"
+        },
+        {
+          "key": "titanium-icyblue",
+          "nameFa": "آبی یخی تیتانیومی",
+          "nameEn": "Titanium Icyblue",
+          "hex": "#c6d6e1",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/assets/ae/p6_gro2/product_color_titaniumIcyblue_PC1.png"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "90576b9445cbd0249fdcce8e348054c3",
+          "key": "12-256-titanium-silver",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "titanium-silver",
+          "colorNameFa": "نقره‌ای تیتانیومی",
+          "colorNameEn": "Titanium Silver",
+          "colorHex": "#bfc4c7",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/assets/ae/p6_gro2/product_color_titaniumSilver_PC1.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "e32e741eb38d375318daee501e9c2676",
+          "key": "12-512-titanium-silver",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "titanium-silver",
+          "colorNameFa": "نقره‌ای تیتانیومی",
+          "colorNameEn": "Titanium Silver",
+          "colorHex": "#bfc4c7",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/assets/ae/p6_gro2/product_color_titaniumSilver_PC1.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "8b39149003b5ddbe98fb186691d11f71",
+          "key": "12-256-titanium-jetblack",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "titanium-jetblack",
+          "colorNameFa": "مشکی تیتانیومی",
+          "colorNameEn": "Titanium Jetblack",
+          "colorHex": "#414649",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/assets/ae/p6_gro2/product_color_titaniumJetblack_PC.jpg",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "8d046fb2de2b0d46935c219d2d8e60e8",
+          "key": "12-512-titanium-jetblack",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "titanium-jetblack",
+          "colorNameFa": "مشکی تیتانیومی",
+          "colorNameEn": "Titanium Jetblack",
+          "colorHex": "#414649",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/assets/ae/p6_gro2/product_color_titaniumJetblack_PC.jpg",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "8ff704e880fa5630ed600da2325c81c3",
+          "key": "12-256-titanium-icyblue",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "titanium-icyblue",
+          "colorNameFa": "آبی یخی تیتانیومی",
+          "colorNameEn": "Titanium Icyblue",
+          "colorHex": "#c6d6e1",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/assets/ae/p6_gro2/product_color_titaniumIcyblue_PC1.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "96a42683acb3adee63a6374ff7ca7716",
+          "key": "12-512-titanium-icyblue",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "titanium-icyblue",
+          "colorNameFa": "آبی یخی تیتانیومی",
+          "colorNameEn": "Titanium Icyblue",
+          "colorHex": "#c6d6e1",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/assets/ae/p6_gro2/product_color_titaniumIcyblue_PC1.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        }
+      ]
+    },
+    {
+      "key": "samsung-galaxy-z-flip7",
+      "categoryId": "phones",
+      "brandId": "samsung",
+      "slug": "samsung-galaxy-z-flip7",
+      "modelCode": "SM-F766B",
+      "nameFa": "گوشی سامسونگ Galaxy Z Flip7",
+      "nameEn": "Samsung Galaxy Z Flip7",
+      "descriptionFa": "گوشی تاشو با نمایشگر اصلی ۶٫۹ اینچی، نمایشگر بیرونی ۴٫۱ اینچی و تراشهٔ Exynos 2500. ابعاد ثبت‌شده مربوط به حالت باز است.",
+      "descriptionEn": "Foldable phone with a 6.9-inch main display, 4.1-inch cover display and Exynos 2500. Listed dimensions are unfolded.",
+      "isDemo": true,
+      "referencePriceRial": null,
+      "availability": "unknown",
+      "imageUrls": [
+        "https://images.samsung.com/ae/smartphones/galaxy-z-flip7/buy/product_color_blueShadow_PC.png",
+        "https://images.samsung.com/ae/smartphones/galaxy-z-flip7/buy/product_color_jetBlack_PC.png",
+        "https://images.samsung.com/ae/smartphones/galaxy-z-flip7/buy/product_color_coralred_PC.png"
+      ],
+      "defaultConfigurationKey": "12-256-blue-shadow",
+      "specifications": {
+        "screenInches": "6.9",
+        "resolution": "2520 × 1080",
+        "processor": "Exynos 2500",
+        "rearCameraMp": [
+          "50",
+          "12"
+        ],
+        "frontCameraMp": "10",
+        "batteryTypicalMah": "4300",
+        "weightG": "188",
+        "chargingMaxW": "25",
+        "protection": "IP48",
+        "dimensionsMm": "166.7 × 75.2 × 6.5 (باز / unfolded)",
+        "display": "Dynamic AMOLED 2X",
+        "refreshRateHz": "120",
+        "network": "5G"
+      },
+      "colors": [
+        {
+          "key": "blue-shadow",
+          "nameFa": "آبی سایه‌دار",
+          "nameEn": "Blue Shadow",
+          "hex": "#7b9cb4",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-flip7/buy/product_color_blueShadow_PC.png"
+        },
+        {
+          "key": "jetblack",
+          "nameFa": "مشکی جت",
+          "nameEn": "Jetblack",
+          "hex": "#35383b",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-flip7/buy/product_color_jetBlack_PC.png"
+        },
+        {
+          "key": "coralred",
+          "nameFa": "قرمز مرجانی",
+          "nameEn": "Coralred",
+          "hex": "#df725f",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-flip7/buy/product_color_coralred_PC.png"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "f7913f675967f346a036976b9d24bccd",
+          "key": "12-256-blue-shadow",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "blue-shadow",
+          "colorNameFa": "آبی سایه‌دار",
+          "colorNameEn": "Blue Shadow",
+          "colorHex": "#7b9cb4",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-flip7/buy/product_color_blueShadow_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "24aaecfac3317f616efde014923c5f5e",
+          "key": "12-256-jetblack",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "jetblack",
+          "colorNameFa": "مشکی جت",
+          "colorNameEn": "Jetblack",
+          "colorHex": "#35383b",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-flip7/buy/product_color_jetBlack_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "650c10d9378fd730170ab8a235a5445a",
+          "key": "12-256-coralred",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "coralred",
+          "colorNameFa": "قرمز مرجانی",
+          "colorNameEn": "Coralred",
+          "colorHex": "#df725f",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-flip7/buy/product_color_coralred_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "7a258fbe325a05121f0b35fb736693fb",
+          "key": "12-512-blue-shadow",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "blue-shadow",
+          "colorNameFa": "آبی سایه‌دار",
+          "colorNameEn": "Blue Shadow",
+          "colorHex": "#7b9cb4",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-flip7/buy/product_color_blueShadow_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "195bfc66cad44a4a452cf192dda87300",
+          "key": "12-512-jetblack",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "jetblack",
+          "colorNameFa": "مشکی جت",
+          "colorNameEn": "Jetblack",
+          "colorHex": "#35383b",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-flip7/buy/product_color_jetBlack_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "59c6e4b815783cee1ac8ac98a766ede4",
+          "key": "12-512-coralred",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "coralred",
+          "colorNameFa": "قرمز مرجانی",
+          "colorNameEn": "Coralred",
+          "colorHex": "#df725f",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-flip7/buy/product_color_coralred_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        }
+      ]
+    },
+    {
+      "key": "samsung-galaxy-z-fold7",
+      "categoryId": "phones",
+      "brandId": "samsung",
+      "slug": "samsung-galaxy-z-fold7",
+      "modelCode": "SM-F966B",
+      "nameFa": "گوشی سامسونگ Galaxy Z Fold7",
+      "nameEn": "Samsung Galaxy Z Fold7",
+      "descriptionFa": "گوشی تاشو با نمایشگر اصلی ۸ اینچی، نمایشگر بیرونی ۶٫۵ اینچی و دوربین اصلی ۲۰۰ مگاپیکسلی. ابعاد ثبت‌شده مربوط به حالت باز است.",
+      "descriptionEn": "Foldable phone with an 8-inch main display, 6.5-inch cover display and 200 MP main camera. Listed dimensions are unfolded.",
+      "isDemo": true,
+      "referencePriceRial": null,
+      "availability": "unknown",
+      "imageUrls": [
+        "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_blueShadow_PC.png",
+        "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_jetBlack_PC.png",
+        "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_silverShadow_PC.png"
+      ],
+      "defaultConfigurationKey": "12-256-blue-shadow",
+      "specifications": {
+        "screenInches": "8.0",
+        "resolution": "2184 × 1968",
+        "processor": "Snapdragon 8 Elite for Galaxy",
+        "rearCameraMp": [
+          "200",
+          "12",
+          "10"
+        ],
+        "frontCameraMp": "10",
+        "batteryTypicalMah": "4400",
+        "weightG": "215",
+        "chargingMaxW": "25",
+        "protection": "IP48",
+        "dimensionsMm": "158.4 × 143.2 × 4.2 (باز / unfolded)",
+        "display": "Dynamic AMOLED 2X",
+        "refreshRateHz": "120",
+        "network": "5G"
+      },
+      "colors": [
+        {
+          "key": "blue-shadow",
+          "nameFa": "آبی سایه‌دار",
+          "nameEn": "Blue Shadow",
+          "hex": "#7b9cb4",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_blueShadow_PC.png"
+        },
+        {
+          "key": "jetblack",
+          "nameFa": "مشکی جت",
+          "nameEn": "Jetblack",
+          "hex": "#35383b",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_jetBlack_PC.png"
+        },
+        {
+          "key": "silver-shadow",
+          "nameFa": "نقره‌ای",
+          "nameEn": "Silver Shadow",
+          "hex": "#c8c8c6",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_silverShadow_PC.png"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "5664c786f51d29c2d775049fae22447b",
+          "key": "12-256-blue-shadow",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "blue-shadow",
+          "colorNameFa": "آبی سایه‌دار",
+          "colorNameEn": "Blue Shadow",
+          "colorHex": "#7b9cb4",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_blueShadow_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "7c63dec3cd2102d03c3562c1c1339074",
+          "key": "12-256-jetblack",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "jetblack",
+          "colorNameFa": "مشکی جت",
+          "colorNameEn": "Jetblack",
+          "colorHex": "#35383b",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_jetBlack_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "fa7b394be4617a2f8a5c100a8f9cf9c3",
+          "key": "12-256-silver-shadow",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "silver-shadow",
+          "colorNameFa": "نقره‌ای",
+          "colorNameEn": "Silver Shadow",
+          "colorHex": "#c8c8c6",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_silverShadow_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "425c57978acae62828d6842115e5efb2",
+          "key": "12-512-blue-shadow",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "blue-shadow",
+          "colorNameFa": "آبی سایه‌دار",
+          "colorNameEn": "Blue Shadow",
+          "colorHex": "#7b9cb4",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_blueShadow_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "3cff5143ec0af67b07947df92c883058",
+          "key": "16-1024-blue-shadow",
+          "ramGb": 16,
+          "storageGb": 1024,
+          "colorKey": "blue-shadow",
+          "colorNameFa": "آبی سایه‌دار",
+          "colorNameEn": "Blue Shadow",
+          "colorHex": "#7b9cb4",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_blueShadow_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "d809f19926f32153844f09159f5e21ac",
+          "key": "12-512-jetblack",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "jetblack",
+          "colorNameFa": "مشکی جت",
+          "colorNameEn": "Jetblack",
+          "colorHex": "#35383b",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_jetBlack_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "c34862378ee0ee1663d754317a1aefc7",
+          "key": "16-1024-jetblack",
+          "ramGb": 16,
+          "storageGb": 1024,
+          "colorKey": "jetblack",
+          "colorNameFa": "مشکی جت",
+          "colorNameEn": "Jetblack",
+          "colorHex": "#35383b",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_jetBlack_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        },
+        {
+          "id": "87e25bf5a6e5df65ae4b5cef0671a7f9",
+          "key": "12-512-silver-shadow",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "silver-shadow",
+          "colorNameFa": "نقره‌ای",
+          "colorNameEn": "Silver Shadow",
+          "colorHex": "#c8c8c6",
+          "imageUrl": "https://images.samsung.com/ae/smartphones/galaxy-z-fold7/buy/product_color_silverShadow_PC.png",
+          "linkedStoreVariantId": null,
+          "isDemo": true,
+          "availability": "unknown"
+        }
+      ]
+    }
+  ]
+}

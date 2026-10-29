@@ -1,0 +1,11 @@
+# بررسی انسانی پرونده — هستهٔ پذیرفتهٔ۵۹
+
+ادامهٔ۵۸، هستهٔ۵۹ پذیرفته و روی اصلی محلی منتشر است؛ STATUS و credit-review59-main-release.json مرجع شواهد و حدود هستند. تصمیم فقط staff/MFA با credit.write موجود، روی Submitted و شناسه/نسخهٔ دقیق آخرین submission است. خواندن با credit.read یا صاحب پرونده، سیاست شرایط با finance جداست. نقش/مجوز تازه‌ای ساخته یا به حساب اصلی اعطا نمی‌شود.
+
+نتیجه‌های صریح: Returned به Draft برای اصلاح، Declined، Approved. یادداشت دلیل برای مشتری و زبان آن ضروری است؛ هیچ نتیجه/مبلغ/مدت پیش‌فرضی ساخته نمی‌شود. Approved به مبلغ صحیح ریال مثبت که مدیر صریحاً وارد می‌کند و از درخواست بیشتر نیست و زمان انقضای UTC صریحِ آینده نیاز دارد. نتیجه‌های دیگر مبلغ/انقضا نمی‌پذیرند. تأیید انسانی، سفارش یا رزرو/پرداخت/ضمانت خرید نیست؛ مصرف اعتبار در checkout هنوز مرحلهٔ بعد است. تصمیم خودکار بر دادهٔ شخصی یا امتیازسازی نداریم.
+
+اصل submission/رضایت/طرح/فایل immutable است؛ تصمیم بر همان snapshot گرفته می‌شود، نه ترجمه یا شرایط تازه. Reviewed history و یادداشت/رسید purpose مجزا و رمز دارند. یک تصمیم نهایی برای هر submission، فرمان actor/UUID/body ثابت، snapshot/state/pointer/event/receipt/audit در root Serializable و gate مشترک پرونده، و رقابت با withdrawal فقط یک برنده دارد. Return همان فایل‌ها/رضایت/سابقه را نگه می‌دارد؛ مشتری در Draft می‌تواند اصلاح و با version جاری دوباره submit کند. ارسال تازه اشارهٔ تصمیم جاری را خالی می‌کند ولی اصل تصمیم قبلی در تاریخچه محفوظ است. تا اتصال checkout هیچ authorization مصرف نمی‌شود.
+
+پذیرش لازم: SQL واقعی سه نتیجه/return-resubmit، ownership/role/MFA، ریال بزرگ/انقضا/محدودیت نسخه، replay تاریخی، auditrollback، race withdrawal، FK/immutability/guardedDown؛ decoder/BFF/journal و مرورگر مصنوعیِ غیرتعهدآور. تصمیم واقعی دربارهٔ شخص یا حساب اصلی در QA گرفته نمی‌شود. mainFilesDisabled و سیاست واقعی تعیین‌نشده محفوظ‌اند.
+
+پذیرش:۹۷۹unit/۶۸۴SQL/۴۲۷storefront/۲۱۴admin/۱۲proxy؛۱۱SQLwire/۱۷۰browserwire،۷فرمان/۱قطعReturn→۱رسید/۰duplicate وcleanup/backup/۱۳۳۱HTTPمحلی. UIتصمیم را تا دریافت snapshot جاری می‌بندد و آخرینsnapshot/decisionتازه خودکارانتخاب می‌شود. Approveروی candidate59-final وcopyنهایی فقطمتنتاریخچه بود؛ finalCopyWritesRetested=false،API/proxyهمهexact. هیچتصمیم واقعی دربارهٔشخص گرفته نشد. اتصالquote/order، revokeمصرف‌نشده وCREDIT-02 هنوزبازند.

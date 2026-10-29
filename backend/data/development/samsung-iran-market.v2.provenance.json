@@ -1,0 +1,235 @@
+{
+  "checkedOn": "2026-10-29",
+  "officialSnapshots": [
+    {
+      "model": "galaxy-s25",
+      "url": "https://www.samsung.com/ae/smartphones/galaxy-s25/buy/",
+      "bytes": 3279109,
+      "sha256": "b5670e2986dd11edfdc6c27c9ecd55ba2230a6e382ed9e7bc8caa5d487f23f36"
+    },
+    {
+      "model": "galaxy-s25-edge",
+      "url": "https://www.samsung.com/ae/smartphones/galaxy-s25-edge/buy/",
+      "bytes": 4049438,
+      "sha256": "70c18418bef9ab3dfa2099b6b010579270f47faf9b4ff53621221e0fce5782bb"
+    },
+    {
+      "model": "galaxy-z-flip7",
+      "url": "https://www.samsung.com/ae/smartphones/galaxy-z-flip7/buy/",
+      "bytes": 2589624,
+      "sha256": "7bbdcb412dfa511583597c3c04278eb9d353ee71d1253fdfbc905652a6a651bd"
+    },
+    {
+      "model": "galaxy-z-fold7",
+      "url": "https://www.samsung.com/ae/smartphones/galaxy-z-fold7/buy/",
+      "bytes": 3654778,
+      "sha256": "529a9ae59356d749c2efa1a720a6c2278002524156deb68fef54bd061920716f"
+    }
+  ],
+  "configurations": [
+    {
+      "model": "samsung-galaxy-s25-plus",
+      "configurationKey": "12-256-navy",
+      "officialSku": "SM-S936BDBIMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25/buy/"
+    },
+    {
+      "model": "samsung-galaxy-s25-plus",
+      "configurationKey": "12-256-icyblue",
+      "officialSku": "SM-S936BLBIMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25/buy/"
+    },
+    {
+      "model": "samsung-galaxy-s25-plus",
+      "configurationKey": "12-256-silver-shadow",
+      "officialSku": "SM-S936BZSIMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25/buy/"
+    },
+    {
+      "model": "samsung-galaxy-s25-plus",
+      "configurationKey": "12-256-mint",
+      "officialSku": "SM-S936BLGIMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25/buy/"
+    },
+    {
+      "model": "samsung-galaxy-s25-plus",
+      "configurationKey": "12-512-navy",
+      "officialSku": "SM-S936BDBOMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25/buy/"
+    },
+    {
+      "model": "samsung-galaxy-s25-plus",
+      "configurationKey": "12-512-icyblue",
+      "officialSku": "SM-S936BLBOMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25/buy/"
+    },
+    {
+      "model": "samsung-galaxy-s25-plus",
+      "configurationKey": "12-512-silver-shadow",
+      "officialSku": "SM-S936BZSOMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25/buy/"
+    },
+    {
+      "model": "samsung-galaxy-s25-plus",
+      "configurationKey": "12-512-mint",
+      "officialSku": "SM-S936BLGOMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25/buy/"
+    },
+    {
+      "model": "samsung-galaxy-s25-edge",
+      "configurationKey": "12-256-titanium-silver",
+      "officialSku": "SM-S937BZSIMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25-edge/buy/"
+    },
+    {
+      "model": "samsung-galaxy-s25-edge",
+      "configurationKey": "12-512-titanium-silver",
+      "officialSku": "SM-S937BZSOMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25-edge/buy/"
+    },
+    {
+      "model": "samsung-galaxy-s25-edge",
+      "configurationKey": "12-256-titanium-jetblack",
+      "officialSku": "SM-S937BZKIMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25-edge/buy/"
+    },
+    {
+      "model": "samsung-galaxy-s25-edge",
+      "configurationKey": "12-512-titanium-jetblack",
+      "officialSku": "SM-S937BZKOMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25-edge/buy/"
+    },
+    {
+      "model": "samsung-galaxy-s25-edge",
+      "configurationKey": "12-256-titanium-icyblue",
+      "officialSku": "SM-S937BLBIMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25-edge/buy/"
+    },
+    {
+      "model": "samsung-galaxy-s25-edge",
+      "configurationKey": "12-512-titanium-icyblue",
+      "officialSku": "SM-S937BLBOMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-s25-edge/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-flip7",
+      "configurationKey": "12-256-blue-shadow",
+      "officialSku": "SM-F766BDBAMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-flip7/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-flip7",
+      "configurationKey": "12-256-jetblack",
+      "officialSku": "SM-F766BZKAMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-flip7/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-flip7",
+      "configurationKey": "12-256-coralred",
+      "officialSku": "SM-F766BZRAMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-flip7/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-flip7",
+      "configurationKey": "12-512-blue-shadow",
+      "officialSku": "SM-F766BDBEMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-flip7/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-flip7",
+      "configurationKey": "12-512-jetblack",
+      "officialSku": "SM-F766BZKEMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-flip7/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-flip7",
+      "configurationKey": "12-512-coralred",
+      "officialSku": "SM-F766BZREMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-flip7/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-fold7",
+      "configurationKey": "12-256-blue-shadow",
+      "officialSku": "SM-F966BDBDMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-fold7/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-fold7",
+      "configurationKey": "12-256-jetblack",
+      "officialSku": "SM-F966BZKDMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-fold7/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-fold7",
+      "configurationKey": "12-256-silver-shadow",
+      "officialSku": "SM-F966BZSDMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-fold7/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-fold7",
+      "configurationKey": "12-512-blue-shadow",
+      "officialSku": "SM-F966BDBGMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-fold7/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-fold7",
+      "configurationKey": "16-1024-blue-shadow",
+      "officialSku": "SM-F966BDBHMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-fold7/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-fold7",
+      "configurationKey": "12-512-jetblack",
+      "officialSku": "SM-F966BZKGMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-fold7/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-fold7",
+      "configurationKey": "16-1024-jetblack",
+      "officialSku": "SM-F966BZKHMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-fold7/buy/"
+    },
+    {
+      "model": "samsung-galaxy-z-fold7",
+      "configurationKey": "12-512-silver-shadow",
+      "officialSku": "SM-F966BZSGMEA",
+      "source": "https://www.samsung.com/ae/smartphones/galaxy-z-fold7/buy/"
+    }
+  ],
+  "notes": [
+    "Only configurations explicitly present in the official Gulf optionMappings; no cartesian product.",
+    "Samsung.com exclusive colours excluded. Swatch hex values are approximate, photographs identify colour.",
+    "Regional model existence does not prove current Iran stock, registration, warranty, price or sourcing availability."
+  ],
+  "specificationSources": [
+    "https://news.samsung.com/global/samsung-galaxy-s25-series-sets-the-standard-of-ai-phone-as-a-true-ai-companion",
+    "https://news.samsung.com/sg/meet-the-samsung-galaxy-s25-edge-an-engineering-marvel-of-new-slim-hardware-innovation",
+    "https://www.samsungmobilepress.com/articles/samsung-galaxy-z-flip7-a-pocket-sized-ai-powerhouse-with-a-new-edge-to-edge-flexwindow",
+    "https://www.samsungmobilepress.com/articles/samsung-galaxy-z-fold7-raising-the-bar-for-smartphones"
+  ],
+  "datasetSha256": "f402a97bd1e98f90d72b4722ae26e2be0e0dbf66e5462fcdd2d0ce256cce2267",
+  "iranCataloguePresence": [
+    {
+      "models": [
+        "Galaxy Z Flip7",
+        "Galaxy Z Fold7"
+      ],
+      "url": "https://www.technolife.com/category/mobile/mobile-phone/brand-samsung/series-z",
+      "purpose": "Model-family and RAM/storage presence only; no seller price, stock, warranty, registration or colour claim imported."
+    },
+    {
+      "models": [
+        "Galaxy S25+"
+      ],
+      "url": "https://www.technolife.com/product-73370/گوشی-موبايل-سامسونگ-مدل-galaxy-s25-plus-5g-ظرفیت-256-گیگابایت-رم-12-گیگابایت",
+      "purpose": "Family presence only."
+    },
+    {
+      "models": [
+        "Galaxy S25 Edge"
+      ],
+      "url": "https://www.technolife.com/product-77820/گوشی-موبايل-سامسونگ-مدل-galaxy-s25-edge-ظرفیت-512-گیگابایت-رم-12-گیگابایت---ویتنام",
+      "purpose": "Family presence only."
+    }
+  ]
+}

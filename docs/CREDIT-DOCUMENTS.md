@@ -1,0 +1,15 @@
+# مدارک خصوصی پروندهٔ چکی — هستهٔ برش۵۷ پذیرفته و محلی منتشر
+
+ادامهٔ CREDIT-01 پس اصلی۵۶ و منتشر در اصلی۵۷: مشتری مدرک را فقط برای پروندهٔ Draft خودش، رضایت جاری و همان revision/کلید تعریف مدرک بارگذاری می‌کند. شرایط باید همچنان فعال و جاری باشند. MIME و اندازه از تعریف تغییرناپذیر خوانده می‌شوند؛ storage/scanner معتبر لازم است. نام/فایل نمونهٔ هویتی واقعی ساخته نمی‌شود. ثبت مدرک تأیید اعتبار یا submit/سفارش نیست.
+
+Files مالک object رمز‌شده/اسکن/metadata و Credit مالک اتصال رابطه‌ای به پرونده/رضایت/revision/کلید است. scan و object I/O خارج تراکنش SQL و ثبت اتصال/نسخهٔ پرونده/event/receipt/audit در root Serializable هستند. قفل شرایط سپس فرمان‌های پرونده، preflight و بازاعتبارسنجی پس I/O، مانع اتصال فایل به رضایت منقضی یا پروندهٔ لغوشده‌اند. object آمادهٔ بدون اتصال خودکار پاک نمی‌شود؛ بازیابی فقط با UUID/بدنه/فایل اصلی است.
+
+تعویض مدرک صریحاً ID فایل جاری را می‌فرستد؛ فایل‌ها/اتصال‌ها و رسید قدیمی append-only می‌مانند. تغییر رضایت، مدارک قدیمی را به نسخهٔ جدید منتقل نمی‌کند. سقف فنی۴۸ اتصال تاریخی در یک پرونده و سقف جهانی۸MiB در هر فایل است؛ سقف تعریف مدرک می‌تواند کوچک‌تر باشد. هیچ فایل عمومی یا URL مستقیم/presign داده نمی‌شود. دانلود فقط مالک یا staff/MFA/credit.read، با audit اجباری، attachment/no-store/noindex/nosniff و bounded slots/deadline است. کارکنان از طرف مشتری مدرک/رضایت ایجاد نمی‌کنند.
+
+UI هر دو زبان، تعریف/required/اندازه/MIME، فایل فعلی/تاریخی، جایگزینی صریح، unknown و GET receipt و دانلود مجاز را پوشش می‌دهد. journal فقط RAM، به حساب مقید و logout پاک‌کننده است؛ full reload فایل/RAM را حفظ نمی‌کند. PWA مسیر فایل/پرونده را cache نمی‌کند. اصلیFiles Disabled باقی می‌ماند مگر storage معتبر مستقل تنظیم شود؛ QA موفق به معنی فعال‌بودن اصلی نیست.
+
+پذیرش:۹۷۳unit/۶۷۳SQL واقعی/۴۱۱storefront/۲۱۴admin/۱۰proxy،۹SQLwire/۸۰browserwire. SQL تعویض/FK/همزمانی/replay/auditrollback/تغییرشرایط حینscan را پوشش می‌دهد؛ مرورگر یک upload با lost-success وGETreceipt، سه پاسخ دانلود دقیق، FA/EN، حفظ فایل قبلی بدون انتقال به رضایت تازه، cancel وprivacy/logout/relogin را پوشش می‌دهد. **آپلود جایگزین دوم مرورگر اجرا نشده** و byte فایل ذخیره‌شدهٔ سیستم بررسی نشده؛ byte پاسخ HTTP دقیق است. انتخاب‌گر CUA باوجودtimeout بیش از۶ساعت معطل ماند؛ دوباره اجرا نشد. امضاهای AV پس وقفه با FreshClam/sigtool تأیید/تازه و سرویس واقعی دوباره آزموده شد. STATUS حدود دقیق و شواهد شکست/بازیابی را نگه می‌دارد.
+
+functionalwrites روی snapshot نخست بود؛ frontend اصلاح مهلت انتقال۴۵ثانیه و binding دانلود بر epoch به‌جای object توکن دارد.۱۴API DLL/proxy/adminassets ثابت‌اند؛ خواندن/دانلود/لغو/خروج در UI نهایی دوباره پذیرفته شدند. QA و سرویس‌های labelدار جمع‌اند. پس backup و حفظ داده، migration روی اصلی و۱۲۳۲HTTP پذیرفته است؛ Files اصلی Disabled و دو جدول تازه خالی‌اند. submit/manualreview/checkout/سررسید همچنان بازند. `credit-documents57-source-acceptance.json` و `credit-documents57-main-release.json` در artifacts/checks مرجع‌اند.
+
+ادامهٔ پذیرفته در اصلی۵۹: submit/withdraw۵۸ و بررسی انسانیReturn/resubmit/Approve/Decline۵۹ تکمیل‌اند؛ CREDIT-SUBMISSION/CREDIT-REVIEW/STATUS آخرینمرجع‌اند و محدودیت‌های قدیمی این سند تاریخی‌اند. Files اصلیDisabled؛ اتصالبهquote/checkout وچرخهٔCREDIT-02 همچنانبازاست.

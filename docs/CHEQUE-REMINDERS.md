@@ -1,0 +1,22 @@
+# یادآوری چک در حساب مشتری — دستی source75 پذیرفته، A86/A87
+
+پس گزارش A85، نخست یادآوری دستیِ محدود به یک چک و سپس تنظیم صریح زمان‌بندی خودکار ساخته می‌شود. کانال این برش فقط صندوق خصوصی داخل حساب مشتری است؛ SMS/ایمیل/Push با D16 خاموش می‌مانند. هیچ سیاست زمانی یا ارسال خودکاری در اصلی فعال نمی‌شود. اپراتور مالی MFA+finance.write متن ثابت و حقایق واقعی سند را بازبینی می‌کند؛ متن دلخواه یا شمارهٔ تماس/مرجع خصوصی چک به مشتری ارسال نمی‌شود.
+
+یادآوری دستی فقط برای سفارش CreditApproved/Fulfilled و سند نگهداری‌شده Received/Deposited/BouncedReported/Withdrawn است. AwaitingPayment/Expired/Cancelled/Paid و سند CollectedReported/ReturnedToCustomer مجاز نیستند؛ نگهداری چک در سفارش لغوشده در گزارش باقی می‌ماند ولی خودبه‌خود مطالبهٔ پرداخت نمی‌سازد. اعلان صرفاً به تاریخ و مبلغ ثبت‌شده و لینک سفارش اشاره می‌کند، نه بدهی قطعی/تأیید بانک/مجوز ارسال. نمایش فارسی و انگلیسی از نسخهٔ ثابت قرارداد رابط است؛ متن خصوصی اپراتور فقط برای audit و تاریخچهٔ مالی محافظت می‌شود.
+
+یک یادآوری برای هر سند در هر روز مدنی تهران سقف فنی جلوگیری از تکرار است؛ تغییر ledger، policy آینده یا UUID جدید این سقف را دور نمی‌زند. تاریخ و مبلغ از سرور می‌آیند و فرم آن‌ها را نمی‌فرستد. preview به owner/order/cheque، نسخهٔ سفارش/گردش، روز تهران و حقایق مالی مقید است. تأیید اولیه false و ارسال explicit؛ command actor+UUID/hash/receipt-before-CAS، خطای ارتباط و GETرسید همان فرمان، global RAMjournal و guard/logout چندتب مانند سایر عملیات مالی‌اند. تاریخچه append-only/DP و صفحه۲۰تایی است؛ سقف فنی3650رویداد هر سند بیش از بازهٔ فعلی طرح‌های۶۰ماهه است.
+
+Credit مالک رویداد و رسید یادآوری است؛ Notifications یک جدول مالی خصوصی مستقل دارد و قرارداد قدیمی ticketId صندوق پشتیبانی عوض نمی‌شود. قرارداد داخلی writer فقط از رویداد اعتبارسنجی‌شدهٔ Credit فراخوانی می‌شود؛ owner/order/cheque/dueDate/rial/روز و شناسهٔ رویداد به payload رمزنگاری‌شده و hash مقیدند. Notifications مالک readAt monotone و فهرست/count/cursorمقیدowner است. rootIdentitySalesCreditNotificationsSerializable/audit هر دو سمت را اتمیک ثبت می‌کند و خرابی ارسال یا audit هر دو را rollback می‌کند؛ notification replay تکراری نمی‌سازد. هیچ contextماژول دیگر از دامنهٔ Credit خوانده نمی‌شود. realtime فقط invalidationپسcommit؛ دادهٔ پایدار SQL مرجع است.
+
+مشتری فقط اعلان و رسید خواندن خود را می‌بیند؛ refخصوصی/Note/actor/شواهد اعتبار/مدارک غایب‌اند. routeBFF/sessionallowlist/private/no-store/noindex/origin/query/body/responsebounds لازم‌اند؛ فید و شمارندهٔ پشتیبانی قبلی با همان قرارداد باقی می‌مانند. پنل یادآوری را کنار جزئیات همان چک و گزارش تاریخچه می‌آورد. مشتری لینک سفارش و وضعیت خوانده/نخوانده، FA/EN، loading/empty/error و خروج امن دارد.
+
+پذیرش پیش از انتشار: مجموع ریال بزرگ/نسخه‌ها/روز تهران، raceدو ارسال/تغییرledger/روز بعد، replayپسCASوexpiry، sourceخراب/DP/receiptTamper، rollbackauditوNotifications، منع role/MFA/foreignowner/فیلد جعلی، SQLواقعی وdecoderواقعی، مرورگر Finance→CustomerFAEN و lostresponse→sameGET/۰duplicate، شمارنده و readAt همزمان، mobile/overflow/logout، حفظ همهٔ جدولهای دیگر، cleanup و انتشار محلی با backup. **نسخهٔ دستی source75 در SQL واقعی و مرورگر پذیرفته است؛ انتشار اصلی و زمان‌بندی خودکار هنوز پذیرفته نیستند.** انتشار گزارش73 مستقل و منتظر پاسخ سؤال محدود توقف است.
+
+
+## پذیرش دستی A87 — 2026-10-28
+
+۱۱۲۳unit،۷۷۱SQL با discovery تازه و انتخاب هر کلاس کامل دقیقاً یک‌بار،۵۲۳front/۲۱۷admin/۲۴proxy پاس؛۱۴DLL محصول در API/unit/SQL/harness/frozen برابر. ۲۸SQLwire با۷بدنهٔ واقعی مقید به preview/receipt و۴۲browserwire با۲POST/۲قطع پسcommit/۲GET همان رسید و صفر duplicate. خطای ابزار تست در خواندن JsonContent مصرف‌شده در گروهB محفوظ است؛ تمام کلاس۵موردی پس capture قبلtransport دوباره پاس شد و هیچ assertion محصول ضعیف نشد.
+
+۲۵NativeHTTP فقط پیش‌نیازQA، صفرReminder قبل مرورگر. اعلان انگلیسی/فارسی/RTL، count/read/unread، لینک سفارش و logoutچندتب پذیرفته؛ mobileclient375=scroll375 و dialog330. اولین دکمهٔ global به مقصد نرفت؛ اصلاح CSS هفت banner با handler ثابت در تلاش دوم pointer-hit و بازیابی بدون سفارش منتخب را پذیرفت. ادعای WCAG/دستگاهواقعی/performance کلی نیست.
+
+QA196جدول: فقط ReminderEvents/Commands/CreditInbox/Audit/Users/Sessions تغییر؛۱۹۰دیگر دقیقاً برابر. دو reminder/دو receipt/دو اعلان خوانده/دو audit؛ ledger/upfront/approval/clearance/Sales/Inventory/scope/policy و deadline اصلی تا100ns ثابت، Paid0. GUID/کلید/credential/session/چهارپورت/تب139–142 جمع و هیچ QA DB باقی نیست. مرجع `artifacts/checks/credit-reminders75-source-acceptance.json` و `tmp/credit-reminders75-ui-runtime-set.json`. migration74/75 سه جدول تازه دارند؛ Down با وجود تاریخچه رد می‌شود. main72 و frozen73 تغییر نکرده‌اند. بعدی تنظیم صریح و worker خودکار، بدون cadence پیش‌فرض یا فعال‌سازی اصلی.

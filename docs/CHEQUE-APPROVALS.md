@@ -1,0 +1,15 @@
+# تأیید دستی هر چک — اجرای D35، پذیرش و انتشار محلی۶۹
+
+اصلی۶۹ پذیرفته و منتشر است؛ STATUS/A79 شواهدند. D35 اجازهٔ ارسال را به پیش‌پرداخت دریافت‌شده و تأیید دستی همهٔ چک‌ها وابسته می‌کند؛ انتظار وصول همهٔ چک‌ها لازم نیست. این برش تأیید هر سند را مستقل از دفتر دریافت/گردش چک ثبت می‌کند. مجوز نهایی و تعهد موجودی در برش بعد با همین حقایق متصل می‌شوند؛ صرف ایجاد این API اجازهٔ ارسال نمی‌دهد.
+
+FinanceMFA با finance.read وضعیت/تاریخچه و با finance.write فرمان می‌دهد. Approve فقط چک واقعیِ دریافت‌شده از برنامهٔ جاریِ سفارش باز و منقضی‌نشده، در حالت Received/Deposited/CollectedReported است؛ مرجع/مبلغ/سررسید و وضعیت سند سرور برای بازبینی نمایش داده می‌شود. BouncedReported/Withdrawn/ReturnedToCustomer قابل تأیید نیستند. این انتخاب فنی صلاحیت حقوقی/بانکی نمی‌سازد؛ متن بازبینی صریح گواهی انسانی است. Approve با Note لازم و Confirmedصریح، بدون مبلغ یا سررسید ورودی. Revoke فقط گواهی را با دلیل باطل می‌کند؛ دریافت یا گردش چک/وجه را تغییر نمی‌دهد.
+
+هر تأیید به OrderVersion/ScheduleVersion/LedgerVersion/رویداد جاری گردش و نسخهٔ قبلی خود مقید است. هر تغییر گردش—even Deposit یا اصلاح گزارش وصول—تأیید قبلی را برای وضعیت تازه نامعتبر می‌کند و بازبینی تازه لازم است. تقویم پس دریافت چک طبق قاعدهٔ موجود ثابت است. تأیید تکراری وضعیت جاری رد می‌شود؛ پس ابطال یا تغییر گردش، بازتأیید با نسخهٔ تازه مجاز است. اصلاح گواهی موجود پس cancel/expiry فقط RevokeباAcknowledgedClosedOrderصریح؛ دریافت تأیید تازه روی سفارش بسته/منقضی ممنوع. حالت آتی مجوز نهایی/ارسال این برش باز نمی‌کند.
+
+Credit مالک سه جدول append-only ChequeApprovals/​ChequeApprovalEvents/​ChequeApprovalCommands است. یک جریان هر سند،FKبهReceivedCheque/رویدادگردش/برنامهٔ موجود،نسخهٔSQL وrootIdentitySalesCreditSerializable/Salesownergate→actorcommandgate؛auditوreceiptاتمیک. اصل وeventوreceiptباDPpurposeجداوowner/order/actor/UUIDرمز؛تاریخچه۲۰تاییseek/سقف۲۰۰،تأییدchainوreceiptهمه‌نسخه‌ها،immutableSaveguard/Downمحافظت‌شده. actorUUID/hashبرایreplayقبلCAS/expiryوGETهمانرسید،بدونduplicateپسقطعپاسخ.
+
+Customerفقطخلاصهٔowned/read-onlyبدونNote/مرجع/actor؛فهرست تمام خطوط برنامه با missing/approved/stale/revoked صریح. AllChequesApproved فقط اگر هرخط دقیقاًیکسنددریافت‌شدهٔهمانبرنامه وتاییدمعتبرهمانLedgerVersionداشته باشد؛هیچچک‌نبودن،همه‌تأیید نیست. این خلاصه bankVerified/canPay/canFulfill=false است. محاسبهٔ اعتبار از دادهٔ جاری انجام می‌شود،آغازمجوزنهایی snapshotهمه‌نسخه‌ها رادوبارهقفل/تأییدخواهدکرد.
+
+پنل فرم ابتداخالی،بازبینیConfirm=false،مبلغبدونinput،زمانUTCصریح/Tehranpreview،RAMjournalactorbound/globalguard/unknownGETsameUUID/authlogoutclear؛private/no-store/noindex/originquerystrict/body8K/responsebounded/noCookie. FA/ENsummary وRTL/LTR/mobile پذیرفتهشود. هیچprovider،policy،role/grant،seed،BankVerified/Paidنقدی/Inventoryallocation/deadlineextension/ScopeUserevival ایجادنشود. اصلیفقطپسSQLواقعی/مرورگر/artifactثابت/QAcleanup/backup/حفظداده/HTTP ارتقامی‌یابد.
+
+پذیرش: eligibility/state/invalidation،مبلغاصل/نسخهٔبرنامه/تک‌تکخطوط،foreignowner/role/MFA/origin/unknownfield،raceApprove/Revoke/ledgerMove/cancel/expiry،replay/cut→GET/auditrollback/tamper/immutable/FK/Down،privatecustomer/FAEN/mobile/logout. اصل۶۸تاپذیرش۶۹ثابت؛D35نهاییوPRDباز.

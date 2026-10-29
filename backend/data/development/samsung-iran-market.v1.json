@@ -1,0 +1,1895 @@
+{
+  "schemaVersion": 1,
+  "datasetId": "samsung-iran-market-2026-10-28-v1",
+  "isDemo": true,
+  "allowedEnvironments": [
+    "Development"
+  ],
+  "checkedOn": "2026-10-28",
+  "scope": "Samsung phones only; real model specifications and official product photos, development publication only.",
+  "stockAndSupplyGuarantee": false,
+  "referencePricesIncluded": false,
+  "publicProvenanceAllowed": false,
+  "configurationIdRecipe": "First 32 lowercase hex characters of SHA256 UTF-8 market-phone-config:v1:<model.key>:<configuration.key>.",
+  "models": [
+    {
+      "key": "samsung-galaxy-a16-4g",
+      "categoryId": "phones",
+      "brandId": "samsung",
+      "slug": "samsung-galaxy-a16-4g",
+      "modelCode": "SM-A165",
+      "nameFa": "گوشی سامسونگ Galaxy A16 4G",
+      "nameEn": "Samsung Galaxy A16 4G",
+      "descriptionFa": "Galaxy A16 4G با نمایشگر 6.7 اینچی Super AMOLED، پردازندهٔ MediaTek Helio G99 و باتری با ظرفیت معمول 5000 میلی‌آمپرساعت معرفی شده است. دوربین اصلی این مدل 50 مگاپیکسل است.",
+      "descriptionEn": "Galaxy A16 4G has a 6.7-inch Super AMOLED display, MediaTek Helio G99 processor and 5000 mAh typical battery. Its main rear camera is 50 MP.",
+      "isDemo": true,
+      "referencePriceRial": null,
+      "availability": "unknown",
+      "imageUrls": [
+        "https://images.samsung.com/is/image/samsung/p6pim/de/sm-a165fzkbeub/gallery/de-galaxy-a16-sm-a165-sm-a165fzkbeub-544179772"
+      ],
+      "defaultConfigurationKey": "4-128-black",
+      "specifications": {
+        "screenInches": "6.7",
+        "display": "Super AMOLED",
+        "resolution": "1080 × 2340",
+        "refreshRateHz": "90",
+        "processor": "MediaTek Helio G99",
+        "rearCameraMp": [
+          "50",
+          "5",
+          "2"
+        ],
+        "frontCameraMp": "13",
+        "batteryTypicalMah": "5000",
+        "weightG": "200",
+        "chargingMaxW": "25",
+        "protection": "IP54",
+        "network": "4G",
+        "dimensionsMm": "164.4 × 77.9 × 7.9"
+      },
+      "colors": [
+        {
+          "key": "black",
+          "nameFa": "مشکی",
+          "nameEn": "Black",
+          "hex": "#4a4f59",
+          "hexIsApproximate": false,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/de/sm-a165fzkbeub/gallery/de-galaxy-a16-sm-a165-sm-a165fzkbeub-544179772"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "3cabb56f82781c8d7aa8b4bd594f9748",
+          "key": "4-128-black",
+          "ramGb": 4,
+          "storageGb": 128,
+          "colorKey": "black",
+          "colorNameFa": "مشکی",
+          "colorNameEn": "Black",
+          "colorHex": "#4a4f59",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/de/sm-a165fzkbeub/gallery/de-galaxy-a16-sm-a165-sm-a165fzkbeub-544179772",
+          "regionalModelCode": "SM-A165FZKBEUB",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        }
+      ],
+      "provenance": {
+        "visibility": "internal-only",
+        "checkedOn": "2026-10-28",
+        "officialPages": [
+          {
+            "url": "https://www.samsung.com/de/smartphones/galaxy-a/galaxy-a16-black-128gb-sm-a165fzkbeub/",
+            "finalUrl": "https://www.samsung.com/de/smartphones/galaxy-a/galaxy-a16-black-128gb-sm-a165fzkbeub/",
+            "htmlSha256": "0c3eeba1c6feb0da301762bbd532aad9240d7bb7df705e4afcd463fc9a868315"
+          },
+          {
+            "url": "https://www.samsung.com/de/smartphones/galaxy-a/galaxy-a16-black-128gb-sm-a165fzkbeub/buy/",
+            "finalUrl": "https://www.samsung.com/de/smartphones/galaxy-a/galaxy-a16-black-128gb-sm-a165fzkbeub/buy/",
+            "htmlSha256": "f5e0191f54d5f2c9844d65bd85ce428da89f274d4657149cf92a81426b19fe14"
+          }
+        ],
+        "officialAdditionalSources": [
+          "https://images.samsung.com/is/content/samsung/assets/iran/smartphones/mobile-catalogue/07-2025/general-catalog-july-2025.pdf"
+        ],
+        "iranRetailCatalogue": {
+          "url": "https://www.technolife.com/product-69494/گوشی-موبایل-سامسونگ-مدل-galaxy-a16-4g-ظرفیت-128-گیگابایت-رم-4-گیگابایت",
+          "evidence": "Product/catalogue title lists this Samsung model in an Iranian retailer catalogue; no price, stock, warranty, registration or delivery claim is imported.",
+          "liveStockVerified": false
+        },
+        "officialIranCatalogue": {
+          "url": "https://images.samsung.com/is/content/samsung/assets/iran/smartphones/mobile-catalogue/07-2025/general-catalog-july-2025.pdf",
+          "modelPresenceOnly": true
+        },
+        "configurationEvidence": "Exact Samsung regional buying metadata / regional product page, not a Cartesian combination of independent axes.",
+        "regionalSkuIsIranPackClaim": false,
+        "imageRights": "Official public Samsung product gallery asset; no separate distribution licence is recorded.",
+        "publicSourceOrPriceFieldsAllowed": false
+      }
+    },
+    {
+      "key": "samsung-galaxy-a26-5g",
+      "categoryId": "phones",
+      "brandId": "samsung",
+      "slug": "samsung-galaxy-a26-5g",
+      "modelCode": "SM-A266",
+      "nameFa": "گوشی سامسونگ Galaxy A26 5G",
+      "nameEn": "Samsung Galaxy A26 5G",
+      "descriptionFa": "Galaxy A26 5G با نمایشگر 6.7 اینچی Super AMOLED، پردازندهٔ Exynos 1380 و باتری با ظرفیت معمول 5000 میلی‌آمپرساعت معرفی شده است. دوربین اصلی این مدل 50 مگاپیکسل است.",
+      "descriptionEn": "Galaxy A26 5G has a 6.7-inch Super AMOLED display, Exynos 1380 processor and 5000 mAh typical battery. Its main rear camera is 50 MP.",
+      "isDemo": true,
+      "referencePriceRial": null,
+      "availability": "unknown",
+      "imageUrls": [
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a266bzwjmea/gallery/ae-galaxy-a26-5g-sm-a266-sm-a266bzwjmea-545345852",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a266bzijmea/gallery/ae-galaxy-a26-5g-sm-a266-sm-a266bzijmea-545345769",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a266bzkjmea/gallery/ae-galaxy-a26-5g-sm-a266-sm-a266bzkjmea-545345814"
+      ],
+      "defaultConfigurationKey": "8-256-black",
+      "specifications": {
+        "screenInches": "6.7",
+        "display": "Super AMOLED",
+        "resolution": "1080 × 2340",
+        "refreshRateHz": "120",
+        "processor": "Exynos 1380",
+        "rearCameraMp": [
+          "50",
+          "8",
+          "2"
+        ],
+        "frontCameraMp": "13",
+        "batteryTypicalMah": "5000",
+        "weightG": "200",
+        "chargingMaxW": "25",
+        "protection": "IP67",
+        "network": "5G",
+        "dimensionsMm": "164.0 × 77.5 × 7.7"
+      },
+      "colors": [
+        {
+          "key": "white",
+          "nameFa": "سفید",
+          "nameEn": "White",
+          "hex": "#f3f4f4",
+          "hexIsApproximate": false,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a266bzwjmea/gallery/ae-galaxy-a26-5g-sm-a266-sm-a266bzwjmea-545345852"
+        },
+        {
+          "key": "peach-pink",
+          "nameFa": "صورتی هلویی",
+          "nameEn": "Peach Pink",
+          "hex": "#fbb2a9",
+          "hexIsApproximate": false,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a266bzijmea/gallery/ae-galaxy-a26-5g-sm-a266-sm-a266bzijmea-545345769"
+        },
+        {
+          "key": "black",
+          "nameFa": "مشکی",
+          "nameEn": "Black",
+          "hex": "#2d2926",
+          "hexIsApproximate": false,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a266bzkjmea/gallery/ae-galaxy-a26-5g-sm-a266-sm-a266bzkjmea-545345814"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "4ea732b5b62dee13dafc74d13e6db22d",
+          "key": "6-128-black",
+          "ramGb": 6,
+          "storageGb": 128,
+          "colorKey": "black",
+          "colorNameFa": "مشکی",
+          "colorNameEn": "Black",
+          "colorHex": "#2d2926",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a266bzkjmea/gallery/ae-galaxy-a26-5g-sm-a266-sm-a266bzkjmea-545345814",
+          "regionalModelCode": "SM-A266BZKIMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "c44002f2d4a8cd8eaecd315465bc14fd",
+          "key": "6-128-peach-pink",
+          "ramGb": 6,
+          "storageGb": 128,
+          "colorKey": "peach-pink",
+          "colorNameFa": "صورتی هلویی",
+          "colorNameEn": "Peach Pink",
+          "colorHex": "#fbb2a9",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a266bzijmea/gallery/ae-galaxy-a26-5g-sm-a266-sm-a266bzijmea-545345769",
+          "regionalModelCode": "SM-A266BZIIMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "ceb55d15e023b6b7d2cbb9cecfb0f581",
+          "key": "6-128-white",
+          "ramGb": 6,
+          "storageGb": 128,
+          "colorKey": "white",
+          "colorNameFa": "سفید",
+          "colorNameEn": "White",
+          "colorHex": "#f3f4f4",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a266bzwjmea/gallery/ae-galaxy-a26-5g-sm-a266-sm-a266bzwjmea-545345852",
+          "regionalModelCode": "SM-A266BZWIMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "fd1984cfe8c64c62d9df699932ae9c06",
+          "key": "8-256-black",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "black",
+          "colorNameFa": "مشکی",
+          "colorNameEn": "Black",
+          "colorHex": "#2d2926",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a266bzkjmea/gallery/ae-galaxy-a26-5g-sm-a266-sm-a266bzkjmea-545345814",
+          "regionalModelCode": "SM-A266BZKJMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "3410e47587a377d249421f4ce043b2e9",
+          "key": "8-256-peach-pink",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "peach-pink",
+          "colorNameFa": "صورتی هلویی",
+          "colorNameEn": "Peach Pink",
+          "colorHex": "#fbb2a9",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a266bzijmea/gallery/ae-galaxy-a26-5g-sm-a266-sm-a266bzijmea-545345769",
+          "regionalModelCode": "SM-A266BZIJMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "6b92211ee63a333aed2467a42ca1f5a1",
+          "key": "8-256-white",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "white",
+          "colorNameFa": "سفید",
+          "colorNameEn": "White",
+          "colorHex": "#f3f4f4",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a266bzwjmea/gallery/ae-galaxy-a26-5g-sm-a266-sm-a266bzwjmea-545345852",
+          "regionalModelCode": "SM-A266BZWJMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        }
+      ],
+      "provenance": {
+        "visibility": "internal-only",
+        "checkedOn": "2026-10-28",
+        "officialPages": [
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a26-5g-white-256gb-sm-a266bzwjmea/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a26-5g-white-256gb-sm-a266bzwjmea/",
+            "htmlSha256": "6d385cf79225482750692411b48ab6522b7e6b1c176c48553d0ba23b2501f3f8"
+          },
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a26-5g-black-256gb-sm-a266bzkjmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a26-5g-black-256gb-sm-a266bzkjmea/buy/",
+            "htmlSha256": "90869b6664cc991b0dc1d5f6eb9d2783a96900d03c9ed60e90abdba45a9e352a"
+          },
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a26-5g-white-256gb-sm-a266bzwjmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a26-5g-white-256gb-sm-a266bzwjmea/buy/",
+            "htmlSha256": "3874bd8c6bf23c329284a88e565b8057c4fab85c3276aae99fe943e3219bfdb2"
+          },
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a26-5g-peach-pink-256gb-sm-a266bzijmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a26-5g-peach-pink-256gb-sm-a266bzijmea/buy/",
+            "htmlSha256": "6659bf789803bc0b83cb1c0330912356040318c411725fa68a139468abb3806e"
+          }
+        ],
+        "officialAdditionalSources": [
+          "https://images.samsung.com/is/content/samsung/assets/iran/smartphones/mobile-catalogue/07-2025/general-catalog-july-2025.pdf",
+          "https://news.samsung.com/in/galaxy-a26-5g-samsungs-most-affordable-ai-powered-smartphone-launches-in-india-starting-at-just-inr-22999"
+        ],
+        "iranRetailCatalogue": {
+          "url": "https://www.technolife.com/product-99217/گوشی-موبايل-سامسونگ-galaxy-a26-5g-ظرفیت-256-گیگابایت-رم-8-گیگابایت---ویتنام",
+          "evidence": "Product/catalogue title lists this Samsung model in an Iranian retailer catalogue; no price, stock, warranty, registration or delivery claim is imported.",
+          "liveStockVerified": false
+        },
+        "officialIranCatalogue": {
+          "url": "https://images.samsung.com/is/content/samsung/assets/iran/smartphones/mobile-catalogue/07-2025/general-catalog-july-2025.pdf",
+          "modelPresenceOnly": true
+        },
+        "configurationEvidence": "Exact Samsung regional buying metadata / regional product page, not a Cartesian combination of independent axes.",
+        "regionalSkuIsIranPackClaim": false,
+        "imageRights": "Official public Samsung product gallery asset; no separate distribution licence is recorded.",
+        "publicSourceOrPriceFieldsAllowed": false
+      }
+    },
+    {
+      "key": "samsung-galaxy-a36-5g",
+      "categoryId": "phones",
+      "brandId": "samsung",
+      "slug": "samsung-galaxy-a36-5g",
+      "modelCode": "SM-A366",
+      "nameFa": "گوشی سامسونگ Galaxy A36 5G",
+      "nameEn": "Samsung Galaxy A36 5G",
+      "descriptionFa": "Galaxy A36 5G با نمایشگر 6.7 اینچی Super AMOLED، پردازندهٔ Snapdragon 6 Gen 3 و باتری با ظرفیت معمول 5000 میلی‌آمپرساعت معرفی شده است. دوربین اصلی این مدل 50 مگاپیکسل است.",
+      "descriptionEn": "Galaxy A36 5G has a 6.7-inch Super AMOLED display, Snapdragon 6 Gen 3 processor and 5000 mAh typical battery. Its main rear camera is 50 MP.",
+      "isDemo": true,
+      "referencePriceRial": null,
+      "availability": "unknown",
+      "imageUrls": [
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366blgvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366blgvmea-545273890",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366bzkvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366bzkvmea-545274120",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366blvvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366blvvmea-545273947",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366bzavmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366bzavmea-545274063"
+      ],
+      "defaultConfigurationKey": "8-256-awesome-black",
+      "specifications": {
+        "screenInches": "6.7",
+        "display": "Super AMOLED",
+        "resolution": "1080 × 2340",
+        "refreshRateHz": "120",
+        "processor": "Snapdragon 6 Gen 3",
+        "rearCameraMp": [
+          "50",
+          "8",
+          "5"
+        ],
+        "frontCameraMp": "12",
+        "batteryTypicalMah": "5000",
+        "weightG": "195",
+        "chargingMaxW": "45",
+        "protection": "IP67",
+        "network": "5G",
+        "dimensionsMm": "162.9 × 78.2 × 7.4"
+      },
+      "colors": [
+        {
+          "key": "awesome-lime",
+          "nameFa": "سبز لیمویی",
+          "nameEn": "Awesome Lime",
+          "hex": "#dfefdb",
+          "hexIsApproximate": false,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366blgvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366blgvmea-545273890"
+        },
+        {
+          "key": "awesome-black",
+          "nameFa": "مشکی",
+          "nameEn": "Awesome Black",
+          "hex": "#404145",
+          "hexIsApproximate": false,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366bzkvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366bzkvmea-545274120"
+        },
+        {
+          "key": "awesome-lavender",
+          "nameFa": "یاسی",
+          "nameEn": "Awesome Lavender",
+          "hex": "#c6cce7",
+          "hexIsApproximate": false,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366blvvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366blvvmea-545273947"
+        },
+        {
+          "key": "awesome-white",
+          "nameFa": "سفید",
+          "nameEn": "Awesome White",
+          "hex": "#dad9db",
+          "hexIsApproximate": false,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366bzavmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366bzavmea-545274063"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "0e017c37497a3c2e85f673ead86cf9ba",
+          "key": "6-128-awesome-black",
+          "ramGb": 6,
+          "storageGb": 128,
+          "colorKey": "awesome-black",
+          "colorNameFa": "مشکی",
+          "colorNameEn": "Awesome Black",
+          "colorHex": "#404145",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366bzkvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366bzkvmea-545274120",
+          "regionalModelCode": "SM-A366BZKMMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "37b41345bc690e43fb6ab1c1c51ed3d8",
+          "key": "6-128-awesome-lavender",
+          "ramGb": 6,
+          "storageGb": 128,
+          "colorKey": "awesome-lavender",
+          "colorNameFa": "یاسی",
+          "colorNameEn": "Awesome Lavender",
+          "colorHex": "#c6cce7",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366blvvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366blvvmea-545273947",
+          "regionalModelCode": "SM-A366BLVMMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "934677d8ff3bd42c9ea08e604ac45366",
+          "key": "6-128-awesome-lime",
+          "ramGb": 6,
+          "storageGb": 128,
+          "colorKey": "awesome-lime",
+          "colorNameFa": "سبز لیمویی",
+          "colorNameEn": "Awesome Lime",
+          "colorHex": "#dfefdb",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366blgvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366blgvmea-545273890",
+          "regionalModelCode": "SM-A366BLGMMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "d11f3211bdbc4d7fb14f47627c5d6975",
+          "key": "6-128-awesome-white",
+          "ramGb": 6,
+          "storageGb": 128,
+          "colorKey": "awesome-white",
+          "colorNameFa": "سفید",
+          "colorNameEn": "Awesome White",
+          "colorHex": "#dad9db",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366bzavmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366bzavmea-545274063",
+          "regionalModelCode": "SM-A366BZAMMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "e4d4ae76f3b3de29194e977222cb8676",
+          "key": "8-128-awesome-black",
+          "ramGb": 8,
+          "storageGb": 128,
+          "colorKey": "awesome-black",
+          "colorNameFa": "مشکی",
+          "colorNameEn": "Awesome Black",
+          "colorHex": "#404145",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366bzkvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366bzkvmea-545274120",
+          "regionalModelCode": "SM-A366BZKPMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "87c3f66f7ef9c9c7b78a80726ba4be84",
+          "key": "8-128-awesome-lavender",
+          "ramGb": 8,
+          "storageGb": 128,
+          "colorKey": "awesome-lavender",
+          "colorNameFa": "یاسی",
+          "colorNameEn": "Awesome Lavender",
+          "colorHex": "#c6cce7",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366blvvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366blvvmea-545273947",
+          "regionalModelCode": "SM-A366BLVPMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "91afd89b4f9ef1f435d6f5939c9f0b6e",
+          "key": "8-128-awesome-lime",
+          "ramGb": 8,
+          "storageGb": 128,
+          "colorKey": "awesome-lime",
+          "colorNameFa": "سبز لیمویی",
+          "colorNameEn": "Awesome Lime",
+          "colorHex": "#dfefdb",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366blgvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366blgvmea-545273890",
+          "regionalModelCode": "SM-A366BLGPMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "23da1bc2f4524272ac55bd136577b468",
+          "key": "8-128-awesome-white",
+          "ramGb": 8,
+          "storageGb": 128,
+          "colorKey": "awesome-white",
+          "colorNameFa": "سفید",
+          "colorNameEn": "Awesome White",
+          "colorHex": "#dad9db",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366bzavmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366bzavmea-545274063",
+          "regionalModelCode": "SM-A366BZAPMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "d5ffd7d84e709353f06035b952f5aa9f",
+          "key": "8-256-awesome-black",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "awesome-black",
+          "colorNameFa": "مشکی",
+          "colorNameEn": "Awesome Black",
+          "colorHex": "#404145",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366bzkvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366bzkvmea-545274120",
+          "regionalModelCode": "SM-A366BZKVMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "19de958fcb4cbc832c310383d3ff4da9",
+          "key": "8-256-awesome-lavender",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "awesome-lavender",
+          "colorNameFa": "یاسی",
+          "colorNameEn": "Awesome Lavender",
+          "colorHex": "#c6cce7",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366blvvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366blvvmea-545273947",
+          "regionalModelCode": "SM-A366BLVVMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "0f1dbd3fd5c4a4fe9728d6e8a6faf4c3",
+          "key": "8-256-awesome-lime",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "awesome-lime",
+          "colorNameFa": "سبز لیمویی",
+          "colorNameEn": "Awesome Lime",
+          "colorHex": "#dfefdb",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366blgvmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366blgvmea-545273890",
+          "regionalModelCode": "SM-A366BLGVMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "b3913638f0d7ce75c964a1d85167c705",
+          "key": "8-256-awesome-white",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "awesome-white",
+          "colorNameFa": "سفید",
+          "colorNameEn": "Awesome White",
+          "colorHex": "#dad9db",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a366bzavmea/gallery/ae-galaxy-a36-5g-sm-a366-sm-a366bzavmea-545274063",
+          "regionalModelCode": "SM-A366BZAVMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        }
+      ],
+      "provenance": {
+        "visibility": "internal-only",
+        "checkedOn": "2026-10-28",
+        "officialPages": [
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a36-5g-awesome-black-256gb-sm-a366bzkvmea/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a36-5g-awesome-black-256gb-sm-a366bzkvmea/",
+            "htmlSha256": "acc9397cf46cc69c3af72c47272758a243cd34fbc4c06b390ff3c397225896dc"
+          },
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a36-5g-awesome-black-256gb-sm-a366bzkvmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a36-5g-awesome-black-256gb-sm-a366bzkvmea/buy/",
+            "htmlSha256": "955682b1f7a5022869a69315ea111125417007da67477414dd68089c84f35db0"
+          },
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a36-5g-awesome-lavender-256gb-sm-a366blvvmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a36-5g-awesome-lavender-256gb-sm-a366blvvmea/buy/",
+            "htmlSha256": "748cee44423cbf5315edab442c250ec1ebcc187262b11ce09ccceea0722e8487"
+          },
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a36-5g-awesome-lime-256gb-sm-a366blgvmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a36-5g-awesome-lime-256gb-sm-a366blgvmea/buy/",
+            "htmlSha256": "15317efa95b9cbbde94614e4479d17254b196e3e3d9c9c979c76cf357eccb8a5"
+          },
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a36-5g-awesome-white-256gb-sm-a366bzavmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a36-5g-awesome-white-256gb-sm-a366bzavmea/buy/",
+            "htmlSha256": "02ce4e458c1085d5e004cbd11ebec39a5e5210cb7e34c95b26ba0de32b57217f"
+          }
+        ],
+        "officialAdditionalSources": [
+          "https://www.samsung.com/ae/news/local/samsung-launches-new-galaxy-a56-5g-galaxy-a36-5g-and-galaxy-a26-5g-in-the-uae/"
+        ],
+        "iranRetailCatalogue": {
+          "url": "https://www.technolife.com/product-99347/گوشی-موبايل-سامسونگ-galaxy-a36-5g-ظرفیت-256-گیگابایت-رم-8-گیگابایت---ویتنام",
+          "evidence": "Product/catalogue title lists this Samsung model in an Iranian retailer catalogue; no price, stock, warranty, registration or delivery claim is imported.",
+          "liveStockVerified": false
+        },
+        "officialIranCatalogue": {
+          "url": "https://images.samsung.com/is/content/samsung/assets/iran/smartphones/mobile-catalogue/07-2025/general-catalog-july-2025.pdf",
+          "modelPresenceOnly": true
+        },
+        "configurationEvidence": "Exact Samsung regional buying metadata / regional product page, not a Cartesian combination of independent axes.",
+        "regionalSkuIsIranPackClaim": false,
+        "imageRights": "Official public Samsung product gallery asset; no separate distribution licence is recorded.",
+        "publicSourceOrPriceFieldsAllowed": false
+      }
+    },
+    {
+      "key": "samsung-galaxy-a56-5g",
+      "categoryId": "phones",
+      "brandId": "samsung",
+      "slug": "samsung-galaxy-a56-5g",
+      "modelCode": "SM-A566",
+      "nameFa": "گوشی سامسونگ Galaxy A56 5G",
+      "nameEn": "Samsung Galaxy A56 5G",
+      "descriptionFa": "Galaxy A56 5G با نمایشگر 6.7 اینچی Super AMOLED، پردازندهٔ Exynos 1580 و باتری با ظرفیت معمول 5000 میلی‌آمپرساعت معرفی شده است. دوربین اصلی این مدل 50 مگاپیکسل است.",
+      "descriptionEn": "Galaxy A56 5G has a 6.7-inch Super AMOLED display, Exynos 1580 processor and 5000 mAh typical battery. Its main rear camera is 50 MP.",
+      "isDemo": true,
+      "referencePriceRial": null,
+      "availability": "unknown",
+      "imageUrls": [
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bliwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bliwmea-545274300",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzkwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzkwmea-545274529",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzawmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzawmea-545274370",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzgwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzgwmea-545274453"
+      ],
+      "defaultConfigurationKey": "8-256-awesome-graphite",
+      "specifications": {
+        "screenInches": "6.7",
+        "display": "Super AMOLED",
+        "resolution": "1080 × 2340",
+        "refreshRateHz": "120",
+        "processor": "Exynos 1580",
+        "rearCameraMp": [
+          "50",
+          "12",
+          "5"
+        ],
+        "frontCameraMp": "12",
+        "batteryTypicalMah": "5000",
+        "weightG": "198",
+        "chargingMaxW": "45",
+        "protection": "IP67",
+        "network": "5G",
+        "dimensionsMm": "162.2 × 77.5 × 7.4"
+      },
+      "colors": [
+        {
+          "key": "awesome-pink",
+          "nameFa": "صورتی",
+          "nameEn": "Awesome Pink",
+          "hex": "#f2dee9",
+          "hexIsApproximate": false,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bliwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bliwmea-545274300"
+        },
+        {
+          "key": "awesome-graphite",
+          "nameFa": "گرافیتی",
+          "nameEn": "Awesome Graphite",
+          "hex": "#53565a",
+          "hexIsApproximate": false,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzkwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzkwmea-545274529"
+        },
+        {
+          "key": "awesome-lightgray",
+          "nameFa": "خاکستری روشن",
+          "nameEn": "Awesome Lightgray",
+          "hex": "#c8caca",
+          "hexIsApproximate": false,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzawmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzawmea-545274370"
+        },
+        {
+          "key": "awesome-olive",
+          "nameFa": "زیتونی",
+          "nameEn": "Awesome Olive",
+          "hex": "#a9bab7",
+          "hexIsApproximate": false,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzgwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzgwmea-545274453"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "fc6ecd94127a1ca5a076c26afcdeb47c",
+          "key": "8-128-awesome-graphite",
+          "ramGb": 8,
+          "storageGb": 128,
+          "colorKey": "awesome-graphite",
+          "colorNameFa": "گرافیتی",
+          "colorNameEn": "Awesome Graphite",
+          "colorHex": "#53565a",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzkwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzkwmea-545274529",
+          "regionalModelCode": "SM-A566BZKVMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "898ebfd48c10f54bc2757454bc402386",
+          "key": "8-128-awesome-lightgray",
+          "ramGb": 8,
+          "storageGb": 128,
+          "colorKey": "awesome-lightgray",
+          "colorNameFa": "خاکستری روشن",
+          "colorNameEn": "Awesome Lightgray",
+          "colorHex": "#c8caca",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzawmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzawmea-545274370",
+          "regionalModelCode": "SM-A566BZAVMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "3ed638630faa7cd1ac3aa816fea6a530",
+          "key": "8-128-awesome-olive",
+          "ramGb": 8,
+          "storageGb": 128,
+          "colorKey": "awesome-olive",
+          "colorNameFa": "زیتونی",
+          "colorNameEn": "Awesome Olive",
+          "colorHex": "#a9bab7",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzgwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzgwmea-545274453",
+          "regionalModelCode": "SM-A566BZGVMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "77955bddba9e760bebbe79081d8346f0",
+          "key": "8-128-awesome-pink",
+          "ramGb": 8,
+          "storageGb": 128,
+          "colorKey": "awesome-pink",
+          "colorNameFa": "صورتی",
+          "colorNameEn": "Awesome Pink",
+          "colorHex": "#f2dee9",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bliwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bliwmea-545274300",
+          "regionalModelCode": "SM-A566BLIVMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "851ad0098c0a466d54ee45ae5a7ae9f0",
+          "key": "8-256-awesome-graphite",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "awesome-graphite",
+          "colorNameFa": "گرافیتی",
+          "colorNameEn": "Awesome Graphite",
+          "colorHex": "#53565a",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzkwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzkwmea-545274529",
+          "regionalModelCode": "SM-A566BZKWMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "b6871c6e4acdc7a924169621593322dd",
+          "key": "8-256-awesome-lightgray",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "awesome-lightgray",
+          "colorNameFa": "خاکستری روشن",
+          "colorNameEn": "Awesome Lightgray",
+          "colorHex": "#c8caca",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzawmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzawmea-545274370",
+          "regionalModelCode": "SM-A566BZAWMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "a9abd78eb7159862a64e161913ad0d6a",
+          "key": "8-256-awesome-olive",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "awesome-olive",
+          "colorNameFa": "زیتونی",
+          "colorNameEn": "Awesome Olive",
+          "colorHex": "#a9bab7",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzgwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzgwmea-545274453",
+          "regionalModelCode": "SM-A566BZGWMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "a5b55a93d917b9fdbdce965f96f0ea39",
+          "key": "8-256-awesome-pink",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "awesome-pink",
+          "colorNameFa": "صورتی",
+          "colorNameEn": "Awesome Pink",
+          "colorHex": "#f2dee9",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bliwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bliwmea-545274300",
+          "regionalModelCode": "SM-A566BLIWMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "9c5ea1223037f58f37878f0c22287088",
+          "key": "12-256-awesome-graphite",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "awesome-graphite",
+          "colorNameFa": "گرافیتی",
+          "colorNameEn": "Awesome Graphite",
+          "colorHex": "#53565a",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzkwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzkwmea-545274529",
+          "regionalModelCode": "SM-A566BZKYMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "3e3dbd6dbec74842a4f1d41af3dc5310",
+          "key": "12-256-awesome-lightgray",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "awesome-lightgray",
+          "colorNameFa": "خاکستری روشن",
+          "colorNameEn": "Awesome Lightgray",
+          "colorHex": "#c8caca",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzawmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzawmea-545274370",
+          "regionalModelCode": "SM-A566BZAYMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "e0a0c49f86a81c6e1b8757c527260965",
+          "key": "12-256-awesome-olive",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "awesome-olive",
+          "colorNameFa": "زیتونی",
+          "colorNameEn": "Awesome Olive",
+          "colorHex": "#a9bab7",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bzgwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bzgwmea-545274453",
+          "regionalModelCode": "SM-A566BZGYMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "6887c9a3f3113b14a45877ce09dbaef1",
+          "key": "12-256-awesome-pink",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "awesome-pink",
+          "colorNameFa": "صورتی",
+          "colorNameEn": "Awesome Pink",
+          "colorHex": "#f2dee9",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-a566bliwmea/gallery/ae-galaxy-a56-5g-sm-a566-sm-a566bliwmea-545274300",
+          "regionalModelCode": "SM-A566BLIYMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        }
+      ],
+      "provenance": {
+        "visibility": "internal-only",
+        "checkedOn": "2026-10-28",
+        "officialPages": [
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a56-5g-awesome-graphite-256gb-sm-a566bzkwmea/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a56-5g-awesome-graphite-256gb-sm-a566bzkwmea/",
+            "htmlSha256": "c532e53a8dcaef3157c12db3a47dcdc96081def29e172bf75c4b518afde96e03"
+          },
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a56-5g-awesome-graphite-256gb-sm-a566bzkwmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a56-5g-awesome-graphite-256gb-sm-a566bzkwmea/buy/",
+            "htmlSha256": "e4b8702cbe6d997d4c1ef9a0b3fb4eb0a2daf276f6b8f8f777f9dfff27da9b27"
+          },
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a56-5g-awesome-lightgray-256gb-sm-a566bzawmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a56-5g-awesome-lightgray-256gb-sm-a566bzawmea/buy/",
+            "htmlSha256": "360a2e2ed18f0bc7084e710a6d3ac809880d38febd1ac286a8fa4ae4ebd001b8"
+          },
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a56-5g-awesome-olive-256gb-sm-a566bzgwmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a56-5g-awesome-olive-256gb-sm-a566bzgwmea/buy/",
+            "htmlSha256": "42f454bece5e2c8823f7cf7d25d54cd72bf1e0d15fa59e29ac5406662f6501d2"
+          },
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a56-5g-awesome-pink-256gb-sm-a566bliwmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-a/galaxy-a56-5g-awesome-pink-256gb-sm-a566bliwmea/buy/",
+            "htmlSha256": "c85fd0a1aaa02be20f18e7a15a9ac0a4c03bb28d2e07ae9e810a4f05231c621a"
+          }
+        ],
+        "officialAdditionalSources": [
+          "https://www.samsung.com/ae/news/local/samsung-launches-new-galaxy-a56-5g-galaxy-a36-5g-and-galaxy-a26-5g-in-the-uae/"
+        ],
+        "iranRetailCatalogue": {
+          "url": "https://www.technolife.com/product-74385/گوشی-موبايل-سامسونگ-galaxy-a56-5g-ظرفیت-128-گیگابایت-رم-8-گیگابایت",
+          "evidence": "Product/catalogue title lists this Samsung model in an Iranian retailer catalogue; no price, stock, warranty, registration or delivery claim is imported.",
+          "liveStockVerified": false
+        },
+        "officialIranCatalogue": {
+          "url": "https://images.samsung.com/is/content/samsung/assets/iran/smartphones/mobile-catalogue/07-2025/general-catalog-july-2025.pdf",
+          "modelPresenceOnly": true
+        },
+        "configurationEvidence": "Exact Samsung regional buying metadata / regional product page, not a Cartesian combination of independent axes.",
+        "regionalSkuIsIranPackClaim": false,
+        "imageRights": "Official public Samsung product gallery asset; no separate distribution licence is recorded.",
+        "publicSourceOrPriceFieldsAllowed": false
+      }
+    },
+    {
+      "key": "samsung-galaxy-s24-fe",
+      "categoryId": "phones",
+      "brandId": "samsung",
+      "slug": "samsung-galaxy-s24-fe",
+      "modelCode": "SM-S721B",
+      "nameFa": "گوشی سامسونگ Galaxy S24 FE",
+      "nameEn": "Samsung Galaxy S24 FE",
+      "descriptionFa": "Galaxy S24 FE با نمایشگر 6.7 اینچی Dynamic AMOLED 2X، پردازندهٔ Exynos 2400e و باتری با ظرفیت معمول 4700 میلی‌آمپرساعت معرفی شده است. دوربین اصلی این مدل 50 مگاپیکسل است.",
+      "descriptionEn": "Galaxy S24 FE has a 6.7-inch Dynamic AMOLED 2X display, Exynos 2400e processor and 4700 mAh typical battery. Its main rear camera is 50 MP.",
+      "isDemo": true,
+      "referencePriceRial": null,
+      "availability": "unknown",
+      "imageUrls": [
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s721blbcmea/gallery/ae-galaxy-s24-fe-s721-sm-s721blbcmea-543829059",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s721bzkcmea/gallery/ae-galaxy-s24-fe-s721-sm-s721bzkcmea-543829260",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s721bzacmea/gallery/ae-galaxy-s24-fe-s721-sm-s721bzacmea-543829216",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s721blgcmea/gallery/ae-galaxy-s24-fe-s721-sm-s721blgcmea-543829121"
+      ],
+      "defaultConfigurationKey": "8-256-blue",
+      "specifications": {
+        "screenInches": "6.7",
+        "display": "Dynamic AMOLED 2X",
+        "resolution": "1080 × 2340",
+        "refreshRateHz": "120",
+        "processor": "Exynos 2400e",
+        "rearCameraMp": [
+          "50",
+          "12",
+          "8"
+        ],
+        "frontCameraMp": "10",
+        "batteryTypicalMah": "4700",
+        "weightG": "213",
+        "chargingMaxW": "25",
+        "protection": "IP68",
+        "network": "5G",
+        "dimensionsMm": "162.0 × 77.3 × 8.0"
+      },
+      "colors": [
+        {
+          "key": "blue",
+          "nameFa": "آبی",
+          "nameEn": "Blue",
+          "hex": "#b7d2e1",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s721blbcmea/gallery/ae-galaxy-s24-fe-s721-sm-s721blbcmea-543829059"
+        },
+        {
+          "key": "graphite",
+          "nameFa": "گرافیتی",
+          "nameEn": "Graphite",
+          "hex": "#55575a",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s721bzkcmea/gallery/ae-galaxy-s24-fe-s721-sm-s721bzkcmea-543829260"
+        },
+        {
+          "key": "gray",
+          "nameFa": "خاکستری",
+          "nameEn": "Gray",
+          "hex": "#b4b6b7",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s721bzacmea/gallery/ae-galaxy-s24-fe-s721-sm-s721bzacmea-543829216"
+        },
+        {
+          "key": "mint",
+          "nameFa": "سبز نعنایی",
+          "nameEn": "Mint",
+          "hex": "#b9d7c6",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s721blgcmea/gallery/ae-galaxy-s24-fe-s721-sm-s721blgcmea-543829121"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "7c5a75dba8c37496b108d1e9ccc7ff97",
+          "key": "8-256-blue",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "blue",
+          "colorNameFa": "آبی",
+          "colorNameEn": "Blue",
+          "colorHex": "#b7d2e1",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s721blbcmea/gallery/ae-galaxy-s24-fe-s721-sm-s721blbcmea-543829059",
+          "regionalModelCode": "SM-S721BLBCMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "65f5e6ea1581217329091da9c7b76a4b",
+          "key": "8-256-graphite",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "graphite",
+          "colorNameFa": "گرافیتی",
+          "colorNameEn": "Graphite",
+          "colorHex": "#55575a",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s721bzkcmea/gallery/ae-galaxy-s24-fe-s721-sm-s721bzkcmea-543829260",
+          "regionalModelCode": "SM-S721BZKCMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "db7848a914b5ca43aa945e2a3e6661d0",
+          "key": "8-256-gray",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "gray",
+          "colorNameFa": "خاکستری",
+          "colorNameEn": "Gray",
+          "colorHex": "#b4b6b7",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s721bzacmea/gallery/ae-galaxy-s24-fe-s721-sm-s721bzacmea-543829216",
+          "regionalModelCode": "SM-S721BZACMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "160adf673b53dd7af3234e1f0e4293c9",
+          "key": "8-256-mint",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "mint",
+          "colorNameFa": "سبز نعنایی",
+          "colorNameEn": "Mint",
+          "colorHex": "#b9d7c6",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s721blgcmea/gallery/ae-galaxy-s24-fe-s721-sm-s721blgcmea-543829121",
+          "regionalModelCode": "SM-S721BLGCMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        }
+      ],
+      "provenance": {
+        "visibility": "internal-only",
+        "checkedOn": "2026-10-28",
+        "officialPages": [
+          {
+            "url": "https://www.samsung.com/ae/business/smartphones/galaxy-s/galaxy-s24-fe-blue-256gb-sm-s721blbcmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/business/smartphones/galaxy-s/galaxy-s24-fe-blue-256gb-sm-s721blbcmea/buy/",
+            "htmlSha256": "a95b0757e7a0c77b23fdee2584617a5e72ddf6815f1bb61609251d904267fc3c"
+          },
+          {
+            "url": "https://www.samsung.com/ae/business/smartphones/galaxy-s/galaxy-s24-fe-graphite-256gb-sm-s721bzkcmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/business/smartphones/galaxy-s/galaxy-s24-fe-graphite-256gb-sm-s721bzkcmea/buy/",
+            "htmlSha256": "5e098ad66c140f5f196fca057cb2fceb1f6c8cac9976178eeca2a186d7f93104"
+          },
+          {
+            "url": "https://www.samsung.com/ae/business/smartphones/galaxy-s/galaxy-s24-fe-gray-256gb-sm-s721bzacmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/business/smartphones/galaxy-s/galaxy-s24-fe-gray-256gb-sm-s721bzacmea/buy/",
+            "htmlSha256": "88e449fc8a45ac54dd8295ac096b5bb02987aa11b0278ed0b241a85afb459980"
+          },
+          {
+            "url": "https://www.samsung.com/ae/business/smartphones/galaxy-s/galaxy-s24-fe-mint-256gb-sm-s721blgcmea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/business/smartphones/galaxy-s/galaxy-s24-fe-mint-256gb-sm-s721blgcmea/buy/",
+            "htmlSha256": "7c9318af3758cf46280a6ea1b6d14be6bef907831c3f936944fdd53d5ab8ea5c"
+          }
+        ],
+        "officialAdditionalSources": [
+          "https://www.samsung.com/in/smartphones/galaxy-s/galaxy-s24-fe-blue-256gb-sm-s721blbcins/",
+          "https://news.samsung.com/global/galaxy-s24-series-expands-with-s24-fe-a-premium-experience-that-makes-full-galaxy-ai-capabilities-attainable-for-more-users"
+        ],
+        "iranRetailCatalogue": {
+          "url": "https://www.technolife.com/product-60419/گوشی-موبايل-سامسونگ-مدل-galaxy-s24-fe-ظرفیت-256-گیگابایت-رم-8-گیگابایت",
+          "evidence": "Product/catalogue title lists this Samsung model in an Iranian retailer catalogue; no price, stock, warranty, registration or delivery claim is imported.",
+          "liveStockVerified": false
+        },
+        "officialIranCatalogue": {
+          "url": "https://images.samsung.com/is/content/samsung/assets/iran/smartphones/mobile-catalogue/07-2025/general-catalog-july-2025.pdf",
+          "modelPresenceOnly": true
+        },
+        "configurationEvidence": "Exact Samsung regional buying metadata / regional product page, not a Cartesian combination of independent axes.",
+        "regionalSkuIsIranPackClaim": false,
+        "imageRights": "Official public Samsung product gallery asset; no separate distribution licence is recorded.",
+        "publicSourceOrPriceFieldsAllowed": false
+      }
+    },
+    {
+      "key": "samsung-galaxy-s25-fe",
+      "categoryId": "phones",
+      "brandId": "samsung",
+      "slug": "samsung-galaxy-s25-fe",
+      "modelCode": "SM-S731B",
+      "nameFa": "گوشی سامسونگ Galaxy S25 FE",
+      "nameEn": "Samsung Galaxy S25 FE",
+      "descriptionFa": "Galaxy S25 FE با نمایشگر 6.7 اینچی Dynamic AMOLED 2X، پردازندهٔ Exynos 2400 و باتری با ظرفیت معمول 4900 میلی‌آمپرساعت معرفی شده است. دوربین اصلی این مدل 50 مگاپیکسل است.",
+      "descriptionEn": "Galaxy S25 FE has a 6.7-inch Dynamic AMOLED 2X display, Exynos 2400 processor and 4900 mAh typical battery. Its main rear camera is 50 MP.",
+      "isDemo": true,
+      "referencePriceRial": null,
+      "availability": "unknown",
+      "imageUrls": [
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731bdbvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731bdbvmea-548740983",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731blbvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731blbvmea-548741112",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731bzkvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731bzkvmea-548741220",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731bzwvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731bzwvmea-548741365"
+      ],
+      "defaultConfigurationKey": "8-256-icyblue",
+      "specifications": {
+        "screenInches": "6.7",
+        "display": "Dynamic AMOLED 2X",
+        "resolution": "1080 × 2340",
+        "refreshRateHz": "120",
+        "processor": "Exynos 2400",
+        "rearCameraMp": [
+          "50",
+          "12",
+          "8"
+        ],
+        "frontCameraMp": "12",
+        "batteryTypicalMah": "4900",
+        "weightG": "190",
+        "chargingMaxW": "45",
+        "protection": "IP68",
+        "network": "5G",
+        "dimensionsMm": "161.3 × 76.6 × 7.4"
+      },
+      "colors": [
+        {
+          "key": "navy",
+          "nameFa": "سرمه‌ای",
+          "nameEn": "Navy",
+          "hex": "#35465d",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731bdbvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731bdbvmea-548740983"
+        },
+        {
+          "key": "icyblue",
+          "nameFa": "آبی یخی",
+          "nameEn": "Icyblue",
+          "hex": "#d5e2e9",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731blbvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731blbvmea-548741112"
+        },
+        {
+          "key": "jetblack",
+          "nameFa": "مشکی",
+          "nameEn": "Jetblack",
+          "hex": "#2b2c2d",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731bzkvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731bzkvmea-548741220"
+        },
+        {
+          "key": "white",
+          "nameFa": "سفید",
+          "nameEn": "White",
+          "hex": "#f1f1ee",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731bzwvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731bzwvmea-548741365"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "12e2cba5caf1f3d14bc563d58fbdbc21",
+          "key": "8-128-icyblue",
+          "ramGb": 8,
+          "storageGb": 128,
+          "colorKey": "icyblue",
+          "colorNameFa": "آبی یخی",
+          "colorNameEn": "Icyblue",
+          "colorHex": "#d5e2e9",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731blbvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731blbvmea-548741112",
+          "regionalModelCode": "SM-S731BLBUMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "b4df3e950e6bfc5f1d614e6537a17493",
+          "key": "8-128-jetblack",
+          "ramGb": 8,
+          "storageGb": 128,
+          "colorKey": "jetblack",
+          "colorNameFa": "مشکی",
+          "colorNameEn": "Jetblack",
+          "colorHex": "#2b2c2d",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731bzkvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731bzkvmea-548741220",
+          "regionalModelCode": "SM-S731BZKUMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "d9a3ecd1e2c39f7bb45090384ee926f0",
+          "key": "8-128-navy",
+          "ramGb": 8,
+          "storageGb": 128,
+          "colorKey": "navy",
+          "colorNameFa": "سرمه‌ای",
+          "colorNameEn": "Navy",
+          "colorHex": "#35465d",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731bdbvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731bdbvmea-548740983",
+          "regionalModelCode": "SM-S731BDBUMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "412633abd73990662cabe41592d291f5",
+          "key": "8-128-white",
+          "ramGb": 8,
+          "storageGb": 128,
+          "colorKey": "white",
+          "colorNameFa": "سفید",
+          "colorNameEn": "White",
+          "colorHex": "#f1f1ee",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731bzwvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731bzwvmea-548741365",
+          "regionalModelCode": "SM-S731BZWUMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "7f26923807fce205f8d1160270c66940",
+          "key": "8-256-icyblue",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "icyblue",
+          "colorNameFa": "آبی یخی",
+          "colorNameEn": "Icyblue",
+          "colorHex": "#d5e2e9",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731blbvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731blbvmea-548741112",
+          "regionalModelCode": "SM-S731BLBVMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "fa7dd9c92a4e007e605a5cd40e4c1bc2",
+          "key": "8-256-jetblack",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "jetblack",
+          "colorNameFa": "مشکی",
+          "colorNameEn": "Jetblack",
+          "colorHex": "#2b2c2d",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731bzkvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731bzkvmea-548741220",
+          "regionalModelCode": "SM-S731BZKVMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "5ef471f78c64e6ee261bbd8027483b33",
+          "key": "8-256-navy",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "navy",
+          "colorNameFa": "سرمه‌ای",
+          "colorNameEn": "Navy",
+          "colorHex": "#35465d",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731bdbvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731bdbvmea-548740983",
+          "regionalModelCode": "SM-S731BDBVMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "6c2a04eafc67051f6de15b670d7a58d4",
+          "key": "8-256-white",
+          "ramGb": 8,
+          "storageGb": 256,
+          "colorKey": "white",
+          "colorNameFa": "سفید",
+          "colorNameEn": "White",
+          "colorHex": "#f1f1ee",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/sm-s731bzwvmea/gallery/ae-galaxy-s25-fe-sm-s731-sm-s731bzwvmea-548741365",
+          "regionalModelCode": "SM-S731BZWVMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        }
+      ],
+      "provenance": {
+        "visibility": "internal-only",
+        "checkedOn": "2026-10-28",
+        "officialPages": [
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-s/galaxy-s25-mint-256gb-sm-s931blgomea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-s25/buy/?modelCode=SM-S931BLGOMEA",
+            "htmlSha256": "fd89a4a73ff2cfc462f52189ea347e8eb9c220da11f164753a358ab7b5b33e6b"
+          },
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-s/galaxy-s25-fe-jetblack-256gb-sm-s731bzkvmea/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-s/galaxy-s25-fe-jetblack-256gb-sm-s731bzkvmea/",
+            "htmlSha256": "2e2a84c8f6f7e6c0cb5ba79f6457123067b73890af81d1826366e622741a9a9c"
+          }
+        ],
+        "officialAdditionalSources": [
+          "https://news.samsung.com/global/meet-samsung-galaxy-s25-fe-the-gateway-to-the-galaxy-ai-and-flagship-essentials"
+        ],
+        "iranRetailCatalogue": {
+          "url": "https://www.technolife.com/category/mobile/mobile-phone/brand-samsung/series-s25",
+          "evidence": "Product/catalogue title lists this Samsung model in an Iranian retailer catalogue; no price, stock, warranty, registration or delivery claim is imported.",
+          "liveStockVerified": false
+        },
+        "officialIranCatalogue": null,
+        "configurationEvidence": "Exact Samsung regional buying metadata / regional product page, not a Cartesian combination of independent axes.",
+        "regionalSkuIsIranPackClaim": false,
+        "imageRights": "Official public Samsung product gallery asset; no separate distribution licence is recorded.",
+        "publicSourceOrPriceFieldsAllowed": false
+      }
+    },
+    {
+      "key": "samsung-galaxy-s25",
+      "categoryId": "phones",
+      "brandId": "samsung",
+      "slug": "samsung-galaxy-s25",
+      "modelCode": "SM-S931B",
+      "nameFa": "گوشی سامسونگ Galaxy S25",
+      "nameEn": "Samsung Galaxy S25",
+      "descriptionFa": "Galaxy S25 با نمایشگر 6.2 اینچی Dynamic AMOLED 2X، پردازندهٔ Snapdragon 8 Elite for Galaxy و باتری با ظرفیت معمول 4000 میلی‌آمپرساعت معرفی شده است. دوربین اصلی این مدل 50 مگاپیکسل است.",
+      "descriptionEn": "Galaxy S25 has a 6.2-inch Dynamic AMOLED 2X display, Snapdragon 8 Elite for Galaxy processor and 4000 mAh typical battery. Its main rear camera is 50 MP.",
+      "isDemo": true,
+      "referencePriceRial": null,
+      "availability": "unknown",
+      "imageUrls": [
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931bdbomea-544634382",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931blbomea-544634420",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931bzsomea-544634496",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931blgomea-544634458"
+      ],
+      "defaultConfigurationKey": "12-256-icyblue",
+      "specifications": {
+        "screenInches": "6.2",
+        "display": "Dynamic AMOLED 2X",
+        "resolution": "1080 × 2340",
+        "refreshRateHz": "120",
+        "processor": "Snapdragon 8 Elite for Galaxy",
+        "rearCameraMp": [
+          "50",
+          "12",
+          "10"
+        ],
+        "frontCameraMp": "12",
+        "batteryTypicalMah": "4000",
+        "weightG": "162",
+        "chargingMaxW": "25",
+        "protection": "IP68",
+        "network": "5G",
+        "dimensionsMm": "146.9 × 70.5 × 7.2"
+      },
+      "colors": [
+        {
+          "key": "navy",
+          "nameFa": "سرمه‌ای",
+          "nameEn": "Navy",
+          "hex": "#35465d",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931bdbomea-544634382"
+        },
+        {
+          "key": "icyblue",
+          "nameFa": "آبی یخی",
+          "nameEn": "Icyblue",
+          "hex": "#d5e2e9",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931blbomea-544634420"
+        },
+        {
+          "key": "silver-shadow",
+          "nameFa": "نقره‌ای",
+          "nameEn": "Silver Shadow",
+          "hex": "#c8c8c6",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931bzsomea-544634496"
+        },
+        {
+          "key": "mint",
+          "nameFa": "سبز نعنایی",
+          "nameEn": "Mint",
+          "hex": "#b9d7c6",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931blgomea-544634458"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "dd6b7dbbf17324ed59954c1e3751e2a9",
+          "key": "12-128-icyblue",
+          "ramGb": 12,
+          "storageGb": 128,
+          "colorKey": "icyblue",
+          "colorNameFa": "آبی یخی",
+          "colorNameEn": "Icyblue",
+          "colorHex": "#d5e2e9",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931blbomea-544634420",
+          "regionalModelCode": "SM-S931BLBIMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "8fb5d668dad104b82a94883575d61455",
+          "key": "12-128-mint",
+          "ramGb": 12,
+          "storageGb": 128,
+          "colorKey": "mint",
+          "colorNameFa": "سبز نعنایی",
+          "colorNameEn": "Mint",
+          "colorHex": "#b9d7c6",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931blgomea-544634458",
+          "regionalModelCode": "SM-S931BLGIMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "6446a987f169c5dd5e8f5701542076a1",
+          "key": "12-128-navy",
+          "ramGb": 12,
+          "storageGb": 128,
+          "colorKey": "navy",
+          "colorNameFa": "سرمه‌ای",
+          "colorNameEn": "Navy",
+          "colorHex": "#35465d",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931bdbomea-544634382",
+          "regionalModelCode": "SM-S931BDBIMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "4a14f6f39ce4c1f48da0ff583774de0f",
+          "key": "12-128-silver-shadow",
+          "ramGb": 12,
+          "storageGb": 128,
+          "colorKey": "silver-shadow",
+          "colorNameFa": "نقره‌ای",
+          "colorNameEn": "Silver Shadow",
+          "colorHex": "#c8c8c6",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931bzsomea-544634496",
+          "regionalModelCode": "SM-S931BZSIMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "024baa2a49bd3fa61052747879ec0a5a",
+          "key": "12-256-icyblue",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "icyblue",
+          "colorNameFa": "آبی یخی",
+          "colorNameEn": "Icyblue",
+          "colorHex": "#d5e2e9",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931blbomea-544634420",
+          "regionalModelCode": "SM-S931BLBOMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "8173478139d0de11fdf3fe3cc277451a",
+          "key": "12-256-mint",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "mint",
+          "colorNameFa": "سبز نعنایی",
+          "colorNameEn": "Mint",
+          "colorHex": "#b9d7c6",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931blgomea-544634458",
+          "regionalModelCode": "SM-S931BLGOMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "72648e476619806bc7aeaba75cdca38f",
+          "key": "12-256-navy",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "navy",
+          "colorNameFa": "سرمه‌ای",
+          "colorNameEn": "Navy",
+          "colorHex": "#35465d",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931bdbomea-544634382",
+          "regionalModelCode": "SM-S931BDBOMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "821912c50a3531e4ce96f3ae0ebded0b",
+          "key": "12-256-silver-shadow",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "silver-shadow",
+          "colorNameFa": "نقره‌ای",
+          "colorNameEn": "Silver Shadow",
+          "colorHex": "#c8c8c6",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931bzsomea-544634496",
+          "regionalModelCode": "SM-S931BZSOMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "de8576dab5912b5c247f7994100d774b",
+          "key": "12-512-icyblue",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "icyblue",
+          "colorNameFa": "آبی یخی",
+          "colorNameEn": "Icyblue",
+          "colorHex": "#d5e2e9",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931blbomea-544634420",
+          "regionalModelCode": "SM-S931BLBPMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "27ed0109a8c02cabb8e935e867d013f5",
+          "key": "12-512-mint",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "mint",
+          "colorNameFa": "سبز نعنایی",
+          "colorNameEn": "Mint",
+          "colorHex": "#b9d7c6",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931blgomea-544634458",
+          "regionalModelCode": "SM-S931BLGPMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "7a936cbf320f29fd63207bf881fef7f3",
+          "key": "12-512-navy",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "navy",
+          "colorNameFa": "سرمه‌ای",
+          "colorNameEn": "Navy",
+          "colorHex": "#35465d",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931bdbomea-544634382",
+          "regionalModelCode": "SM-S931BDBPMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "c7fabc65607e9d794cdabcde538b2bf4",
+          "key": "12-512-silver-shadow",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "silver-shadow",
+          "colorNameFa": "نقره‌ای",
+          "colorNameEn": "Silver Shadow",
+          "colorHex": "#c8c8c6",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s931-sm-s931bzsomea-544634496",
+          "regionalModelCode": "SM-S931BZSPMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        }
+      ],
+      "provenance": {
+        "visibility": "internal-only",
+        "checkedOn": "2026-10-28",
+        "officialPages": [
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-s/galaxy-s25-mint-256gb-sm-s931blgomea/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-s25/buy/?modelCode=SM-S931BLGOMEA",
+            "htmlSha256": "fd89a4a73ff2cfc462f52189ea347e8eb9c220da11f164753a358ab7b5b33e6b"
+          }
+        ],
+        "officialAdditionalSources": [
+          "https://www.samsung.com/ae/mobile-phone-buying-guide/introducing-samsung-galaxy-s25/",
+          "https://www.samsung.com/ae/smartphones/galaxy-s25/specs/"
+        ],
+        "iranRetailCatalogue": {
+          "url": "https://www.technolife.com/product-73382/گوشی-موبايل-سامسونگ-مدل-galaxy-s25-5g-ظرفیت-256-گیگابایت-رم-12-گیگابایت",
+          "evidence": "Product/catalogue title lists this Samsung model in an Iranian retailer catalogue; no price, stock, warranty, registration or delivery claim is imported.",
+          "liveStockVerified": false
+        },
+        "officialIranCatalogue": {
+          "url": "https://images.samsung.com/is/content/samsung/assets/iran/smartphones/mobile-catalogue/07-2025/general-catalog-july-2025.pdf",
+          "modelPresenceOnly": true
+        },
+        "configurationEvidence": "Exact Samsung regional buying metadata / regional product page, not a Cartesian combination of independent axes.",
+        "regionalSkuIsIranPackClaim": false,
+        "imageRights": "Official public Samsung product gallery asset; no separate distribution licence is recorded.",
+        "publicSourceOrPriceFieldsAllowed": false
+      }
+    },
+    {
+      "key": "samsung-galaxy-s25-ultra",
+      "categoryId": "phones",
+      "brandId": "samsung",
+      "slug": "samsung-galaxy-s25-ultra",
+      "modelCode": "SM-S938B",
+      "nameFa": "گوشی سامسونگ Galaxy S25 Ultra",
+      "nameEn": "Samsung Galaxy S25 Ultra",
+      "descriptionFa": "Galaxy S25 Ultra با نمایشگر 6.9 اینچی Dynamic AMOLED 2X، پردازندهٔ Snapdragon 8 Elite for Galaxy و باتری با ظرفیت معمول 5000 میلی‌آمپرساعت معرفی شده است. دوربین اصلی این مدل 200 مگاپیکسل است.",
+      "descriptionEn": "Galaxy S25 Ultra has a 6.9-inch Dynamic AMOLED 2X display, Snapdragon 8 Elite for Galaxy processor and 5000 mAh typical battery. Its main rear camera is 200 MP.",
+      "isDemo": true,
+      "referencePriceRial": null,
+      "availability": "unknown",
+      "imageUrls": [
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzbimea-544633174",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bztimea-544633564",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzkimea-544633342",
+        "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzsimea-544633453"
+      ],
+      "defaultConfigurationKey": "12-256-titanium-black",
+      "specifications": {
+        "screenInches": "6.9",
+        "display": "Dynamic AMOLED 2X",
+        "resolution": "1440 × 3120",
+        "refreshRateHz": "120",
+        "processor": "Snapdragon 8 Elite for Galaxy",
+        "rearCameraMp": [
+          "200",
+          "50",
+          "50",
+          "10"
+        ],
+        "frontCameraMp": "12",
+        "batteryTypicalMah": "5000",
+        "weightG": "218",
+        "chargingMaxW": "45",
+        "protection": "IP68",
+        "network": "5G",
+        "dimensionsMm": "162.8 × 77.6 × 8.2"
+      },
+      "colors": [
+        {
+          "key": "titanium-silverblue",
+          "nameFa": "آبی نقره‌ای تیتانیومی",
+          "nameEn": "Titanium Silverblue",
+          "hex": "#a5b4bf",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzbimea-544633174"
+        },
+        {
+          "key": "titanium-gray",
+          "nameFa": "خاکستری تیتانیومی",
+          "nameEn": "Titanium Gray",
+          "hex": "#8e8981",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bztimea-544633564"
+        },
+        {
+          "key": "titanium-black",
+          "nameFa": "مشکی تیتانیومی",
+          "nameEn": "Titanium Black",
+          "hex": "#4a4a48",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzkimea-544633342"
+        },
+        {
+          "key": "titanium-whitesilver",
+          "nameFa": "سفید نقره‌ای تیتانیومی",
+          "nameEn": "Titanium Whitesilver",
+          "hex": "#d9d9d3",
+          "hexIsApproximate": true,
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzsimea-544633453"
+        }
+      ],
+      "configurations": [
+        {
+          "id": "3656e5b8b7854fce19103728425135e5",
+          "key": "12-256-titanium-black",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "titanium-black",
+          "colorNameFa": "مشکی تیتانیومی",
+          "colorNameEn": "Titanium Black",
+          "colorHex": "#4a4a48",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzkimea-544633342",
+          "regionalModelCode": "SM-S938BZKIMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "858634d9d176f34f916684d7b2d8cb01",
+          "key": "12-256-titanium-gray",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "titanium-gray",
+          "colorNameFa": "خاکستری تیتانیومی",
+          "colorNameEn": "Titanium Gray",
+          "colorHex": "#8e8981",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bztimea-544633564",
+          "regionalModelCode": "SM-S938BZTIMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "8d4d27c7a0de4152410822a305a2342f",
+          "key": "12-256-titanium-silverblue",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "titanium-silverblue",
+          "colorNameFa": "آبی نقره‌ای تیتانیومی",
+          "colorNameEn": "Titanium Silverblue",
+          "colorHex": "#a5b4bf",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzbimea-544633174",
+          "regionalModelCode": "SM-S938BZBIMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "bd8cab5819a5f384264d9b3d44dcc254",
+          "key": "12-256-titanium-whitesilver",
+          "ramGb": 12,
+          "storageGb": 256,
+          "colorKey": "titanium-whitesilver",
+          "colorNameFa": "سفید نقره‌ای تیتانیومی",
+          "colorNameEn": "Titanium Whitesilver",
+          "colorHex": "#d9d9d3",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzsimea-544633453",
+          "regionalModelCode": "SM-S938BZSIMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "4f4308285617b5a0d12297e6cd9915b1",
+          "key": "12-512-titanium-black",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "titanium-black",
+          "colorNameFa": "مشکی تیتانیومی",
+          "colorNameEn": "Titanium Black",
+          "colorHex": "#4a4a48",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzkimea-544633342",
+          "regionalModelCode": "SM-S938BZKOMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "3e8abfc9e9d9b48ed7d31330374480f5",
+          "key": "12-512-titanium-gray",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "titanium-gray",
+          "colorNameFa": "خاکستری تیتانیومی",
+          "colorNameEn": "Titanium Gray",
+          "colorHex": "#8e8981",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bztimea-544633564",
+          "regionalModelCode": "SM-S938BZTOMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "b18fa709ff4afab54323b4cbe621d241",
+          "key": "12-512-titanium-silverblue",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "titanium-silverblue",
+          "colorNameFa": "آبی نقره‌ای تیتانیومی",
+          "colorNameEn": "Titanium Silverblue",
+          "colorHex": "#a5b4bf",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzbimea-544633174",
+          "regionalModelCode": "SM-S938BZBOMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "38a1e98391990bedfc8e339c4af06627",
+          "key": "12-512-titanium-whitesilver",
+          "ramGb": 12,
+          "storageGb": 512,
+          "colorKey": "titanium-whitesilver",
+          "colorNameFa": "سفید نقره‌ای تیتانیومی",
+          "colorNameEn": "Titanium Whitesilver",
+          "colorHex": "#d9d9d3",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzsimea-544633453",
+          "regionalModelCode": "SM-S938BZSOMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "280776f978dce6cef9ffd1bd4b87844f",
+          "key": "12-1024-titanium-black",
+          "ramGb": 12,
+          "storageGb": 1024,
+          "colorKey": "titanium-black",
+          "colorNameFa": "مشکی تیتانیومی",
+          "colorNameEn": "Titanium Black",
+          "colorHex": "#4a4a48",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzkimea-544633342",
+          "regionalModelCode": "SM-S938BZKPMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "47547126baac6211c7b9d5ac3f86285e",
+          "key": "12-1024-titanium-gray",
+          "ramGb": 12,
+          "storageGb": 1024,
+          "colorKey": "titanium-gray",
+          "colorNameFa": "خاکستری تیتانیومی",
+          "colorNameEn": "Titanium Gray",
+          "colorHex": "#8e8981",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bztimea-544633564",
+          "regionalModelCode": "SM-S938BZTPMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "7a12f3368129117ddcd503a817b4e7fa",
+          "key": "12-1024-titanium-silverblue",
+          "ramGb": 12,
+          "storageGb": 1024,
+          "colorKey": "titanium-silverblue",
+          "colorNameFa": "آبی نقره‌ای تیتانیومی",
+          "colorNameEn": "Titanium Silverblue",
+          "colorHex": "#a5b4bf",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzbimea-544633174",
+          "regionalModelCode": "SM-S938BZBPMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        },
+        {
+          "id": "11f054a3737543cdce3ac10c81df7d73",
+          "key": "12-1024-titanium-whitesilver",
+          "ramGb": 12,
+          "storageGb": 1024,
+          "colorKey": "titanium-whitesilver",
+          "colorNameFa": "سفید نقره‌ای تیتانیومی",
+          "colorNameEn": "Titanium Whitesilver",
+          "colorHex": "#d9d9d3",
+          "imageUrl": "https://images.samsung.com/is/image/samsung/p6pim/ae/2501/gallery/ae-galaxy-s25-s938-sm-s938bzsimea-544633453",
+          "regionalModelCode": "SM-S938BZSPMEA",
+          "linkedStoreVariantId": null,
+          "availability": "unknown",
+          "isDemo": true
+        }
+      ],
+      "provenance": {
+        "visibility": "internal-only",
+        "checkedOn": "2026-10-28",
+        "officialPages": [
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-s25-ultra/specs/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-s25-ultra/specs/",
+            "htmlSha256": "96862064c4e3e70b8ff24729cf5e31969eee2692a05650331c21a413def559fd"
+          },
+          {
+            "url": "https://www.samsung.com/ae/smartphones/galaxy-s25-ultra/buy/",
+            "finalUrl": "https://www.samsung.com/ae/smartphones/galaxy-s25-ultra/buy/",
+            "htmlSha256": "4465fd228295bb51b813888976741eb7fd1b55a251740e51aba05a09c50c5c0a"
+          }
+        ],
+        "officialAdditionalSources": [
+          "https://www.samsung.com/ae/mobile-phone-buying-guide/introducing-samsung-galaxy-s25/"
+        ],
+        "iranRetailCatalogue": {
+          "url": "https://www.technolife.com/product-69015/گوشی-موبایل-سامسونگ-galaxy-s25-ultra-5g-ظرفیت-256-گیگابایت-رم-12-گیگابایت---ویتنام",
+          "evidence": "Product/catalogue title lists this Samsung model in an Iranian retailer catalogue; no price, stock, warranty, registration or delivery claim is imported.",
+          "liveStockVerified": false
+        },
+        "officialIranCatalogue": {
+          "url": "https://images.samsung.com/is/content/samsung/assets/iran/smartphones/mobile-catalogue/07-2025/general-catalog-july-2025.pdf",
+          "modelPresenceOnly": true
+        },
+        "configurationEvidence": "Exact Samsung regional buying metadata / regional product page, not a Cartesian combination of independent axes.",
+        "regionalSkuIsIranPackClaim": false,
+        "imageRights": "Official public Samsung product gallery asset; no separate distribution licence is recorded.",
+        "publicSourceOrPriceFieldsAllowed": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+# وضعیت و نقطهٔ ادامه
+
+آخرین به‌روزرسانی: 2026-10-27. **اصلی محلی۵۴؛ پیوست خصوصی تیکت پذیرفته و منتشر است. کل PRD/PDF هنوز کامل نیست.** D34 ادامه تا تکمیل همهٔ بخش‌هاست؛ پایان یک برش پایان هدف نیست. تاریخچهٔ کامل پیش۵۴ در [آرشیو](archive/STATUS-before-ticket-files54-release.md) محفوظ است.
+
+## اجرای اصلی محلی۵۴
+
+- API: http://127.0.0.1:5080 — PID20930/session5900؛ restart: `python3 tmp/ticket-files54-release.py serve-api`.
+- فروشگاه: http://127.0.0.1:3000 — PID20985/session83646؛ restart: `python3 tmp/ticket-files54-release.py serve-storefront`.
+- پنل: http://127.0.0.1:3173 — PID20899/session3958؛ restart: `node tmp/serve-ticket-files54-main-admin.mjs`.
+- descriptorهای `tmp/{api,storefront,admin}-runtime-current.json` مرجع مسیر/hash/restart هستند. build فروشگاه `AI1Ny17EOIrH-bKykiy5T`، API mode و preview خاموش است. `tmp/ticket-files54-layout-runtime-set.json` snapshot ثابت پیش‌انتشار است؛ mainPublished تاریخی آن با release/current اشتباه نشود.
+- SQL۵۴ migration،۱۴۷ جدول و۱۲ schema دارد. هر۱۴۳ جدول قبلی به‌جز history پشتیبانی دقیقاً برابر است؛ تمام۵۲ migration تاریخی حفظ و فقط history پشتیبانی+۱، Files history+۱ و دو جدول تجاری خالی اضافه شدند. schema قبلی جز unique constraint افزایشی Messages حفظ است؛ پسHTTP هر۱۴۷ جدول/schema/view برابر است.
+- Stock101/0/0؛ Orders/Reservations/Settings/Policies/SourcingRequests/paymenthistory/Support/Inbox/Files صفرند. CMS site3 FA/EN و auth1 محفوظ‌اند؛ سند support اصلی هنوز ثبت/منتشر نشده، FAQ خالی پنهان است و تیکت متنی کار می‌کند. هیچ role/grant/نمونه/سیاست مالی/provider به اصلی اضافه نشد.
+- **Files اصلی Disabled است**؛ S3/bucket/ClamAV تولیدی هنوز پیکربندی نشده‌اند. آزمون واقعی در سرویس‌های مستقل QA انجام و آن منابع جمع شدند؛ موفقیت QA به معنی فعال‌بودن آپلود اصلی نیست. پیام متنی مستقل در دسترس است.
+- بکاپ تازه20,045,824بایت COPY_ONLY/CHECKSUM/VERIFYONLY و keyring خصوصی: `artifacts/checks/main-pre-ticket-files54-backup.json`. همان میزبان است؛ offsite/restore۵۴/nativeLinux را اثبات نمی‌کند. current/rollback/restart/keys/backups/evidence در tmp محفوظ‌اند؛ tmp کامل پاک نشود. writer قدیمی خودکار علیه۵۴ اجرا نشود. Redis پارسه طبق D32 روشن و دست‌نخورده است.
+
+## فایل خصوصی و پیوست تیکت۵۴ پذیرفته
+
+[PRIVATE-FILES](PRIVATE-FILES.md) قرارداد و منابع رسمی را ثبت می‌کند. Files مستقل مالک AES-256-GCM/keywrap/نام حفاظت‌شده و Staged→Stored→Attached است؛ Support رابطهٔ یک فایل به یک پیام و UUID را مالک است. اسکن و S3 I/O خارج SQL؛ attach/پیام/receipt/notification/audit در root Serializable، actor+command+IntentHash شامل caption/locale و digest واقعی فایل‌اند. unknownwrite حذف خودکار ندارد؛ retry ورودی متفاوت409 است. دانلود فقط owner یا staff/MFA/support.read، attachment/no-store/noindex/nosniff/sandbox و بدون URL عمومی است. multipart دستی bounded بدون IFormFile/tempdisk، سقف فنی۸MiB/۲۰پیوست و slot مستقل upload/download تا پایان bodywrite، timeout و zeroing پیاده‌اند. filesystem فقط Development؛ پیش‌فرض Disabled.
+
+۹۵۱ واحد،کل۶۵۸ SQL واقعی،۳۸۹ فروشگاه/۲۱۴ پنل/۷proxy و typecheck/build موفق‌اند؛۱۴DLL unit/SQL/harness/frozen برابر و مدل Files/Support بدون pending است. رگرسیون اول۶۵۷ SQL با۱۲ شکست خاتمه یافت: سقف۱GiB testheap و deadlock پیچیده‌شدهٔ EF؛ تشخیص innerexception،۲GiB فقط تست و حداکثر۲ fixture مستقل اصلاح شد، Task.WhenAllهای دامنه حفظ و کل۶۵۸ با صفر شکست/skip موفق شد. دیتابیس نیمه‌ساختهٔ خالی OOM و کلیدهای دقیق همانGUID جمع شدند؛ guard اولیه cleanup ابتدا directory755 را رد کرد، سپس با تطبیق مسیر/مالکیت و XML۶۰۰ فقط همان fixture پاک شد.
+
+S3 واقعی SeaweedFS4.51 ARM64 و ClamAV1.5.4/28164 با امضای25Oct و کمتر۴۸ساعت هنگام آزمون، PDF معتبر، رد EICAR در حافظه، conditional-create/no-overwrite، anonymous403 و roundtrip دقیق با SQL واقعی پذیرفته‌اند. imageها pinned و metadata در `tmp/private-files-services-current.json` اکنون cleanup=true است. Clam فقط imageamd64 داشت و از emulation مجاز موجود استفاده شد؛ nativeLinux پذیرفته نیست. اجرای اول verifier به contentroot اشتباه executable تست رسید؛ helper با contentroot صریح اصلاح و اجرای بعد موفق شد. MinIO upstream هنگام بررسی archived بود و fixture انتخاب نشد؛ SeaweedFS انتخاب اجباری تولید نیست.
+
+۱۲ پاسخ SQL و۵۶۶ پاسخ مرورگر با decoder تولیدی، دو multipart canonical با hash واقعی و۳ binary response پذیرفته‌اند. مشتری و SupportAgent/MFA ساختگی، دو PDF، حفظ caption/file در refresh دستی و draft با live refresh، قطع پاسخ موفق upload کارمند→unknown با همان UUID/body/file در RAM→GETreceipt بدون POST تکراری، دانلود واقعی هر دو طرف با hash دقیق، FA/EN، logout در تب دیگر→پنهان‌شدن و login→بازیابی دو پیوست موفق‌اند. از۱۴۷ جدول QA فقط۱۰ جدول مجاز تغییر و۱۳۷ جدول دیگر برابرند؛۱ticket/۳message/۳event/۳command/۲attachment/۲AttachedObject/۱notification و سیاست/سفارش/رزرو صفر. width۱۲۸۰/client=scroll۱۲۶۵؛ mobile پذیرفته نیست. console نهایی خطا/هشدار صفر است.
+
+ابزار انتخاب/دانلود فایل تأخیر طولانی داشت؛ gateway آزمایشی نخست شمارندهٔ طول عمر realtime۲۰۰۰ و سپس ضبط۵۰۰response را پر کرد. فقط guardهای fixture اصلاح و gateway با حفظ evidence restart شد؛ دانلود اول پنل موفق اعلام نشد و دانلود مجدد با فایل محلی/hash دقیق پذیرفته شد. status زنده در پنل خانهٔ grid اشغال می‌کرد؛ CSS مشترک grid-column:1/-1 اصلاح و هر دو رابط rebuild/freeze شدند. reload نهایی، دو ستون هم‌تراز و بدون overflow، خواندن پایدار دو پیوست و FA/EN تأیید شد. شواهد شکست‌ها حفظ‌اند.
+
+QA SQL/کلید/credentialها، تب‌های62–64 و پورت‌های3105/3175/5181/5182 پاک/بسته‌اند. فقط دو container/network/volume با تطبیق label+ID دقیق و bind خصوصی ciphertext/secretهای همانQA جمع شدند؛ منابع قبلی و Redis پارسه تغییر نکردند. PDFهای ساختگی دانلودشده در Downloads صرفاً شاهدند و فایل شخصی حذف نشد. `ticket-files54-source-acceptance.json`، `private-files-real-services.json`، `ticket-files-browser-wire/acceptance.json`، `ticket-files-browser-sql.json` و `ticket-files-qa-cleanup.json` مرجع‌اند.
+
+پس از backup و baseline تازه، migrationهای `20261026095307_PrivateDocumentObjects` و `20261026101051_PrivateTicketAttachments` روی اصلی اعمال شدند.۱۰۸۶ HTTP شامل۱۰۴۱ شاهد قبلی و حفظ۶۳۵asset پنل/۲۳۰Next و۱۶مرز فایل401 موفق است. `ticket-files54-main-release.json` و before/after/post-smoke شواهدند. اتصال مدارک Credit، نگهداری/حذف واقعی، restore همراه objectها، nativeLinux/load/mobile و کل پروژه بازند؛ فایل عمومی یا آنتی‌ویروس همیشه‌موفق محصول نداریم.
+
+## بخش‌های پذیرفتهٔ پیشین محفوظ
+
+[PRIVATE-REALTIME](PRIVATE-REALTIME.md): SignalR JSON/LongPolling هم‌مبدأ، bearer header و lease مقید، pulse پسcommit بی‌محتوا و journal/draft/reconnect؛ SQL مرجع است. [PRIVATE-NOTIFICATIONS](PRIVATE-NOTIFICATIONS.md): Inbox دائمی/owner-only/read یکنواخت. [SUPPORT-CONTENT](SUPPORT-CONTENT.md): FAQ و انتشار/restore نسخه‌دار FA/EN. [SUPPORT-TICKETS](SUPPORT-TICKETS.md): مکالمهٔ SQL رمز‌شده/receipt/SupportAgent/MFA. [PAYMENT-CORE](PAYMENT-CORE.md): هسته۵۰ با provider خاموش. [ORDER-FULFILLMENT](ORDER-FULFILLMENT.md): ارسال کامل صرفاً فیزیکی۴۸. بازار/تأمین/هلو/دست‌دوم/review/compare/CMS و شواهد قدیمی در آرشیو محفوظ‌اند.
+
+## کار بعدی برای D34 — ادامه بده
+
+سورس جاری پس۵۴: پیش‌نویس CREDIT-01 در حال پذیرش است، نه کل پروندهٔ چک. CreditDbContext سه جدول Applications/ApplicationEvents/ApplicationCommands و migration افزایشی `20261026212840_PrivateCreditDraftApplications` دارد؛ روی اصلی اعمال نشده است. Create/cancel/list/detail/receipt، snapshot رمز‌شدهٔ طرح، ریال string و audit root Serializable ساخته‌اند. CreditReviewer با credit.read/write مستقل از finance.read تعریف شده و هیچ کاربر اصلی نقش تازه نگرفته است. submit/consent/documents/review/order هنوز فعال نیستند.۹۶۳واحد/کل۶۶۲SQL واقعی با صفر شکست/skip،۸wireSQL،۳۹۴فروشگاه/۲۱۴پنل/۸proxy موفق‌اند؛ رگرسیون واحد اول فهرست صریح نقش قدیمی را رد کرد و انتظار نقش تازه بدون کاهش assertion جداسازی اصلاح شد. تست TS ابتدا safeParse رقم فارسی را به BigInt می‌رساند؛ guard پول و refinements اصلاح و کل۳۹۴ موفق شد. build/typecheck نهایی، QA مرورگر/cleanup/freeze/backup/انتشار۵۵ باقی‌اند. شواهد credit-applications-* هستند. کار از این پذیرش ادامه یابد، نه ساخت دوبارهٔ هسته. پس آن شرایط قابل تنظیم/رضایت/مدارک/بررسی/اتصال چک ادامه دارند.
+
+1. CREDIT-01: پروندهٔ درخواست چک، رضایت و snapshot طرح/مدارک خصوصی با قرارداد Files، بررسی دستی مجوزدار و journal/receipt؛ سپس سررسید/وصول/برگشت CREDIT-02. درصد/ماه/پیش‌پرداخت یا شرایط واقعی از درخواست ادامه استنباط نشود.
+2. ارسال جزئی/دیجیتال، مرجوعی/بازپرداخت، CMS پیشرفته/بلاگ/SEO، search/alert/loyalty و باقی PRD لازم‌اند؛ کل چرخه فروش/PDF کامل نیست.
+3. پرداخت زنده initiation/verify/callback/reconcile/sandbox/refund وابسته D16 است؛ اطلاعات provider فعلاً نداریم و سؤال تکرار نشود. هلو live D30 و منابع مجاز بازار/نظر خارجی بازند؛ vendorAPI یا موفقیت ساختگی ساخته نشود.
+4. mobile/WCAG/performance/CI/nativeLinux/load/offsitebackup و معیارهای۱۲گانه شاهد مستقل می‌خواهند. هزینه/مالیات/گارانتی/مرجوعی/چک واقعی نامعلوم‌اند؛ mainSettings/Policy خاموش‌اند. D14 انتشار محلی،D21 نمونه فقطGUIDQA،D32 Redis روشن،D33 نگه‌داری tmp وD34 هدف کل پروژه حفظ‌اند.

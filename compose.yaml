@@ -1,0 +1,87 @@
+name: sayman-local
+services:
+  api:
+    profiles: [backend]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports: ["127.0.0.1:5080:8080"]
+    init: true
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Shop: "Server=sqlserver;Database=Sayman;User Id=sa;Password=${SQL_SA_PASSWORD:?Run python3 scripts/init-local-env.py};TrustServerCertificate=True;Connect Timeout=5"
+      Auth__SigningKey: ${AUTH_SIGNING_KEY:?Run python3 scripts/init-local-env.py}
+      Bootstrap__AdminPassword: ${BOOTSTRAP_ADMIN_PASSWORD:?Run python3 scripts/init-local-env.py}
+      Cors__Origins__0: http://127.0.0.1:3173
+      Cors__Origins__1: http://127.0.0.1:3000
+      Cors__AdminOrigins__0: http://127.0.0.1:3173
+    volumes: ["identity-keys:/var/lib/sayman/keys"]
+    depends_on:
+      sqlserver: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "dotnet", "Shop.Api.dll", "--health-probe"]
+      interval: 30s
+      timeout: 6s
+      start_period: 20s
+      retries: 3
+  admin:
+    profiles: [backend]
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        VITE_STOREFRONT_URL: http://127.0.0.1:3000
+    init: true
+    ports: ["127.0.0.1:3173:8080"]
+    environment:
+      ADMIN_API_URL: http://api:8080
+      ADMIN_PUBLIC_URL: http://127.0.0.1:3173
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  sqlserver:
+    profiles: [backend]
+    image: mcr.microsoft.com/mssql/server:2022-CU22-ubuntu-22.04@sha256:db9a8fe3098b7e8bbde41106bdc7caee942e97124e5fdb71b872ca208de3092d
+    platform: linux/amd64
+    ports: ["127.0.0.1:11433:1433"]
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?Run python3 scripts/init-local-env.py}
+      SQLCMDPASSWORD: ${SQL_SA_PASSWORD:?Run python3 scripts/init-local-env.py}
+      MSSQL_MEMORY_LIMIT_MB: "1536"
+    volumes: ["sql-data:/var/opt/mssql"]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -Q 'SELECT 1' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      start_period: 45s
+      retries: 12
+  storefront:
+    build:
+      context: .
+      dockerfile: apps/storefront/Dockerfile
+    ports:
+      - "127.0.0.1:3000:3000"
+    init: true
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      SHOP_ENABLE_PREVIEW: "true"
+      SHOP_PUBLIC_URL: ${SHOP_PUBLIC_URL:-http://127.0.0.1:3000}
+      SHOP_ENABLE_INDEXING: ${SHOP_ENABLE_INDEXING:-false}
+      SHOP_PWA_ENABLED: ${SHOP_PWA_ENABLED:-true}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+volumes:
+  sql-data:
+  identity-keys:

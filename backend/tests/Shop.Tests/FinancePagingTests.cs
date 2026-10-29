@@ -1,0 +1,34 @@
+using System.Net;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Shop.Modules.Payments;
+using Shop.Modules.Credit;
+using Shop.SharedKernel;
+using Xunit;
+namespace Shop.Tests;
+public sealed class FinancePagingTests
+{
+    [Fact] public void CursorBindsScopeAndEveryFilter(){var f=PurchaseAdminFilter.Create("كاربَر ۱۲","false","cat","cheque");Assert.Equal("کاربر 12",f.Search);var token=PurchaseAdminPaging.Encode("one",f,"method");Assert.Equal("one",PurchaseAdminPaging.Decode(token,f,"method"));Assert.Throws<BusinessException>(()=>PurchaseAdminPaging.Decode(token,f,"plan"));foreach(var other in new[]{PurchaseAdminFilter.Create("other","false","cat","cheque"),PurchaseAdminFilter.Create("كاربَر ۱۲","true","cat","cheque"),PurchaseAdminFilter.Create("كاربَر ۱۲","false","other","cheque"),PurchaseAdminFilter.Create("كاربَر ۱۲","false","cat","online")})Assert.Throws<BusinessException>(()=>PurchaseAdminPaging.Decode(token,other,"method"));Assert.Null(PurchaseAdminPaging.Decode(null,f,"method"));}
+    [Theory][InlineData("query")][InlineData("words")][InlineData("kind")][InlineData("enabled")][InlineData("id")][InlineData("control")]
+    public void UnsupportedFiltersAreRejected(string kind)=>Assert.Throws<BusinessException>(()=>PurchaseAdminFilter.Create(kind=="query"?new string('x',121):kind=="words"?"a b c d e f g h i":kind=="control"?"a\0b":null,kind=="enabled"?"yes":null,kind=="id"?"bad!":null,kind=="kind"?"cash":null));
+    [Fact] public void MalformedOrOversizedCursorsNeverReachSql(){foreach(var token in new[]{"!",new string('a',513),Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{}"))})Assert.Throws<BusinessException>(()=>PurchaseAdminPaging.Decode(token,PurchaseAdminFilter.Create(),"plan"));}
+    [Fact] public void MethodAndPlanSqlProjectBoundedMetadataWithoutMoneyDescriptionsOrFullCategoryGraph(){var f=PurchaseAdminFilter.Create("طرح ۱۲","false","cat");using var m=new PaymentsDbContext(DesignTimeOptions.Create<PaymentsDbContext>("payments"));using var p=new CreditDbContext(DesignTimeOptions.Create<CreditDbContext>("credit"));var method=AdminPurchaseMethods.Project(AdminPurchaseMethods.Match(m,f,"after").OrderBy(x=>x.Id).Take(51)).ToQueryString();var plan=AdminCreditPlans.Project(AdminCreditPlans.Match(p,f,"after").OrderBy(x=>x.Id).Take(51)).ToQueryString();foreach(var sql in new[]{method,plan}){Assert.Contains("TOP",sql);Assert.Contains("EXISTS",sql);Assert.Contains("COUNT",sql);Assert.Contains("REPLACE",sql);Assert.Contains("COLLATE Latin1_General_100_CI_AI",sql);Assert.DoesNotContain("AmountRial",sql);Assert.DoesNotContain("Description",sql);Assert.DoesNotContain("Version",sql);}Assert.Throws<BusinessException>(()=>AdminCreditPlans.Match(p,PurchaseAdminFilter.Create(kind:"online")));}
+    private static WebApplicationFactory<Program> Host(FakeFinance fake)=>new ApiFactory().WithWebHostBuilder(b=>b.ConfigureTestServices(s=>{s.AddSingleton<IAdminPurchaseMethods>(fake);s.AddSingleton<IAdminCreditPlans>(fake);}));
+    private static HttpClient Client(WebApplicationFactory<Program> host,string? kind="access",string permission="finance.read"){var c=host.CreateClient();if(kind is not null)c.DefaultRequestHeaders.Add("X-Test-Kind",kind);c.DefaultRequestHeaders.Add("X-Test-Permissions",permission);return c;}
+    [Theory][InlineData(null,"",401)][InlineData("mfa_pending","finance.read",403)][InlineData("access","cms.read",403)]
+    public async Task EveryNewFinanceReadRequiresFullFinancePermission(string? kind,string permission,int expected){var fake=new FakeFinance();using var host=Host(fake);using var c=Client(host,kind,permission);foreach(var path in new[]{"/api/admin/purchase-methods-page","/api/admin/cheque-plans-page","/api/admin/purchase-methods/one","/api/admin/cheque-plans/one","/api/admin/purchase-summary"})Assert.Equal(expected,(int)(await c.GetAsync(path)).StatusCode);Assert.Equal(0,fake.Calls);}
+    [Theory][InlineData("/purchase-methods-page?kind=unknown")][InlineData("/cheque-plans-page?kind=online")][InlineData("/cheque-plans-page?enabled=true&enabled=false")][InlineData("/purchase-methods-page?cursor=bad!")][InlineData("/purchase-methods/bad!")][InlineData("/cheque-plans-page?ownerId=other")]
+    public async Task InvalidFiltersIdsAndDuplicateQueryKeysAreRejectedBeforeReading(string path){var fake=new FakeFinance();using var host=Host(fake);using var c=Client(host);Assert.Equal(HttpStatusCode.BadRequest,(await c.GetAsync("/api/admin"+path)).StatusCode);Assert.Equal(0,fake.Calls);}
+    [Fact] public async Task ActualHttpContractsKeepNullsLongMoneyAndSummaryCountsWithoutTransactions(){var fake=new FakeFinance();using var host=Host(fake);using var c=Client(host);foreach(var (path,name) in new[]{("purchase-methods-page","finance-method-page"),("cheque-plans-page","finance-plan-page"),("purchase-methods/one","finance-method-detail"),("cheque-plans/one","finance-plan-detail"),("purchase-summary","finance-summary")}){using var r=await c.GetAsync("/api/admin/"+path);Assert.Equal(HttpStatusCode.OK,r.StatusCode);Assert.Contains("no-store",r.Headers.CacheControl!.ToString());var json=await r.Content.ReadAsStringAsync();await ContractWireCapture.SaveAsync(name,json);if(name.EndsWith("page",StringComparison.Ordinal))Assert.Contains("\"nextCursor\":null",json);if(name.EndsWith("detail",StringComparison.Ordinal)){Assert.Contains("\"maxAmountRial\":null",json);Assert.Contains("9223372036854775807",json);}}Assert.Equal(6,fake.Calls);}
+    public sealed class FakeFinance:IAdminPurchaseMethods,IAdminCreditPlans
+    {
+        public int Calls;
+        public Task<AdminMethodPage> PageAsync(PurchaseAdminFilter f,string? cursor,CancellationToken ct){Calls++;return Task.FromResult(new AdminMethodPage(1,50,[new("one","روش نمونه","Sample method","online",false,false,1)],null));}
+        Task<AdminPlanPage> IAdminCreditPlans.PageAsync(PurchaseAdminFilter f,string? cursor,CancellationToken ct){Calls++;return Task.FromResult(new AdminPlanPage(1,50,[new("one","طرح نمونه","Sample plan",false,6,2,1500,1000,10,1)],null));}
+        public Task<AdminMethodDetail> DetailAsync(string id,CancellationToken ct){Calls++;return Task.FromResult(new AdminMethodDetail(1,new(id,"روش نمونه","Sample method","online","توضیح","Description",false,false,"9223372036854775807",null,["cat-missing"],"AAAAAAAAAAE=")));}
+        Task<AdminPlanDetail> IAdminCreditPlans.DetailAsync(string id,CancellationToken ct){Calls++;return Task.FromResult(new AdminPlanDetail(1,new(id,"طرح نمونه","Sample plan",false,6,2,1500,1000,10,"9223372036854775807",null,["cat-missing"],"AAAAAAAAAAE=")));}
+        public Task<PurchaseCounts> CountsAsync(CancellationToken ct){Calls++;return Task.FromResult(new PurchaseCounts("9223372036854775807","9007199254740993"));}
+    }
+}

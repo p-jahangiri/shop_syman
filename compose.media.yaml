@@ -1,0 +1,19 @@
+name: sayman-media
+services:
+  scanner:
+    image: clamav/clamav:stable@sha256:bda39705e291105049c3936e2803ac90b955172af8030f94f05dce1252df6c6d
+    platform: linux/amd64
+    init: true
+    restart: unless-stopped
+    cpus: 2
+    mem_limit: 4g
+    ports: ["127.0.0.1:13310:3310"]
+    volumes: ["signatures:/var/lib/clamav"]
+    healthcheck:
+      test: ["CMD-SHELL", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      start_period: 180s
+      retries: 5
+volumes:
+  signatures:

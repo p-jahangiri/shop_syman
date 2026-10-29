@@ -1,0 +1,69 @@
+# Alternative backend-only stack for Vercel frontends. Do not combine with full stack.
+name: sayman-production
+services:
+  api:
+    image: ${API_IMAGE:?Set the release.json API image including @sha256}
+    platform: linux/amd64
+    init: true
+    restart: unless-stopped
+    env_file: ["${API_RUNTIME_ENV_FILE:?Run production_release.py prepare-api}"]
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      DOTNET_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__Shop: ${ConnectionStrings__Shop:?Set the production runtime connection}
+      Auth__SigningKey: ${Auth__SigningKey:?Set a unique production signing key}
+      DataProtection__KeyDirectory: /var/lib/sayman/keys
+      DataProtection__CertificatePath: /run/secrets/identity-encryption.pfx
+      DataProtection__CertificatePassword: ${DataProtection__CertificatePassword:?Set the PFX password}
+      AllowedHosts: api;localhost;127.0.0.1
+      Cors__Origins__0: ${STOREFRONT_ORIGIN:?Set the exact HTTPS Vercel/custom-domain storefront origin}
+      Cors__Origins__1: ${ADMIN_ORIGIN:?Set the exact HTTPS Vercel/custom-domain admin origin}
+      Cors__AdminOrigins__0: ${ADMIN_ORIGIN}
+      Media__Storage: ${Media__Storage:-Disabled}
+      Files__Storage: ${Files__Storage:-Disabled}
+      Bootstrap__AdminPassword: ""
+    volumes:
+      - type: bind
+        source: ${SHARED_DIRECTORY:?Run production_release.py prepare-api}/identity-keys
+        target: /var/lib/sayman/keys
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${SHARED_DIRECTORY}/identity-encryption.pfx
+        target: /run/secrets/identity-encryption.pfx
+        read_only: true
+        bind: {create_host_path: false}
+    expose: ["8080"]
+    healthcheck:
+      test: ["CMD", "dotnet", "Shop.Api.dll", "--health-probe"]
+      interval: 15s
+      timeout: 10s
+      start_period: 30s
+      retries: 12
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    logging: {driver: json-file, options: {max-size: 10m, max-file: "5"}}
+  nginx:
+    image: ${NGINX_IMAGE:?Pin the official nginx image with @sha256}
+    platform: linux/amd64
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?Set the public API DNS name}
+      NGINX_ENVSUBST_FILTER: '^API_DOMAIN$$'
+    volumes:
+      - ./deploy/nginx/api.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - type: bind
+        source: ${SHARED_DIRECTORY}/tls
+        target: /etc/nginx/tls
+        read_only: true
+        bind: {create_host_path: false}
+    depends_on: {api: {condition: service_healthy}}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/healthz"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+    security_opt: ["no-new-privileges:true"]
+    logging: {driver: json-file, options: {max-size: 10m, max-file: "5"}}

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><TreatWarningsAsErrors>true</TreatWarningsAsErrors><NuGetAudit>false</NuGetAudit></PropertyGroup>
+  <ItemGroup>
+    <Reference Include="$(FrozenRuntime)/Shop.*.dll" Private="false" />
+    <Reference Include="$(FrozenRuntime)/Microsoft.EntityFrameworkCore*.dll" Private="false" />
+    <Reference Include="$(FrozenRuntime)/Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll" Private="false" />
+    <Reference Include="$(FrozenRuntime)/Microsoft.Data.SqlClient.dll" Private="false" />
+  </ItemGroup>
+  <Target Name="RequireFrozenRuntime" BeforeTargets="ResolveReferences"><Error Condition="!Exists('$(FrozenRuntime)/Shop.Api.dll')" Text="Pass the verified FrozenRuntime directory; this tool never builds product assemblies." /></Target>
+</Project>

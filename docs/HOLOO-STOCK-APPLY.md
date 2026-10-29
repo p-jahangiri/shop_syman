@@ -1,0 +1,19 @@
+# اعمال دستی ماندهٔ فیزیکی از فایل هلو
+
+اصلی/سورس۴۷ در 2026-10-26 محلی منتشر و پذیرفته شد. قرارداد vendor هلو نامعلوم و live خاموش است؛ این عملیات اصلاح دستی و بررسی‌شدهٔ انبار سایت است و سندی در هلو نمی‌نویسد. نسخه۴۶ و وابستگی‌های restart آن محفوظ‌اند.
+
+طراحی اجرایی: مسیر stock-preview مستقل،قرارداد v1reconciliation قبلی وcanApplyManual=falseآنرابدونتغییردارد. previewجدیدشاملهمانfacts+proofنسخهٔSKU/Product/used/digital/active ازCatalog وmarkers اعمال قبلی وfingerprintتماموابستگی‌هاست. RootیکreadSerializableباهمانCatalog/Inventoryدارد. خواندنفایلstagingبایدhashمتنرابطه‌ایraw/هدرراباPayloadHash ذخیره‌شدهدوبارهتطبیقدهد؛خرابیfailclosed.
+
+فقطردیف‌هایانتخاب‌شدهٔصریح (distinct/sorted،۱تا۲۰۰)،منبعactivewhole_store_physicalوquantityMeaning=physical؛ratioexact۰تا۱۰۰۰۰۰۰. فیلدغایبunknown،ردیفغایبازفایلحذف/صفرنیست. قیمت/محتوااصلاح‌نمی‌شود. Roleinventory.write+catalog.read/MFA. دوackصریح:فایلنمایندهٔماندهٔفیزیکیواقعیکاملبرایاینردیف‌هاست واثرعملیاتثبت‌نشدهدرسورسبررسی‌شده‌است. اینتأییدانسانیجایاتصالخودکارهلونیست.
+
+فرمان actor+N-UUID/hashbody وbatch/previewfingerprint/reason/rowNumbers/دوackاست. replayقبلخواندننسخه‌هایجاریازرسیدتاریخیبرمی‌گردد؛UUIDباpayloadمتفاوت409،رسیدفقطهمانactor. rootAuditSerializableهمانconnectionراهماهنگمی‌کند. ترتیبقفل:global accounting-warehousewhole_store_physical (همانwarehousewriter)→lookupرسید→Catalogimport/proofs→StockUP/HOLDمرتب→reconciliation/progress→comparefingerprint→اعتبارسنجیتمامردیف‌ها→writeهمه/ledger/receipt/audit→commit.
+
+کنترل‌ها:Stockنسخه‌دار وOnHandtarget>=Reserved+SourcingReserved؛سریال/IMEI وکارکردهیاUsedInspectionحتیStockغایبمسدود؛CatalogSKUactivephysical؛گردشانباربعدObservedAtمسدود؛هرbatch/rowفقطیکباردرهمهactors؛ObservedAtجدیدبایدازآخریناعمالبرایهمانVariantبزرگترباشد،حتیdelta0وسورسعوض‌شده. مدلبازارانبارمصنوعینمی‌سازد. Delta0رسیدثبت‌می‌کندولیledger/Stockبی‌دلیلنمی‌نویسد؛Stockغایبtarget0همغایبمی‌ماند.
+
+InventoryدوtableجدیدApplicationHeaderوLinesدارد؛headerprimaryId32وuniqueActor+CommandId،hash/payloadhash/fingerprint/company/warehouse/نسخه/reason/acks/demo/time/count؛linesimmutableیکتاBatchId+RowNumber،sourceitem/unit/rawquantity/ratio وSKU/Product/Link/Mappingversions/snapshotnames وbefore/afterStockversion/OnHand/Reserved/SourcingReserved/movementIdnullable. همهhistoryدرmoduleمالک؛FKفقطداخلی. replayازهمینsnapshotرابطه‌ایخوانده‌می‌شود؛نهStock/Catalogامروز. آخرینobservedباindexVariant/ObservedAtقابلqueryاست. SaveChangesguardsبرایEFhistoryوDownguard51000بادادهلازم‌اند.
+
+پذیرشلازم:SQLpositive/zero/subset/raceUUID/actor/tamper/staleهرdependency/نسخهٔStockوholdrace/oldobservation/duplicatebatchrow/usedبدونStock/serial/rollbackمیانیوreceipt/audit/Production/immutableDown؛wireخام→decoderتولیدی؛UIانتخابصریح/قفلRAMمالک/دو200قطع‌شده/همانUUIDbody/GETرسید/ناوبری/ledgerوتاریخچه؛QAcleanup؛backupتازه/افزایشیخالی/حفظاصلی. شواهد پذیرش زیر ثبت شده‌اند؛ mobile و vendor/live همچنان بازند.
+
+پذیرش:۸۶۶ unit/۲۴ SQL هدفمند/کل۵۶۷ SQL واقعی/۲۰۸ پنل/۳ server proxy و typecheck/build؛۶ پاسخ خام SQL و input واقعی با decoder تولیدی به مقادیر/نسخه‌های همان preview بسته شدند. مرورگر artifact immutable:3→6، دو200 قطع‌شده و retry یکسان، ناوبری و GET رسید، جلوگیری از تکرار فایل، فایل تازه6→2 و رسید تاریخی3→6 پس از تغییر؛ قیمت/تعهدات و همهٔ ردیف‌های دیگر Stock دقیقاً محفوظ‌اند. FA/EN فروشگاه موجودی2 را نشان داد. QA کامل پاک شد. main۴۶→۴۷ با بکاپ تازه، دو جدول خالی، حفظ۱۲۶ جدول قدیمی جز history Inventory، تمام schema/viewها و۱۴۶۷ HTTP پذیرفته است؛ پس از HTTP هر۱۲۹ جدول برابر است.
+
+مرجع immutable: `tmp/holoo-stock-apply47-runtime-set.json`. شواهد: `artifacts/checks/holoo-stock-apply-browser-{acceptance,sql-after,wire-acceptance}.json` و `holoo-stock-apply47-main-release.json`. فروشگاه همان build۴۴ است؛ main browser تکرار نشد. عرض واقعی desktop۱۲۸۰ بود و mobile پذیرفته نیست. ایراد مستقل حفظ تنوع هنگام تغییر زبان در STATUS برای اصلاح بعدی ثبت شد. proxy۴۶/۴۷ جدا حفظ شده‌اند. Down با history خطای51000 دارد؛ restore/Down یا writer قبلی علیه۴۷ خودکار اجرا نشود.
