@@ -25,17 +25,19 @@ jobs:
     env:
       VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ vars[matrix.project_id_variable] }}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       STOREFRONT_PUBLIC_URL: ${{ vars.STOREFRONT_PUBLIC_URL }}
       RELEASE_APP: ${{ matrix.app }}
       NEXT_TELEMETRY_DISABLED: '1'
       VERCEL_TELEMETRY_DISABLED: '1'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
       - name: Check tag and configured project
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -44,7 +46,9 @@ jobs:
       - name: Install pinned Vercel CLI
         run: npm install --global vercel@65.7.0 --no-audit --no-fund
       - name: Pull production settings
-        run: vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=production
       - name: Validate production settings and public API readiness
         shell: bash
         run: |
@@ -74,9 +78,11 @@ jobs:
               throw Error('VITE_STOREFRONT_URL must match STOREFRONT_PUBLIC_URL.');
           }
           const response = await fetch(api + '/health/ready', { redirect: 'error', signal: AbortSignal.timeout(15000) });
-          if (!response.ok) throw Error('Public API is not ready. Publish the Linux API and configure its HTTPS origin before publishing the frontends.');
+          if (!response.ok) throw Error('Public API is not ready. Publish the configured production API and set its HTTPS origin before publishing the frontends.');
           NODE
       - name: Build production artifact
-        run: vercel build --prod --token "$VERCEL_TOKEN"
+        run: vercel build --prod
       - name: Publish the tagged artifact
-        run: vercel deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN" --meta "releaseTag=$GITHUB_REF_NAME" --meta "gitCommit=$GITHUB_SHA"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --prebuilt --prod --yes --meta "releaseTag=$GITHUB_REF_NAME" --meta "gitCommit=$GITHUB_SHA"

@@ -13,13 +13,13 @@ GitHub خصوصی روی شاخهٔ `main` متصل و push شده است. در 
 
 `VERCEL_ORG_ID=team_r5gwfze48ez83lvEPUhu7Mul` و شناسهٔ هر دو پروژه و `STOREFRONT_PUBLIC_URL` در GitHub Variables ثبت شده‌اند؛ Environment با نام `production` نیز ساخته شده است. هر دو متغیر `VERCEL_DEPLOY_ENABLED` و `PRODUCTION_DEPLOY_ENABLED` فعلاً `false` هستند. envهای غیرمحرمانهٔ شناخته‌شدهٔ Production در دو پروژه ثبت شده‌اند؛ `SHOP_API_URL` و `ADMIN_API_URL` تا تعیین API واقعی عمداً مقدار ساختگی ندارند.
 
-**این پروژه‌ها هنوز deploy نشده‌اند. مالک تأیید کرد فعلاً سرور ندارد و تنظیمات آماده بمانند؛ انتشار تا درخواست بعدی و آماده‌شدن API فعال نمی‌شود.** دامنهٔ تخصیص‌یافته به‌معنی سایت فعال نیست. موارد لازم برای فعال‌سازی: سرور واقعی API/SQL و HTTPS، ثبت URL API در هر دو پروژه، قبولی CI و health/گردش متصل، و repository Actions secret `VERCEL_TOKEN` برای انتشار خودکار tag. ساخت و ورود token را مالک حساب انجام دهد؛ در چت ارسال نشود. این بخش برای همین حساب ثبت شده است؛ انتقال به حساب دیگر نیازمند شناسه‌های همان مقصد است.
+**این پروژه‌ها هنوز deploy نشده‌اند. مالک تأیید کرد فعلاً سرور ندارد و تنظیمات آماده بمانند؛ انتشار تا درخواست بعدی و آماده‌شدن API فعال نمی‌شود.** دامنهٔ تخصیص‌یافته به‌معنی سایت فعال نیست. موارد لازم برای فعال‌سازی: سرور واقعی API/SQL و HTTPS، ثبت URL API در هر دو پروژه، قبولی CI و health/گردش متصل، و secret `VERCEL_TOKEN` در GitHub Environment به نام `production` برای انتشار خودکار tag. ساخت و ورود token را مالک حساب انجام دهد؛ در چت ارسال نشود. این بخش برای همین حساب ثبت شده است؛ انتقال به حساب دیگر نیازمند شناسه‌های همان مقصد است.
 
 ## انتخاب فعلی: رابط روی Vercel، API و SQL روی سرور
 
 دو پروژه از همین مخزن بسازید: فروشگاه Next.js با Root Directory برابر `apps/storefront` و پنل Vite با Root Directory برابر `apps/admin`. در هر دو، گزینهٔ **Include source files outside of the Root Directory in the Build Step** روشن باشد؛ وابستگی‌های workspace و توکن‌های طراحی در ریشهٔ مخزن‌اند. تنظیمات build/install و مسیرهای پنل در `vercel.json` هر پروژه قرار دارند.
 
-Vercel جای اجرای Docker Compose، پردازش پایدار API دات‌نت یا SQL Server نیست. `SHOP_API_URL` و `ADMIN_API_URL` باید آدرس واقعی HTTPS یک API در دسترس Vercel باشند؛ `localhost` و IP خصوصی مک قابل استفاده نیستند. بدون API، نمایش داده، ورود و عملیات تجاری متصل پذیرفته نیست. برای ظاهرسازی، Production را به Development یا preview تغییر ندهید و کلیدهای دیتابیس را در Vercel قرار ندهید.
+پیکربندی آمادهٔ این راهنما رابط‌ها را روی Vercel و API/SQL را روی میزبان جدا قرار می‌دهد. Vercel اکنون [Container Runtime برای OCI](https://vercel.com/docs/functions/runtimes/container) دارد و اجرای API دات‌نت در کانتینر از نظر runtime ممکن است. این API فعلی به key ring مشترک و پایدار، گواهی رمزگذاری، SQL Server و workerهای پس‌زمینه وابسته است؛ انتقال آن به Vercel به طراحی و پذیرش ماندگاری کلیدها، اجرای کارها، migration و backup نیاز دارد. برای اجرای پیوسته نیز سرویس‌های مخصوص پلتفرم باید جدا بررسی و پیکربندی شوند. فایل‌های فعلی این انتقال را پیاده نمی‌کنند و SQL/کلیدها نباید به filesystem گذرای تابع سپرده شوند. `SHOP_API_URL` و `ADMIN_API_URL` باید آدرس واقعی HTTPS یک API در دسترس Vercel باشند؛ `localhost` و IP خصوصی مک قابل استفاده نیستند. بدون API، نمایش داده، ورود و عملیات تجاری متصل پذیرفته نیست. برای ظاهرسازی، Production را به Development یا preview تغییر ندهید و کلیدهای دیتابیس را در دو پروژهٔ رابط Vercel قرار ندهید.
 
 در صفحهٔ [New Project تیم مالک](https://vercel.com/new?teamSlug=parviz21jgmailcoms-projects)، GitHub و سپس `p-jahangiri/shop_syman` را انتخاب کنید. پروژه‌ها را جداگانه import کنید:
 
@@ -53,11 +53,15 @@ VITE_STOREFRONT_URL=https://shop-syman.vercel.app
 
 دامنهٔ واقعی تخصیص‌یافته را جایگزین نمونه کنید. `VITE_STOREFRONT_URL` در زمان build وارد فایل عمومی می‌شود؛ رمز در متغیرهای `VITE_*` یا `NEXT_PUBLIC_*` قرار ندهید. API نیز باید `Cors__Origins__0` را برابر origin فروشگاه، `Cors__Origins__1` را برابر origin پنل و `Cors__AdminOrigins__0` را برابر origin پنل بشناسد. در صورت انتشار مستقیم API پشت reverse proxy، تنظیم Host و اعتماد به proxy را طبق پیکربندی همان سرور انجام دهید؛ `AllowedHosts=*` راه‌حل تنظیم اشتباه نیست.
 
-پنل روی Vercel همان کنترل‌های BFF را از `server.mjs` به‌صورت تابع Node اجرا می‌کند. محدودیت بدنهٔ Vercel حدود 4.5MB است؛ گردش‌های بارگذاری فایل بزرگ‌ترِ نسخهٔ لینوکس روی این میزبان قابل پذیرش نیستند. سقف کل multipart در adapter برابر۴MiB است؛ overhead فرم هم جزو آن است. UI فعلی هنوز قابلیت۸MiB بک‌اند را نشان می‌دهد و سقف اختصاصی میزبان را نمی‌شناسد؛ این ناهماهنگی، و پاسخ تصویر/دانلود بزرگ‌تر از۴٫۵MB، پیش از پذیرش کامل فایل رویVercel باید رفع یا به میزبان فایل مناسب منتقل شوند. ارتباط زندهٔ فعلی پنل Long Polling است؛ Vercel میزبان WebSocket دائمی نیست. پذیرش Docker یا آزمون محلی معادل پذیرش عملیاتی Vercel، آپلود، نشست یا ارتباط زنده نیست. [محدودیت توابع Vercel](https://vercel.com/docs/functions/limitations).
+پنل روی Vercel همان کنترل‌های BFF را از `server.mjs` به‌صورت تابع Node اجرا می‌کند. [حد بدنهٔ درخواست تابع](https://vercel.com/docs/functions/limitations) 4.5MB است و adapter این پروژه کل multipart را به۴MiB محدود می‌کند؛ overhead فرم هم جزو آن است. UI فعلی هنوز قابلیت۸MiB بک‌اند را نشان می‌دهد و سقف میزبان را نمی‌شناسد؛ این ناهماهنگی پیش از پذیرش کامل آپلود روی Vercel باید رفع شود.
+
+برای پاسخ، سقف buffered را از [پاسخ stream‌شده](https://github.com/vercel/vercel-plugin/blob/main/skills/vercel-functions/SKILL.md#request-and-response-payloads) جدا کنید: streaming از سقف۴٫۵MB بدنه مستثناست، ولی محدودیت زمان تابع و سقف‌های برنامه باقی‌اند. proxy فعلی برای بعضی مسیرها از `remote.pipe(response)` استفاده می‌کند؛ دانلود و تصویر بزرگ روی Vercel هنوز end-to-end آزموده و پذیرفته نشده‌اند.
+
+Vercel از [WebSocket](https://vercel.com/docs/functions/websockets) پشتیبانی می‌کند؛ اتصال در پایان حداکثر عمر تابع بسته می‌شود و کلاینت باید reconnect کند. ارتباط فعلی پنل Long Polling می‌ماند و پذیرش عملیاتی آن روی Vercel هنوز انجام نشده است. پذیرش Docker یا آزمون محلی، نتیجهٔ اجرای واقعی آپلود، نشست یا ارتباط زنده روی Vercel را ثابت نمی‌کند.
 
 ## انتشار فقط با tag
 
-پس از آماده‌شدن مقصد و secretها، از کد commitشده در `main` نسخه بسازید:
+پس از آماده‌شدن مقصد و secretها، از کد بازبینی‌شده و commitشده در `main` نسخه بسازید:
 
 ```sh
 git add .
@@ -73,7 +77,7 @@ git push origin v1.0.0
 
 ### اتصال GitHub Actions به Vercel
 
-Environment به نام `production` در مخزن بسازید. شناسهٔ team و هر دو project را از Settings همان پروژه‌های Vercel بردارید. متغیرهای repository عبارت‌اند از `VERCEL_DEPLOY_ENABLED=true`، `VERCEL_ORG_ID`، `VERCEL_STOREFRONT_PROJECT_ID`، `VERCEL_ADMIN_PROJECT_ID` و `STOREFRONT_PUBLIC_URL`. متغیرها و secretهای دقیق workflow در `.github/workflows/vercel-release.yml` تعریف شده‌اند. `VERCEL_TOKEN` فقط در GitHub Secrets وارد شود؛ در کد، خروجی CI یا چت قرار نگیرد. ساخت token و واردکردن آن را مالک حساب انجام دهد. تا زمانی که مقصد فعال و شناسه‌ها تنظیم نشده‌اند، job انتشار Vercel نباید فعال شود.
+Environment به نام `production` در مخزن بسازید. شناسهٔ team و هر دو project را از Settings همان پروژه‌های Vercel بردارید. متغیرهای repository عبارت‌اند از `VERCEL_DEPLOY_ENABLED=true`، `VERCEL_ORG_ID`، `VERCEL_STOREFRONT_PROJECT_ID`، `VERCEL_ADMIN_PROJECT_ID` و `STOREFRONT_PUBLIC_URL`. متغیرها و secretهای دقیق workflow در `.github/workflows/vercel-release.yml` تعریف شده‌اند. `VERCEL_TOKEN` در Secrets محیط `production` ثبت شود و فقط مرحله‌های نیازمند احراز هویت به آن دسترسی دارند؛ در کد، خروجی CI یا چت قرار نگیرد. ساخت token و واردکردن آن را مالک حساب انجام دهد. token در آرگومان CLI قرار نمی‌گیرد و هنگام نصب وابستگی‌ها یا build به environment برنامه داده نمی‌شود. تا زمانی که مقصد فعال و شناسه‌ها تنظیم نشده‌اند، job انتشار Vercel نباید فعال شود.
 
 اگر انتشار با Actions را انتخاب کردید، انتشار خودکار branch از یکپارچگی Git Vercel خاموش بماند تا هر push به `main` مستقل از tag به Production نرود. فایل‌های `vercel.json` این مرز را مشخص می‌کنند. اولین import و یک build موفق به‌تنهایی پذیرش API و گردش تجاری نیست.
 
