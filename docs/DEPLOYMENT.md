@@ -2,6 +2,19 @@
 
 تاریخ: 2026-10-29. مخزن: [shop_syman](https://github.com/p-jahangiri/shop_syman).
 
+## تنظیمات انجام‌شده برای این مخزن
+
+GitHub خصوصی روی شاخهٔ `main` متصل و push شده است. در تیم مالک، دو پروژهٔ Vercel ساخته و اتصال آن‌ها به همین GitHub تأیید شده؛ Node22 و دسترسی build به workspaceهای بیرون Root تنظیم شده‌اند:
+
+| بخش     | پروژه                                                                               | شناسه                              | Root Directory    | دامنهٔ تخصیص‌یافته            |
+| ------- | ----------------------------------------------------------------------------------- | ---------------------------------- | ----------------- | ----------------------------- |
+| فروشگاه | [shop-syman](https://vercel.com/parviz21jgmailcoms-projects/shop-syman)             | `prj_rnKzD8MmUPSSNeKWFdZr5205tKOm` | `apps/storefront` | `shop-syman.vercel.app`       |
+| پنل     | [shop-syman-admin](https://vercel.com/parviz21jgmailcoms-projects/shop-syman-admin) | `prj_Av5SLbbD4JZIGRudmjNRaZvkXAlW` | `apps/admin`      | `shop-syman-admin.vercel.app` |
+
+`VERCEL_ORG_ID=team_r5gwfze48ez83lvEPUhu7Mul` و شناسهٔ هر دو پروژه و `STOREFRONT_PUBLIC_URL` در GitHub Variables ثبت شده‌اند؛ Environment با نام `production` نیز ساخته شده است. هر دو متغیر `VERCEL_DEPLOY_ENABLED` و `PRODUCTION_DEPLOY_ENABLED` فعلاً `false` هستند. envهای غیرمحرمانهٔ شناخته‌شدهٔ Production در دو پروژه ثبت شده‌اند؛ `SHOP_API_URL` و `ADMIN_API_URL` تا تعیین API واقعی عمداً مقدار ساختگی ندارند.
+
+**این پروژه‌ها هنوز deploy نشده‌اند. مالک تأیید کرد فعلاً سرور ندارد و تنظیمات آماده بمانند؛ انتشار تا درخواست بعدی و آماده‌شدن API فعال نمی‌شود.** دامنهٔ تخصیص‌یافته به‌معنی سایت فعال نیست. موارد لازم برای فعال‌سازی: سرور واقعی API/SQL و HTTPS، ثبت URL API در هر دو پروژه، قبولی CI و health/گردش متصل، و repository Actions secret `VERCEL_TOKEN` برای انتشار خودکار tag. ساخت و ورود token را مالک حساب انجام دهد؛ در چت ارسال نشود. این بخش برای همین حساب ثبت شده است؛ انتقال به حساب دیگر نیازمند شناسه‌های همان مقصد است.
+
 ## انتخاب فعلی: رابط روی Vercel، API و SQL روی سرور
 
 دو پروژه از همین مخزن بسازید: فروشگاه Next.js با Root Directory برابر `apps/storefront` و پنل Vite با Root Directory برابر `apps/admin`. در هر دو، گزینهٔ **Include source files outside of the Root Directory in the Build Step** روشن باشد؛ وابستگی‌های workspace و توکن‌های طراحی در ریشهٔ مخزن‌اند. تنظیمات build/install و مسیرهای پنل در `vercel.json` هر پروژه قرار دارند.
@@ -130,12 +143,12 @@ Digest انتخابی را در محیط نگه دارید. اتصال GHCR خص
 نمونهٔ بخش SQL برای اجرا توسط اپراتور با حساب backup و مسیر مجاز سرور SQL:
 
 ```sql
+DECLARE @BackupPath nvarchar(4000) =
+  N'/var/opt/mssql/backup/Sayman-' + CONVERT(nvarchar(36), NEWID()) + N'.bak';
 BACKUP DATABASE [Sayman]
-  TO DISK = N'/var/opt/mssql/backup/Sayman-before-release.bak'
-  WITH COPY_ONLY, CHECKSUM;
-RESTORE VERIFYONLY
-  FROM DISK = N'/var/opt/mssql/backup/Sayman-before-release.bak'
-  WITH CHECKSUM;
+  TO DISK = @BackupPath WITH COPY_ONLY, CHECKSUM;
+RESTORE VERIFYONLY FROM DISK = @BackupPath WITH CHECKSUM;
+SELECT @BackupPath AS BackupPath;
 ```
 
 در hook واقعی نام یکتای هر نسخه، کپی offsite، snapshot نسخه‌دار object storage و archive رمزگذاری‌شدهٔ کلیدها لازم‌اند. `VERIFYONLY` جای تمرین restore روی محیط مستقل کوتاه‌عمر را نمی‌گیرد. نمونهٔ ابزار بکاپ توسعه در [BACKUP-RESTORE](BACKUP-RESTORE.md) نباید بدون بررسی محدوده روی Production اجرا شود. این تغییرات، زمان‌بندی یا offsite واقعی را فعال نمی‌کنند.
