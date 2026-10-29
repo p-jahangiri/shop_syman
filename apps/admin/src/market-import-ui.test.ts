@@ -39,9 +39,13 @@ const deferred = <T>() => {
   const promise = new Promise<T>((done) => (resolve = done));
   return { promise, resolve };
 };
-const flush = async () => {
-  for (let count = 0; count < 6; count++) await setImmediate();
-};
+async function waitForIdle(ready: () => boolean) {
+  const deadline = performance.now() + 5000;
+  while (!ready()) {
+    assert.ok(performance.now() < deadline, 'CSV handler did not settle within five seconds');
+    await setImmediate();
+  }
+}
 function text(value: unknown): string {
   return value == null || value === false
     ? ''
@@ -68,6 +72,7 @@ async function harness(kind: 'primary' | 'extra') {
   primaryJournal.clearMarketImportJournal();
   sourceJournal.clearSourceCsvJournal();
   const values: unknown[] = [],
+    operationRefs = new Set<{ current: unknown }>(),
     writes: { path: string; body: Record<string, unknown> }[] = [];
   let cursor = 0,
     authority = 0;
@@ -87,7 +92,10 @@ async function harness(kind: 'primary' | 'extra') {
     },
     useRef(initial: unknown) {
       const index = cursor++;
-      return (values[index] ??= { current: initial });
+      const reference = (values[index] ??= { current: initial }) as { current: unknown };
+      if (initial === false || initial instanceof state.MarketImportDraft)
+        operationRefs.add(reference);
+      return reference;
     },
     useEffect() {},
   };
@@ -218,6 +226,16 @@ async function harness(kind: 'primary' | 'extra') {
     writes,
     preview,
     readJournal,
+    // Actual guards cover async hashing, transport and finally cleanup. The
+    // intentionally pending file/commit cases assert before awaiting them.
+    settle: () =>
+      waitForIdle(() =>
+        [...operationRefs].every(
+          ({ current }) =>
+            current !== true &&
+            !(current instanceof state.MarketImportDraft && current.readingFile),
+        ),
+      ),
     setTransport: (next: typeof transport) => (transport = next),
     invalidate: () => authority++,
     previewLabel: kind === 'primary' ? 'پیش‌نمایش و بررسی خطاها' : 'بررسی فایل منابع',
@@ -238,7 +256,7 @@ for (const kind of ['primary', 'extra'] as const) {
       tree = h.render();
       h.setTransport(async () => h.preview('FILE_A'));
       button(tree, h.previewLabel).props.onClick();
-      await flush();
+      await h.settle();
       tree = h.render();
       const staleCommit = button(tree, h.commitLabel),
         file = deferred<ArrayBuffer>();
@@ -247,11 +265,10 @@ for (const kind of ['primary', 'extra'] as const) {
         .props.onChange({ target: { files: [{ size: 6, arrayBuffer: () => file.promise }] } });
       staleCommit.props.onClick();
       button(tree, h.previewLabel).props.onClick();
-      await flush();
       assert.equal(h.writes.filter((value) => value.path.endsWith('/commit')).length, 0);
       assert.equal(h.writes.filter((value) => value.path.endsWith('/preview')).length, 1);
       file.resolve(new TextEncoder().encode('FILE_B').buffer);
-      await flush();
+      await h.settle();
       tree = h.render();
       assert.equal(
         elements(tree).find((value) => value.type === 'textarea')!.props.value,
@@ -261,10 +278,9 @@ for (const kind of ['primary', 'extra'] as const) {
         path.endsWith('/preview') ? h.preview('FILE_B') : new Promise(() => {}),
       );
       button(tree, h.previewLabel).props.onClick();
-      await flush();
+      await h.settle();
       tree = h.render();
       button(tree, h.commitLabel).props.onClick();
-      await flush();
       assert.equal(h.writes.find((value) => value.path.endsWith('/commit'))!.body.csv, 'FILE_B');
     },
   );
@@ -277,13 +293,13 @@ for (const kind of ['primary', 'extra'] as const) {
     tree = h.render();
     h.setTransport(async () => h.preview('EXACT_CSV\r\n'));
     button(tree, h.previewLabel).props.onClick();
-    await flush();
+    await h.settle();
     tree = h.render();
     h.setTransport(async () => {
       throw Error('Synthetic lost reply');
     });
     button(tree, h.commitLabel).props.onClick();
-    await flush();
+    await h.settle();
     const first = h.readJournal()!;
     assert.equal(first.uncertain, true);
     for (const status of [403, 409]) {
@@ -292,7 +308,7 @@ for (const kind of ['primary', 'extra'] as const) {
         throw new ApiError(status);
       });
       button(tree, h.retryLabel).props.onClick();
-      await flush();
+      await h.settle();
       assert.deepEqual(h.readJournal()!.command, first.command);
       assert.equal(h.readJournal()!.uncertain, true);
     }
@@ -317,7 +333,7 @@ for (const kind of ['primary', 'extra'] as const) {
     button(tree, h.previewLabel).props.onClick();
     h.invalidate();
     response.resolve(await h.preview('PRIVATE_CSV'));
-    await flush();
+    await h.settle();
     tree = h.render();
     assert.equal(
       elements(tree).some(
