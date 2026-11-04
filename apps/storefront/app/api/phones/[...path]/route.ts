@@ -1,4 +1,4 @@
-import { proxyPhones } from '@/lib/phone-discovery-http';
+import { proxyPhones } from '@/lib/market/phone-discovery-http';
 async function handler(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
   return proxyPhones(request, (await params).path, {
     SHOP_API_URL: process.env.SHOP_API_URL,

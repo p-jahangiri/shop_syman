@@ -78,7 +78,46 @@ public sealed class AdminStockTests(ApiFactory factory) : IClassFixture<ApiFacto
     {
         await using var app=factory.WithWebHostBuilder(b=>b.ConfigureTestServices(s=>{s.RemoveAll<IAdminStockCatalog>();s.RemoveAll<IAdminStockReader>();s.AddSingleton<IAdminStockCatalog,Catalog>();s.AddSingleton<IAdminStockReader,Stock>();}));
         using var client=app.CreateClient();client.DefaultRequestHeaders.Add("X-Test-Kind","access");client.DefaultRequestHeaders.Add("X-Test-Permissions","inventory.read,catalog.read");
-        foreach(var path in new[]{"/api/admin/inventory/variants","/api/admin/inventory/variants/with-stock","/api/admin/inventory/v2/variants","/api/admin/inventory/v2/variants/with-stock","/api/admin/inventory/summary","/api/admin/catalog/summary"}){using var result=await client.GetAsync(path);Assert.Equal(HttpStatusCode.OK,result.StatusCode);Assert.Contains("no-store",result.Headers.CacheControl!.ToString());var json=JsonNode.Parse(await result.Content.ReadAsStringAsync())!;if(path=="/api/admin/inventory/variants"||path.EndsWith("summary",StringComparison.Ordinal))await ContractWireCapture.SaveAsync(path=="/api/admin/inventory/variants"?"stock-page":path=="/api/admin/inventory/summary"?"stock-summary":"catalog-summary",await result.Content.ReadAsStringAsync());if(path.EndsWith("summary"))Assert.Contains("9007199254740993",json.ToJsonString());Assert.DoesNotContain("priceRial",json.ToJsonString());if(path is "/api/admin/inventory/variants" or "/api/admin/inventory/v2/variants"){Assert.True(json.AsObject().ContainsKey("nextCursor"));Assert.Null(json["nextCursor"]);var missing=json["items"]![0]!.AsObject();Assert.True(missing.ContainsKey("version"));Assert.Null(missing["version"]);if(path.Contains("/v2/",StringComparison.Ordinal)){Assert.Equal(2,json["version"]!.GetValue<int>());Assert.Equal(0,missing["sourcingReserved"]!.GetValue<int>());}else Assert.False(missing.ContainsKey("sourcingReserved"));}}
+        var routes = new (string Path, string? Capture)[]
+        {
+            ("/api/admin/inventory/variants", "stock-page"),
+            ("/api/admin/inventory/variants/with-stock", null),
+            ("/api/admin/inventory/v2/variants", "stock-page-v2"),
+            ("/api/admin/inventory/v2/variants/with-stock", null),
+            ("/api/admin/inventory/summary", "stock-summary"),
+            ("/api/admin/catalog/summary", "catalog-summary")
+        };
+        foreach (var (path, capture) in routes)
+        {
+            using var result = await client.GetAsync(path);
+            Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+            Assert.Contains("no-store", result.Headers.CacheControl!.ToString());
+            var body = await result.Content.ReadAsStringAsync();
+            var json = JsonNode.Parse(body)!;
+            if (capture is not null)
+                await ContractWireCapture.SaveAsync(capture, body);
+            if (path.EndsWith("summary", StringComparison.Ordinal))
+                Assert.Contains("9007199254740993", json.ToJsonString());
+            Assert.DoesNotContain("priceRial", json.ToJsonString());
+
+            if (capture is "stock-page" or "stock-page-v2")
+            {
+                Assert.True(json.AsObject().ContainsKey("nextCursor"));
+                Assert.Null(json["nextCursor"]);
+                var missing = json["items"]![0]!.AsObject();
+                Assert.True(missing.ContainsKey("version"));
+                Assert.Null(missing["version"]);
+                if (capture == "stock-page-v2")
+                {
+                    Assert.Equal(2, json["version"]!.GetValue<int>());
+                    Assert.Equal(0, missing["sourcingReserved"]!.GetValue<int>());
+                }
+                else
+                {
+                    Assert.False(missing.ContainsKey("sourcingReserved"));
+                }
+            }
+        }
         foreach(var query in new[]{"active=wrong","cursor=invalid", "query="+new string('a',121)}){using var result=await client.GetAsync("/api/admin/inventory/variants?"+query);Assert.Equal(HttpStatusCode.BadRequest,result.StatusCode);}
     }
     private sealed class SourcingHeldStock:IAdminStockReader

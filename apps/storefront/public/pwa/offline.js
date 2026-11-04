@@ -4,6 +4,7 @@
  const text=(fa,en)=>locale==='fa'?fa:en;
  const node=id=>document.getElementById(id);
  const privatePage=/^\/(?:fa\/|en\/)?(?:account|cart|checkout|payment|payments|orders|credit|admin)(?:\/|$)/.test(location.pathname)||location.pathname.startsWith('/api/');
+ const conditionPage=/^\/(?:fa\/|en\/)?catalog\/?$/.test(location.pathname)&&new URLSearchParams(location.search).has('condition');
  const normalize=value=>String(value).normalize('NFKC').replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[\u064B-\u065F\u0670]/g,'').replace(/[۰-۹]/g,c=>String(c.charCodeAt(0)-0x6f0)).replace(/[٠-٩]/g,c=>String(c.charCodeAt(0)-0x660)).replace(/\u200c/g,' ').toLowerCase().trim();
  let products=[];let categories=[];
  function element(tag,className,value){const e=document.createElement(tag);if(className)e.className=className;if(value!==undefined)e.textContent=value;return e;}
@@ -23,6 +24,7 @@
  async function load(){
   node('retry').disabled=true;node('connection').textContent=text('در حال بررسی اتصال…','Checking the connection…');
   if(privatePage){node('page-title').textContent=text('این بخش به اتصال اینترنت نیاز دارد','This section needs an internet connection');node('catalog').hidden=true;node('connection').textContent=text('برای ورود، سبد و خرید، فروشگاه را پس از برقراری اتصال باز کنید.','Open the store when the connection returns to sign in, use your bag or make a purchase.');node('retry').disabled=false;return;}
+  if(conditionPage){node('page-title').textContent=text('برای دیدن این فهرست دوباره وصل شوید','Reconnect to view this list');node('catalog').hidden=true;node('connection').textContent=text('وضعیت نو یا کارکردهٔ کالا در فهرست ذخیره‌شده در دسترس نیست.','The saved catalogue does not include product condition.');node('retry').disabled=false;return;}
   try{
    const response=await fetch(`/pwa/catalog/${locale}.json`,{credentials:'omit',cache:'no-cache'});
    if(!response.ok)throw new Error('unavailable');const data=await response.json();
@@ -41,5 +43,6 @@
   }catch{node('connection').textContent=text('فهرست آفلاین در دسترس نیست. پس از برقراری اتصال دوباره تلاش کنید.','The saved catalogue is unavailable. Try again when the connection returns.');node('catalog').hidden=true;}
   finally{node('retry').disabled=false;}
  }
- node('retry').addEventListener('click',()=>{if(privatePage)location.reload();else void load();});node('search').addEventListener('input',filter);node('category').addEventListener('change',filter);void load();
+ // Retry the actual route, keeping its search and filters. The worker will serve the safe shell again if still offline.
+ node('retry').addEventListener('click',()=>location.reload());node('search').addEventListener('input',filter);node('category').addEventListener('change',filter);void load();
 })();

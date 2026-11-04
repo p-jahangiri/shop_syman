@@ -1,6 +1,6 @@
 'use client';
-import { useI18n, useStorefront } from '@/components/locale-provider';
-import Link from '@/components/localized-link';
+import { useI18n, useStorefront } from '@/components/navigation/locale-provider';
+import Link from '@/components/navigation/localized-link';
 import { ArrowLeft, Search } from 'lucide-react';
 export default function NotFound() {
   const { t } = useI18n();

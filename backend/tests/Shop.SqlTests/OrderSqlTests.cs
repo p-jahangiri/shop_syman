@@ -73,6 +73,11 @@ public sealed class OrderSqlTests(OrderFixture fixture) : IClassFixture<OrderFix
         Assert.Equal("9007199254741000", order["payableTotalRial"]!.GetValue<string>()); Assert.Equal("09121234567", order["contactPhone"]!.GetValue<string>()); Assert.Equal("1234567890", order["delivery"]!["postalCode"]!.GetValue<string>()); Assert.Equal("AwaitingPayment", order["summary"]!["state"]!.GetValue<string>()); Assert.False(order["canPay"]!.GetValue<bool>()); Assert.Equal("gateway_unconfigured", order["paymentAvailability"]!.GetValue<string>());
         Assert.Empty((await OrderFixture.Json(await client.GetAsync("/api/cart/en")))["lines"]!.AsArray());
         await using var scope = fixture.Sql.Factory.Services.CreateAsyncScope(); var inv = scope.ServiceProvider.GetRequiredService<InventoryDbContext>(); var stock = await inv.Stock.AsNoTracking().SingleAsync(x => x.VariantId == data.Variant); Assert.Equal(1, stock.Reserved); Assert.Equal(5, stock.OnHand); Assert.False(await inv.Movements.AnyAsync(x => x.VariantId == data.Variant));
+        var sales = scope.ServiceProvider.GetRequiredService<SalesDbContext>();
+        var signal = await sales.SmsSignals.Include(x => x.OrderEvent).SingleAsync(x => x.OrderEvent.OrderId == order["summary"]!["id"]!.GetValue<string>());
+        Assert.Equal("orderCreated", signal.Kind); Assert.Null(signal.ProcessedAt);
+        var outbound = (await new SalesSmsSignals(sales, TimeProvider.System).PendingAsync(default)).Single(x => x.SourceId == signal.Id);
+        Assert.Equal(data.Owner, outbound.OwnerId); Assert.Equal("9007199254741000", outbound.Values["amountRial"]); Assert.False(outbound.ContainsDemo);
         await scope.ServiceProvider.GetRequiredService<CatalogDbContext>().Variants.Where(v => v.Id == data.Variant).ExecuteUpdateAsync(s => s.SetProperty(v => v.PriceRial, 1).SetProperty(v => v.WarrantyEn, "Changed warranty"));
         var read = await OrderFixture.Json(await client.GetAsync("/api/orders/" + order["summary"]!["id"]!.GetValue<string>())); Assert.Equal("9007199254740993", read["lines"]![0]!["unitPriceRial"]!.GetValue<string>()); Assert.Equal("Original warranty", read["lines"]![0]!["warranty"]!.GetValue<string>());
     }
@@ -121,7 +126,7 @@ public sealed class OrderSqlTests(OrderFixture fixture) : IClassFixture<OrderFix
     {
         var data = await Scenario(); using var client = data.Client; var created = (await OrderFixture.Json(await client.PostAsJsonAsync("/api/orders", Input(data.Quote["quoteId"]!.GetValue<string>())), HttpStatusCode.Created))["order"]!; var id = created["summary"]!["id"]!.GetValue<string>(); var input = new CancelOrderInput(created["summary"]!["version"]!.GetValue<string>());
         var responses = await Task.WhenAll(client.PostAsJsonAsync("/api/orders/" + id + "/cancel", input), client.PostAsJsonAsync("/api/orders/" + id + "/cancel", input)); foreach (var response in responses) Assert.Equal("Cancelled", (await OrderFixture.Json(response))["summary"]!["state"]!.GetValue<string>());
-        await using var scope = fixture.Sql.Factory.Services.CreateAsyncScope(); var inv = scope.ServiceProvider.GetRequiredService<InventoryDbContext>(); var stock = await inv.Stock.SingleAsync(x => x.VariantId == data.Variant); Assert.Equal(0, stock.Reserved); Assert.Equal(5, stock.OnHand); Assert.False(await inv.Movements.AnyAsync(x => x.VariantId == data.Variant)); Assert.Equal(2, await scope.ServiceProvider.GetRequiredService<SalesDbContext>().Set<SalesOrderEvent>().CountAsync(x => x.OrderId == id));
+        await using var scope = fixture.Sql.Factory.Services.CreateAsyncScope(); var inv = scope.ServiceProvider.GetRequiredService<InventoryDbContext>(); var stock = await inv.Stock.SingleAsync(x => x.VariantId == data.Variant); Assert.Equal(0, stock.Reserved); Assert.Equal(5, stock.OnHand); Assert.False(await inv.Movements.AnyAsync(x => x.VariantId == data.Variant)); Assert.Equal(2, await scope.ServiceProvider.GetRequiredService<SalesDbContext>().Set<SalesOrderEvent>().CountAsync(x => x.OrderId == id)); Assert.Equal(2, await scope.ServiceProvider.GetRequiredService<SalesDbContext>().SmsSignals.CountAsync(x => x.OrderEvent.OrderId == id));
     }
     private sealed class Clock : TimeProvider { public DateTimeOffset Now { get; set; } = DateTimeOffset.UtcNow; public override DateTimeOffset GetUtcNow() => Now; }
     [Fact] public async Task ExpiryWorkersAndRequestReplayShareTheOriginalDeadlineAndReleaseOnce()
@@ -180,5 +185,18 @@ public sealed class OrderSqlTests(OrderFixture fixture) : IClassFixture<OrderFix
         var seen = first["items"]!.AsArray().Concat(second["items"]!.AsArray()).Select(x => x!["id"]!.GetValue<string>()).ToArray(); Assert.Equal(21, seen.Distinct().Count()); Assert.True(expected.SetEquals(seen));
         foreach (var row in first["items"]!.AsArray()) foreach (var key in new[] { "ownerId", "contactName", "contactPhone", "delivery", "note" }) Assert.Null(row![key]);
         using var invalid = await client.GetAsync("/api/orders?cursor=not-a-cursor"); Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        var oldest = second["items"]![0]!;
+        var reference = Uri.EscapeDataString(oldest["reference"]!.GetValue<string>());
+        var staffMatch = await OrderFixture.Json(await fixture.Admin.GetAsync($"/api/admin/orders/v2?state=Cancelled&reference={reference}"));
+        var staffOrder = Assert.Single(staffMatch["items"]!.AsArray())!;
+        Assert.Equal(oldest["id"]!.GetValue<string>(), staffOrder["id"]!.GetValue<string>());
+        Assert.Equal(person.Owner, staffOrder["ownerId"]!.GetValue<string>());
+        foreach (var key in new[] { "contactName", "contactPhone", "delivery", "note" }) Assert.Null(staffOrder[key]);
+        var wrongState = await OrderFixture.Json(await fixture.Admin.GetAsync($"/api/admin/orders/v2?state=AwaitingPayment&reference={reference}"));
+        Assert.Empty(wrongState["items"]!.AsArray());
+        using var invalidState = await fixture.Admin.GetAsync("/api/admin/orders/v2?state=0");
+        Assert.Equal(HttpStatusCode.BadRequest, invalidState.StatusCode);
+        using var unauthorized = await client.GetAsync($"/api/admin/orders/v2?reference={reference}");
+        Assert.Equal(HttpStatusCode.Forbidden, unauthorized.StatusCode);
     }
 }

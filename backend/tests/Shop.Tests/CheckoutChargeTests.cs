@@ -40,11 +40,11 @@ public sealed class CheckoutChargeTests
         Assert.Equal("quote_amount_limit", Assert.Throws<BusinessException>(() => CheckoutChargeCalculator.Calculate(long.MaxValue, long.MaxValue, false, Policy(), "en")).Code);
         Assert.Equal("quote_amount_limit", Assert.Throws<BusinessException>(() => CheckoutChargeCalculator.Calculate(long.MaxValue, long.MaxValue, true, Policy("inclusive", "goods_shipping"), "en")).Code);
     }
-    [Theory] [InlineData("zero-fee")] [InlineData("hidden-fee")] [InlineData("zero-threshold")] [InlineData("empty-name")] [InlineData("unknown-mode")] [InlineData("zero-rate")] [InlineData("excess-rate")] [InlineData("hidden-rate")] [InlineData("invalid-base")] [InlineData("invalid-rounding")]
+    [Theory] [InlineData("zero-fee")] [InlineData("hidden-fee")] [InlineData("zero-threshold")] [InlineData("empty-name")] [InlineData("null-description")] [InlineData("unknown-mode")] [InlineData("zero-rate")] [InlineData("excess-rate")] [InlineData("hidden-rate")] [InlineData("invalid-base")] [InlineData("invalid-rounding")]
     public void InvalidPoliciesFailBeforeDatabaseAccess(string kind)
     {
         var input = new CheckoutChargePolicyInput("flat", "ارسال", "Delivery", "", "", "1999", null, "exclusive", 925, "goods", "half_up", null);
-        input = kind switch { "zero-fee" => input with { ShippingFeeRial = "0" }, "hidden-fee" => input with { ShippingMode = "free" }, "zero-threshold" => input with { ShippingFreeFromRial = "0" }, "empty-name" => input with { ShippingNameEn = "" }, "unknown-mode" => input with { ShippingMode = "provider" }, "zero-rate" => input with { TaxRateBasisPoints = 0 }, "excess-rate" => input with { TaxRateBasisPoints = 10001 }, "hidden-rate" => input with { TaxMode = "unconfigured" }, "invalid-base" => input with { TaxBase = "unknown" }, _ => input with { TaxRounding = "unknown" } };
+        input = kind switch { "zero-fee" => input with { ShippingFeeRial = "0" }, "hidden-fee" => input with { ShippingMode = "free" }, "zero-threshold" => input with { ShippingFreeFromRial = "0" }, "empty-name" => input with { ShippingNameEn = "" }, "null-description" => input with { ShippingDescriptionEn = null! }, "unknown-mode" => input with { ShippingMode = "provider" }, "zero-rate" => input with { TaxRateBasisPoints = 0 }, "excess-rate" => input with { TaxRateBasisPoints = 10001 }, "hidden-rate" => input with { TaxMode = "unconfigured" }, "invalid-base" => input with { TaxBase = "unknown" }, _ => input with { TaxRounding = "unknown" } };
         Assert.Equal("invalid_charge_policy", Assert.Throws<BusinessException>(() => CheckoutChargePolicyService.Validate(input)).Code);
     }
     [Fact] public void IncludedAndExclusiveModesPreservePaymentInvariantsForLargeAmounts()

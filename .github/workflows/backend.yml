@@ -26,6 +26,7 @@ jobs:
       - run: dotnet package list --project backend/src/Shop.Api/Shop.Api.csproj --vulnerable --include-transitive --format json --no-restore > nuget-audit.json
       - name: Reject known vulnerable backend packages
         run: python3 -c "import json; d=json.load(open('nuget-audit.json')); assert not d.get('logs'), 'NuGet audit unavailable'; assert not any(f.get('topLevelPackages') or f.get('transitivePackages') for p in d.get('projects',[]) for f in p.get('frameworks',[])), 'Vulnerable NuGet package'"
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: dotnet test backend/tests/Shop.Tests --no-restore --disable-build-servers -m:1
       - run: python3 -m unittest discover -s scripts -p 'test_production_release.py'
       - run: python3 scripts/init-local-env.py

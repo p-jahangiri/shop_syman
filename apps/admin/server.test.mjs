@@ -6,6 +6,719 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { once } from 'node:events';
 import { createAdminServer } from './server.mjs';
+
+const smsMetadata = () => ({
+  schemaVersion: 1,
+  version: 'AAAAAAAAAAE=',
+  provider: 'smsIr',
+  enabled: true,
+  mode: 'live',
+  templateId: 170274,
+  codeParameterName: 'CODE',
+  nameParameterName: 'NAME',
+  genericName: 'کاربر سایمان',
+  keyConfigured: true,
+  otpLifetimeSeconds: 300,
+  resendAfterSeconds: 60,
+  maxAttempts: 5,
+  availability: 'configured',
+});
+const smsCommand = () => ({
+  version: 'AAAAAAAAAAE=',
+  requestId: 'a'.repeat(32),
+  provider: 'smsIr',
+  enabled: true,
+  mode: 'live',
+  templateId: 170274,
+  codeParameterName: 'CODE',
+  nameParameterName: 'NAME',
+  genericName: 'کاربر سایمان',
+  apiKeyAction: 'replace',
+  apiKey: 'synthetic-key-not-a-real-credential',
+});
+test('same-origin backup-code status GET forwards the configured origin when browsers omit it, and rejects cross-site reads', async () =>
+  withSmsProxy(async ({ base, seen, remote }) => {
+    const url = base.replace('/api/admin/sms/settings', '/api/auth/mfa/recovery-codes');
+    remote({ body: JSON.stringify({ schemaVersion: 1, remainingCodes: 0 }) });
+    const response = await fetch(url, { headers: { Authorization: 'Bearer synthetic-only' } });
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('Cache-Control'), /private, no-store/);
+    assert.deepEqual(await response.json(), { schemaVersion: 1, remainingCodes: 0 });
+    assert.equal(seen.length, 1);
+    assert.equal(seen[0].headers.origin, 'https://admin.example.test');
+    assert.equal(seen[0].headers['x-sayman-client'], 'admin');
+    assert.equal(seen[0].headers.authorization, 'Bearer synthetic-only');
+    assert.equal(seen[0].headers.cookie, undefined);
+    for (const headers of [
+      { Origin: 'https://other.example.test' },
+      { 'Sec-Fetch-Site': 'cross-site' },
+    ]) {
+      assert.equal(
+        (await fetch(url, { headers: { Authorization: 'Bearer synthetic-only', ...headers } }))
+          .status,
+        403,
+      );
+    }
+    assert.equal(seen.length, 1);
+  }));
+test('staff password change proxy requires own admin bearer/origin, rejects query, and forwards private 204 cookie deletion', async () =>
+  withSmsProxy(async ({ base, headers, seen, remote }) => {
+    const url = base.replace('/api/admin/sms/settings', '/api/auth/staff/change-password');
+    const input = JSON.stringify({
+      currentPassword: 'synthetic-old',
+      newPassword: 'Synthetic-new-47!',
+      code: '123456',
+    });
+    for (const [target, supplied, expected] of [
+      [url, { Origin: headers.Origin, 'Content-Type': 'application/json' }, 401],
+      [url, { ...headers, Origin: 'https://other.example.test' }, 403],
+      [url + '?userId=other', headers, 400],
+      [url, { ...headers, 'Content-Type': 'text/plain' }, 415],
+    ]) {
+      assert.equal(
+        (await fetch(target, { method: 'POST', headers: supplied, body: input })).status,
+        expected,
+      );
+    }
+    assert.equal(seen.length, 0);
+    remote({
+      status: 204,
+      body: '',
+      headers: {
+        'Set-Cookie':
+          '__Host-sayman_admin_refresh=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict',
+      },
+    });
+    const response = await fetch(url, { method: 'POST', headers, body: input });
+    assert.equal(response.status, 204);
+    assert.match(response.headers.get('Cache-Control'), /private, no-store/);
+    assert.match(response.headers.get('Set-Cookie'), /__Host-sayman_admin_refresh=;/);
+    assert.equal(seen.length, 1);
+    assert.equal(seen[0].headers.cookie, undefined);
+    assert.equal(seen[0].headers['x-sayman-client'], 'admin');
+    assert.deepEqual(JSON.parse(seen[0].body), JSON.parse(input));
+  }));
+async function withSmsProxy(run) {
+  const seen = [];
+  let remote = { status: 200, headers: {}, body: JSON.stringify(smsMetadata()) };
+  const upstream = http.createServer(async (req, res) => {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    seen.push({
+      path: req.url,
+      method: req.method,
+      headers: req.headers,
+      body: Buffer.concat(chunks).toString('utf8'),
+    });
+    res.writeHead(remote.status, { 'Content-Type': 'application/json', ...remote.headers });
+    res.end(remote.body);
+  });
+  upstream.listen(0, '127.0.0.1');
+  await once(upstream, 'listening');
+  const publicUrl = 'https://admin.example.test',
+    server = createAdminServer({
+      apiUrl: `http://127.0.0.1:${upstream.address().port}`,
+      publicUrl,
+    });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const base = `http://127.0.0.1:${server.address().port}/api/admin/sms/settings`,
+    headers = {
+      Authorization: 'Bearer synthetic-only',
+      Origin: publicUrl,
+      'Content-Type': 'application/json',
+      Cookie: 'never-forward-this=1',
+    };
+  try {
+    await run({
+      base,
+      headers,
+      seen,
+      remote: (value) => {
+        remote = { status: 200, headers: {}, body: JSON.stringify(smsMetadata()), ...value };
+      },
+    });
+  } finally {
+    for (const value of [server, upstream]) {
+      value.closeAllConnections();
+      await new Promise((resolve) => value.close(resolve));
+    }
+  }
+}
+const workspaceEvents = [
+  'otp',
+  'orderCreated',
+  'orderPaid',
+  'orderShipped',
+  'orderCancelled',
+  'creditApproved',
+  'orderDigitalReady',
+  'chequeReminder',
+];
+function workspaceMetadata() {
+  return {
+    schemaVersion: 1,
+    version: 'AAAAAAAAAAE=',
+    otp: {
+      lifetimeSeconds: 300,
+      resendSeconds: 60,
+      maxAttempts: 5,
+      phoneHourlyLimit: 5,
+      phoneDailyLimit: 20,
+      globalHourlyLimit: 100,
+      globalDailyLimit: 1000,
+      notificationHourlyLimit: 100,
+      notificationDailyLimit: 1000,
+      genericName: 'کاربر سایمان',
+    },
+    connections: [
+      {
+        id: 'd6900000000000000000000000000001',
+        name: 'Synthetic',
+        provider: 'kavenegar',
+        mode: 'live',
+        enabled: true,
+        keyConfigured: true,
+      },
+    ],
+    templates: [
+      {
+        id: 'd6900000000000000000000000000002',
+        name: 'OTP',
+        kind: 'otp',
+        connectionId: 'd6900000000000000000000000000001',
+        providerTemplate: 'SaymanOtp',
+        approved: true,
+        previewText: '#token#',
+        parameters: [{ name: 'token', source: 'code', constant: null }],
+      },
+    ],
+    routes: workspaceEvents.map((event) => ({
+      event,
+      enabled: event === 'otp',
+      templateId: event === 'otp' ? 'd6900000000000000000000000000002' : null,
+      enabledSince: event === 'otp' ? '2026-11-01T00:00:00+00:00' : null,
+    })),
+  };
+}
+test('D69 workspace proxy allows both provider metadata and write-only keys without cookies', async () =>
+  withSmsProxy(async ({ base, headers, seen, remote }) => {
+    const url = base.replace('/settings', '/workspace'),
+      metadata = workspaceMetadata();
+    remote({ body: JSON.stringify(metadata) });
+    assert.deepEqual(await (await fetch(url, { headers })).json(), metadata);
+    const command = {
+      version: metadata.version,
+      requestId: 'd6900000000000000000000000000003',
+      otp: metadata.otp,
+      connections: metadata.connections.map((c) => ({
+        id: c.id,
+        name: c.name,
+        provider: c.provider,
+        mode: c.mode,
+        enabled: c.enabled,
+        keyAction: 'replace',
+        apiKey: 'synthetic-new-key',
+      })),
+      templates: metadata.templates,
+      routes: metadata.routes.map((r) => ({
+        event: r.event,
+        enabled: r.enabled,
+        templateId: r.templateId,
+      })),
+    };
+    assert.equal(
+      (await fetch(url, { headers, method: 'PUT', body: JSON.stringify(command) })).status,
+      200,
+    );
+    assert.equal(seen.length, 2);
+    assert.ok(seen.every((r) => !r.headers.cookie && r.headers['x-sayman-client'] === 'admin'));
+    assert.deepEqual(JSON.parse(seen[1].body), command);
+  }));
+test('D69 workspace proxy blocks key echoes, ambiguous input and secret-bearing errors', async () =>
+  withSmsProxy(async ({ base, headers, seen, remote }) => {
+    const url = base.replace('/settings', '/workspace');
+    const command = {
+      version: null,
+      requestId: 'd6900000000000000000000000000003',
+      otp: workspaceMetadata().otp,
+      connections: [],
+      templates: [],
+      routes: workspaceEvents.map((event) => ({ event, enabled: false, templateId: null })),
+    };
+    for (const body of [
+      JSON.stringify({ ...command, apiKey: 'synthetic-secret' }),
+      JSON.stringify(command).replace('"requestId":', '"requestId":"duplicate","requestId":'),
+      JSON.stringify({ ...command, routes: command.routes.slice(1) }),
+    ])
+      assert.equal((await fetch(url, { headers, method: 'PUT', body })).status, 400);
+    assert.equal(seen.length, 0);
+    const metadata = workspaceMetadata();
+    metadata.connections[0].apiKey = 'synthetic-secret';
+    remote({ body: JSON.stringify(metadata) });
+    let response = await fetch(url, { headers });
+    assert.equal(response.status, 503);
+    assert.ok(!(await response.text()).includes('synthetic-secret'));
+    remote({
+      status: 400,
+      body: JSON.stringify({ title: 'synthetic-secret', detail: 'synthetic-secret' }),
+    });
+    response = await fetch(url, { headers, method: 'PUT', body: JSON.stringify(command) });
+    assert.equal(response.status, 400);
+    assert.ok(!(await response.text()).includes('synthetic-secret'));
+  }));
+test('D69 delivery log proxy filters queries and requires explicit paid-test consent', async () =>
+  withSmsProxy(async ({ base, headers, seen, remote }) => {
+    const url = base.replace('/settings', '/messages');
+    remote({ body: JSON.stringify({ schemaVersion: 1, items: [] }) });
+    assert.equal(
+      (await fetch(url + '?state=unknown&kind=orderPaid&cursor=12', { headers })).status,
+      200,
+    );
+    for (const query of [
+      '?mobile=private',
+      '?state=unknown&state=accepted',
+      '?cursor=01',
+      '?kind=unknown',
+    ])
+      assert.equal((await fetch(url + query, { headers })).status, 400);
+    const input = {
+      requestId: 'd6900000000000000000000000000003',
+      templateId: 'd6900000000000000000000000000002',
+      mobile: '+989120000000',
+      confirmed: false,
+    };
+    assert.equal(
+      (await fetch(url + '/test', { headers, method: 'POST', body: JSON.stringify(input) })).status,
+      400,
+    );
+    assert.equal(seen.length, 1);
+  }));
+test('D69 encoded, repeated-slash and case-variant SMS routes cannot escape the bounded proxy', async () =>
+  withSmsProxy(async ({ base, headers, seen, remote }) => {
+    remote({ body: JSON.stringify({ apiKey: 'synthetic-private-echo' }) });
+    for (const suffix of [
+      '/api/admin/%73ms/workspace',
+      '/api/admin/sms/%77orkspace',
+      '/api/admin//sms/workspace',
+      '/api/admin/SMS/workspace',
+      '/api/admin/sms/WORKSPACE',
+    ]) {
+      const url = new URL(base);
+      url.pathname = suffix;
+      const response = await fetch(url, { headers });
+      assert.ok([400, 404].includes(response.status));
+      assert.ok(!(await response.text()).includes('synthetic-private-echo'));
+    }
+    assert.equal(seen.length, 0);
+  }));
+test('D67 SMS settings proxy admits bounded private GET/PUT without cookie forwarding or key readback', async () =>
+  withSmsProxy(async ({ base, headers, seen }) => {
+    assert.equal((await fetch(base)).status, 401);
+    for (const init of [
+      { headers },
+      { headers, method: 'PUT', body: JSON.stringify(smsCommand()) },
+    ]) {
+      const response = await fetch(base, init);
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), smsMetadata());
+      assert.match(response.headers.get('Cache-Control'), /private, no-store/);
+      assert.match(response.headers.get('Vary'), /Authorization/);
+      assert.match(response.headers.get('X-Robots-Tag'), /noindex/);
+    }
+    assert.equal(seen.length, 2);
+    assert.ok(
+      seen.every(
+        (entry) =>
+          !entry.headers.cookie &&
+          entry.headers['x-sayman-client'] === 'admin' &&
+          entry.headers.authorization === headers.Authorization,
+      ),
+    );
+    assert.deepEqual(JSON.parse(seen[1].body), smsCommand());
+  }));
+test('D67 SMS settings proxy rejects ambiguous, unknown and unbounded key commands before upstream', async () =>
+  withSmsProxy(async ({ base, headers, seen }) => {
+    for (const body of [
+      JSON.stringify({ ...smsCommand(), apiKeyAction: 'keep' }),
+      JSON.stringify({ ...smsCommand(), apiKeyAction: 'clear' }),
+      JSON.stringify({ ...smsCommand(), apiKey: null }),
+      JSON.stringify({ ...smsCommand(), apiKey: 'with space' }),
+      JSON.stringify({ ...smsCommand(), templateId: 123456 }),
+      JSON.stringify({ ...smsCommand(), mode: 'sandbox' }),
+      JSON.stringify({ ...smsCommand(), version: 'AAAAAAAAAAF=' }),
+      JSON.stringify({ ...smsCommand(), requestId: '0'.repeat(32) }),
+      JSON.stringify({ ...smsCommand(), actor: 'extra' }),
+      JSON.stringify(smsCommand()).replace('"apiKey":', '"APIKEY":"extra","apiKey":'),
+    ]) {
+      const response = await fetch(base, { headers, method: 'PUT', body });
+      assert.equal(
+        response.status,
+        400,
+        body.replaceAll('synthetic-key-not-a-real-credential', '[synthetic]'),
+      );
+      assert.equal((await response.text()).includes('synthetic-key-not-a-real-credential'), false);
+    }
+    assert.equal(
+      (await fetch(base, { headers, method: 'PUT', body: 'x'.repeat(16385) })).status,
+      413,
+    );
+    assert.equal(seen.length, 0);
+  }));
+test('D67 SMS settings proxy enforces method, query, exact subroute and same-origin JSON boundaries', async () =>
+  withSmsProxy(async ({ base, headers, seen }) => {
+    assert.equal((await fetch(base + '?version=x', { headers })).status, 400);
+    assert.equal((await fetch(base + '/key', { headers })).status, 404);
+    assert.equal((await fetch(base.replace('/settings', ''), { headers })).status, 404);
+    assert.equal((await fetch(base, { headers, method: 'POST', body: '{}' })).status, 405);
+    assert.equal(
+      (
+        await fetch(base, {
+          headers: { ...headers, Origin: undefined },
+          method: 'PUT',
+          body: JSON.stringify(smsCommand()),
+        })
+      ).status,
+      403,
+    );
+    const withoutOrigin = { ...headers };
+    delete withoutOrigin.Origin;
+    assert.equal(
+      (
+        await fetch(base, {
+          headers: withoutOrigin,
+          method: 'PUT',
+          body: JSON.stringify(smsCommand()),
+        })
+      ).status,
+      403,
+    );
+    assert.equal(
+      (
+        await fetch(base, {
+          headers: { ...headers, 'Content-Type': 'text/plain' },
+          method: 'PUT',
+          body: JSON.stringify(smsCommand()),
+        })
+      ).status,
+      415,
+    );
+    assert.equal(
+      (await fetch(base, { headers: { ...headers, Authorization: 'Basic synthetic' } })).status,
+      401,
+    );
+    assert.equal(seen.length, 0);
+  }));
+test('D67 SMS settings proxy sanitizes invalid metadata, upstream cookies, redirects and all error details', async () =>
+  withSmsProxy(async ({ base, headers, seen, remote }) => {
+    for (const value of [
+      { body: JSON.stringify({ ...smsMetadata(), apiKey: 'synthetic-key-not-a-real-credential' }) },
+      { body: JSON.stringify({ ...smsMetadata(), protectedApiKey: 'never-show' }) },
+      { body: JSON.stringify({ ...smsMetadata(), availability: 'disabled' }) },
+      { body: JSON.stringify({ ...smsMetadata(), version: 'AAAAAAAAAAF=' }) },
+      {
+        body: JSON.stringify(smsMetadata()).replace(
+          '"schemaVersion":1',
+          '"schemaVersion":1,"SchemaVersion":1',
+        ),
+      },
+      { body: 'x'.repeat(16385) },
+      { body: '{}', headers: { 'Set-Cookie': 'unexpected=1' } },
+      { headers: { 'Content-Type': 'text/html' } },
+      {
+        status: 302,
+        headers: { Location: 'https://provider.invalid/?key=synthetic-key-not-a-real-credential' },
+      },
+    ]) {
+      remote(value);
+      const response = await fetch(base, { headers });
+      assert.equal(response.status, 503);
+      assert.deepEqual(await response.json(), { title: 'otp_unavailable' });
+    }
+    remote({
+      status: 409,
+      body: JSON.stringify({
+        title: 'sms_settings_conflict',
+        detail: 'synthetic-key-not-a-real-credential',
+        apiKey: 'synthetic-key-not-a-real-credential',
+      }),
+    });
+    const conflict = await fetch(base, { headers });
+    assert.equal(conflict.status, 409);
+    assert.deepEqual(await conflict.json(), { title: 'sms_settings_conflict' });
+    remote({
+      status: 429,
+      headers: { 'Retry-After': '60' },
+      body: JSON.stringify({
+        title: 'unknown-provider-title-secret',
+        detail: 'synthetic-key-not-a-real-credential',
+      }),
+    });
+    const limited = await fetch(base, { headers });
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get('Retry-After'), '60');
+    assert.deepEqual(await limited.json(), { title: 'otp_unavailable' });
+    assert.equal(seen.length, 11);
+  }));
+
+test('RMA admin proxy admits only bounded private policy, case, history and command routes', async () => {
+  const seen = [],
+    id = 'a'.repeat(32),
+    commandId = 'b'.repeat(32),
+    version = 'AAAAAAAAAAE=';
+  const policy = {
+    version: null,
+    enabled: true,
+    physicalReturns: true,
+    digitalComplaints: true,
+    conditionsFa: 'شرایط نمونه',
+    conditionsEn: 'Synthetic conditions',
+    windowMode: 'deliveryDays',
+    windowDays: 3,
+    maxOpenPerOwner: null,
+    note: 'Synthetic initial policy',
+    confirmed: true,
+  };
+  const review = {
+    ownerId: 'synthetic-owner',
+    version,
+    action: 'startReview',
+    outcome: null,
+    note: 'Synthetic review',
+    customerMessage: null,
+    acknowledgeNoFinancialAction: true,
+  };
+  const upstream = http.createServer(async (req, res) => {
+    const parts = [];
+    for await (const chunk of req) parts.push(chunk);
+    seen.push({
+      path: req.url,
+      cookie: req.headers.cookie ?? null,
+      client: req.headers['x-sayman-client'],
+      method: req.method,
+      body: Buffer.concat(parts).toString('utf8'),
+    });
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'X-Sayman-Returns-Contract': 'rma-v1',
+    });
+    res.end('{}');
+  });
+  upstream.listen(0, '127.0.0.1');
+  await once(upstream, 'listening');
+  const publicUrl = 'https://admin.example.test';
+  const server = createAdminServer({
+    apiUrl: `http://127.0.0.1:${upstream.address().port}`,
+    publicUrl,
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const origin = `http://127.0.0.1:${server.address().port}`,
+    base = '/api/admin/returns',
+    headers = {
+      Authorization: 'Bearer synthetic-only',
+      Origin: publicUrl,
+      Cookie: 'do-not-forward=1',
+      'Content-Type': 'application/json',
+    };
+  try {
+    assert.equal((await fetch(origin + base)).status, 401);
+    for (const tail of [
+      '',
+      '?state=submitted&after=YWJj',
+      '/policy',
+      '/policy/history?beforeRevision=10000',
+      '/policy/commands/' + commandId,
+      '/synthetic-owner/' + id,
+      '/commands/' + commandId,
+    ]) {
+      const response = await fetch(origin + base + tail, { headers });
+      assert.equal(response.status, 200, tail);
+      assert.equal(await response.text(), '{}');
+      assert.match(response.headers.get('Cache-Control'), /private, no-store/);
+      assert.match(response.headers.get('X-Robots-Tag'), /noindex/);
+      assert.equal(response.headers.get('X-Content-Type-Options'), 'nosniff');
+      assert.equal(response.headers.get('X-Sayman-Returns-Contract'), 'rma-v1');
+    }
+    for (const [tail, input] of [
+      ['/policy/commands/' + commandId, policy],
+      ['/' + id + '/commands/' + commandId, review],
+    ])
+      assert.equal(
+        (await fetch(origin + base + tail, { headers, method: 'PUT', body: JSON.stringify(input) }))
+          .status,
+        200,
+      );
+    assert.ok(seen.every((request) => request.cookie === null && request.client === 'admin'));
+    assert.deepEqual(JSON.parse(seen.at(-1).body), review);
+    const count = seen.length;
+    for (const [tail, status] of [
+      ['?owner=another', 400],
+      ['?state=Paid', 400],
+      ['?state=submitted&state=reviewed', 400],
+      ['?after=', 400],
+      ['?after=YWJj%0A', 400],
+      ['?after=' + 'a'.repeat(181), 400],
+      ['/policy/history?beforeRevision=01', 400],
+      ['/policy/history?beforeRevision=1%0A', 400],
+      ['/policy/history?beforeRevision=10001', 400],
+      ['/policy/history?beforeRevision=1&beforeRevision=2', 400],
+      ['/policy?state=submitted', 400],
+      ['/policy/commands/' + commandId + '?after=YWJj', 400],
+      ['/' + id + '/refund', 404],
+      ['/commands/' + '0'.repeat(32), 404],
+    ])
+      assert.equal((await fetch(origin + base + tail, { headers })).status, status, tail);
+    assert.equal((await fetch(origin + base, { headers, method: 'PUT', body: '{}' })).status, 405);
+    assert.equal(
+      (
+        await fetch(origin + base + '/policy/commands/' + commandId, {
+          headers,
+          method: 'POST',
+          body: JSON.stringify(policy),
+        })
+      ).status,
+      405,
+    );
+    for (const input of [
+      JSON.stringify({ ...policy, refundRial: '10' }),
+      JSON.stringify({ ...policy, confirmed: false }),
+      JSON.stringify({ ...policy, windowDays: null }),
+      JSON.stringify(policy).replace('"enabled":true', '"enabled":true,"ena\\u0062led":false'),
+      JSON.stringify(policy).replace('"enabled":true', '"enabled":true,"ENABLED":false'),
+      '{',
+      '{"x":' + '['.repeat(33) + '0' + ']'.repeat(33) + '}',
+      new Uint8Array([0xff]),
+    ])
+      assert.equal(
+        (
+          await fetch(origin + base + '/policy/commands/' + commandId, {
+            headers,
+            method: 'PUT',
+            body: input,
+          })
+        ).status,
+        400,
+      );
+    for (const input of [
+      JSON.stringify({ ...review, ownerId: 'contains@invalid' }),
+      JSON.stringify({ ...review, ownerId: 'synthetic-owner\n' }),
+      JSON.stringify({ ...review, action: 'completeReview', outcome: null }),
+      JSON.stringify({ ...review, customerMessage: '', acknowledgeNoFinancialAction: true }),
+    ])
+      assert.equal(
+        (
+          await fetch(origin + base + '/' + id + '/commands/' + commandId, {
+            headers,
+            method: 'PUT',
+            body: input,
+          })
+        ).status,
+        400,
+      );
+    assert.equal(
+      (
+        await fetch(origin + base + '/policy/commands/' + commandId, {
+          headers,
+          method: 'PUT',
+          body: 'x'.repeat(32769),
+        })
+      ).status,
+      413,
+    );
+    assert.equal(
+      (
+        await fetch(origin + base + '/policy/commands/' + commandId, {
+          headers: { ...headers, 'Content-Type': 'text/plain' },
+          method: 'PUT',
+          body: '{}',
+        })
+      ).status,
+      415,
+    );
+    for (const h of [
+      { ...headers, Origin: 'https://evil.example' },
+      { ...headers, 'Sec-Fetch-Site': 'cross-site' },
+      { Authorization: headers.Authorization, 'Content-Type': 'application/json' },
+    ])
+      assert.equal(
+        (
+          await fetch(origin + base + '/policy/commands/' + commandId, {
+            headers: h,
+            method: 'PUT',
+            body: JSON.stringify(policy),
+          })
+        ).status,
+        403,
+      );
+    assert.equal(seen.length, count);
+  } finally {
+    for (const s of [server, upstream]) s.closeAllConnections();
+    await Promise.all([server, upstream].map((s) => new Promise((resolve) => s.close(resolve))));
+  }
+});
+
+test('RMA admin proxy buffers strict bounded JSON, rejects redirects/cookies, and preserves empty bearer401', async () => {
+  let reply = {
+    status: 200,
+    headers: { 'Content-Type': 'application/json', 'X-Sayman-Returns-Contract': 'rma-v1' },
+    body: '{}',
+  };
+  const upstream = http.createServer((req, res) => {
+    req.resume();
+    res.writeHead(reply.status, reply.headers);
+    res.end(reply.body);
+  });
+  upstream.listen(0, '127.0.0.1');
+  await once(upstream, 'listening');
+  const server = createAdminServer({ apiUrl: `http://127.0.0.1:${upstream.address().port}` });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const url = `http://127.0.0.1:${server.address().port}/api/admin/returns`,
+    headers = { Authorization: 'Bearer synthetic-only' },
+    marked = { 'Content-Type': 'application/json', 'X-Sayman-Returns-Contract': 'rma-v1' };
+  try {
+    for (const status of [401, 403]) {
+      reply = { status, headers: {}, body: '' };
+      const response = await fetch(url, { headers });
+      assert.equal(response.status, status);
+      assert.equal(await response.text(), '');
+    }
+    reply = { status: 404, headers: marked, body: '{"title":"rma_not_found"}' };
+    assert.equal((await fetch(url, { headers })).status, 404);
+    for (const invalid of [
+      { status: 200, headers: { 'Content-Type': 'application/json' }, body: '{}' },
+      { status: 404, headers: { 'Content-Type': 'application/json' }, body: '{}' },
+      { status: 200, headers: { ...marked, 'Set-Cookie': 'forbidden=1' }, body: '{}' },
+      { status: 200, headers: { ...marked, 'X-Sayman-Returns-Contract': 'other-v1' }, body: '{}' },
+      { status: 200, headers: { ...marked, 'Content-Type': 'text/html' }, body: '{}' },
+      { status: 200, headers: marked, body: '{' },
+      { status: 200, headers: marked, body: '{"x":1,"X":2}' },
+      { status: 200, headers: marked, body: '{"x":1,"\\u0078":2}' },
+      { status: 200, headers: marked, body: Buffer.from([0xff]) },
+      { status: 200, headers: marked, body: 'x'.repeat(2097153) },
+      { status: 200, headers: { ...marked, 'Content-Length': '2097153' }, body: '{}' },
+      { status: 302, headers: { Location: 'https://evil.example' }, body: '' },
+      { status: 503, headers: { 'Content-Type': 'text/html' }, body: '<html>error</html>' },
+    ]) {
+      reply = invalid;
+      const response = await fetch(url, { headers });
+      assert.equal(response.status, 503);
+      assert.equal(response.headers.has('Set-Cookie'), false);
+      await response.arrayBuffer();
+    }
+    const exact = '{"value":"' + 'x'.repeat(2097140) + '"}';
+    assert.equal(Buffer.byteLength(exact), 2097152);
+    reply = { status: 200, headers: marked, body: exact };
+    const response = await fetch(url, { headers });
+    assert.equal(response.status, 200);
+    assert.equal(Buffer.byteLength(await response.text()), 2097152);
+  } finally {
+    for (const s of [server, upstream]) s.closeAllConnections();
+    await Promise.all([server, upstream].map((s) => new Promise((resolve) => s.close(resolve))));
+  }
+});
+
 test('blog publication proxy scopes draft/revision/commands and preserves private JSON limits without cookies', async () => {
   const seen = [];
   let unsafe = false;
@@ -2124,5 +2837,280 @@ test('customer directory proxy admits only scoped reads and never forwards or re
     await Promise.all(
       [server, upstream].map((value) => new Promise((resolve) => value.close(resolve))),
     );
+  }
+});
+
+test('digital delivery proxy scopes metadata and actor receipts, uses its own installed contract and bounded request without cookies', async () => {
+  const seen = [];
+  let contract = 'digital-v1',
+    unsafe = false,
+    status = 200;
+  const upstream = http.createServer((req, res) => {
+    seen.push({ path: req.url, cookie: req.headers.cookie ?? null, method: req.method });
+    req.resume();
+    res.writeHead(status, {
+      'Content-Type': 'application/json',
+      ...(contract ? { 'X-Sayman-Fulfillment-Contract': contract } : {}),
+      ...(unsafe ? { 'Set-Cookie': 'never=1' } : {}),
+    });
+    res.end('{}');
+  });
+  upstream.listen(0, '127.0.0.1');
+  await once(upstream, 'listening');
+  const server = createAdminServer({ apiUrl: `http://127.0.0.1:${upstream.address().port}` });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const origin = `http://127.0.0.1:${server.address().port}`,
+    id = 'a'.repeat(32),
+    base = '/api/admin/orders/OWNER/' + id + '/fulfillment/digital',
+    headers = {
+      Authorization: 'Bearer synthetic-only',
+      Cookie: 'do-not-forward=1',
+      'Content-Type': 'application/json',
+    };
+  try {
+    assert.equal((await fetch(origin + base)).status, 401);
+    for (const tail of ['', '/commands/' + id]) {
+      const r = await fetch(origin + base + tail, { headers });
+      assert.equal(r.status, 200);
+      assert.match(r.headers.get('Cache-Control'), /private, no-store/);
+      assert.match(r.headers.get('X-Robots-Tag'), /noindex/);
+      assert.equal(r.headers.get('X-Sayman-Fulfillment-Contract'), 'digital-v1');
+    }
+    assert.equal(
+      (
+        await fetch(origin + base + '/commands/' + id, {
+          method: 'POST',
+          headers,
+          body: 'x'.repeat(100000),
+        })
+      ).status,
+      200,
+    );
+    assert.ok(seen.every((r) => r.cookie === null));
+    const before = seen.length;
+    for (const tail of ['?owner=other', '?after=1', '/commands/' + id + '?after=1'])
+      assert.equal((await fetch(origin + base + tail, { headers })).status, 400);
+    for (const tail of ['/' + id + '/content', '/parcels/' + id])
+      assert.equal((await fetch(origin + base + tail, { headers })).status, 404);
+    assert.equal((await fetch(origin + base, { method: 'POST', headers, body: '{}' })).status, 405);
+    assert.equal(
+      (
+        await fetch(origin + base + '/commands/' + id, {
+          method: 'POST',
+          headers,
+          body: 'x'.repeat(524289),
+        })
+      ).status,
+      413,
+    );
+    assert.equal(seen.length, before);
+    for (const invalid of ['', 'parcels-v1']) {
+      contract = invalid;
+      assert.equal((await fetch(origin + base, { headers })).status, 503);
+    }
+    contract = 'digital-v1';
+    unsafe = true;
+    let r = await fetch(origin + base, { headers });
+    assert.equal(r.status, 503);
+    assert.equal(r.headers.has('Set-Cookie'), false);
+    unsafe = false;
+    status = 404;
+    r = await fetch(origin + base, { headers });
+    assert.equal(r.status, 404);
+    contract = '';
+    r = await fetch(origin + base, { headers });
+    assert.equal(r.status, 503);
+  } finally {
+    for (const s of [server, upstream]) s.closeAllConnections();
+    await Promise.all([server, upstream].map((s) => new Promise((resolve) => s.close(resolve))));
+  }
+});
+
+test('Material receives a per-document style nonce without permitting inline script', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'sayman-material-test-'));
+  await writeFile(
+    path.join(root, 'index.html'),
+    '<!doctype html><html><head></head><body></body></html>',
+  );
+  const server = createAdminServer({ root });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  try {
+    const origin = `http://127.0.0.1:${server.address().port}`;
+    const one = await fetch(origin),
+      two = await fetch(origin);
+    const html = await one.text(),
+      tag = /<meta name="sayman-style-nonce" content="([A-Za-z0-9+/=]+)">/.exec(html);
+    assert.ok(tag);
+    const csp = one.headers.get('content-security-policy');
+    assert.ok(csp.includes(`style-src 'self' 'nonce-${tag[1]}'`));
+    assert.ok(csp.includes("script-src 'self';"));
+    assert.ok(!csp.includes("script-src 'self' 'unsafe-inline'"));
+    assert.notEqual(csp, two.headers.get('content-security-policy'));
+  } finally {
+    server.closeAllConnections();
+    await new Promise((resolve) => server.close(resolve));
+    await rm(root, { recursive: true, force: true });
+  }
+});
+test('workspace proxy bounds localized inline errors, preserves receipt404 and blocks unknown paths and duplicate queries', async () => {
+  let status = 400,
+    problem = {
+      title: 'invalid_product_fields',
+      errors: { 'variants.0.sku': ['این کد تکراری است.'], slug: ['نشانی تکراری است.'] },
+      detail: 'private diagnostic',
+    };
+  let calls = 0,
+    lastPath = '';
+  const upstream = http.createServer(async (req, res) => {
+    calls++;
+    lastPath = req.url;
+    for await (const chunk of req) {
+      assert.ok(Buffer.isBuffer(chunk));
+    }
+    res.writeHead(status, { 'Content-Type': 'application/problem+json' });
+    res.end(JSON.stringify(problem));
+  });
+  upstream.listen(0, '127.0.0.1');
+  await once(upstream, 'listening');
+  const server = createAdminServer({
+    apiUrl: `http://127.0.0.1:${upstream.address().port}`,
+    publicUrl: 'http://127.0.0.1:3173',
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const origin = `http://127.0.0.1:${server.address().port}`,
+    base = '/api/admin/catalog/workspace',
+    headers = {
+      Authorization: 'Bearer synthetic-only',
+      Origin: 'http://127.0.0.1:3173',
+      'Content-Type': 'application/json',
+    };
+  try {
+    let response = await fetch(origin + base + '/archive', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        requestId: 'a'.repeat(32),
+        productId: 'p1',
+        version: 'AAAAAAAAAAE=',
+        restore: false,
+      }),
+    });
+    assert.equal(response.status, 400);
+    const output = await response.json();
+    assert.deepEqual(output.errors, problem.errors);
+    assert.ok(!JSON.stringify(output).includes('private diagnostic'));
+    assert.equal(response.headers.has('set-cookie'), false);
+    const before = calls;
+    assert.equal(
+      (await fetch(origin + base + '/products?search=a&search=b', { headers })).status,
+      400,
+    );
+    assert.equal((await fetch(origin + base + '/unexpected', { headers })).status, 404);
+    assert.equal((await fetch(origin + base + '/products?minStock=-1', { headers })).status, 400);
+    assert.equal(
+      (await fetch(origin + base + '/products?maxPriceRial=1&maxPriceRial=2', { headers })).status,
+      400,
+    );
+    assert.equal(
+      (await fetch(origin + base + '/products?updatedFrom=2026-02-29T00:00:00.000Z', { headers }))
+        .status,
+      400,
+    );
+    for (const query of [
+      'categoryIds=a,A',
+      'brandIds=a,,b',
+      'statuses=Published,all',
+      'statuses=Draft&statuses=Hidden',
+    ]) {
+      assert.equal((await fetch(origin + base + '/products?' + query, { headers })).status, 400);
+    }
+    assert.equal(calls, before);
+    await fetch(
+      origin +
+        base +
+        '/products?name=phone&minPriceRial=9007199254740993&maxStock=0&minVariants=1&updatedBefore=2026-11-03T00%3A00%3A00.000Z&categoryIds=c1%2Cc2&brandIds=b1%2Cb2&statuses=Published%2Carchived',
+      { headers },
+    );
+    assert.equal(calls, before + 1);
+    const forwarded = new URL(lastPath, origin).searchParams;
+    assert.equal(forwarded.get('minPriceRial'), '9007199254740993');
+    assert.equal(forwarded.get('updatedBefore'), '2026-11-03T00:00:00.000Z');
+    assert.equal(forwarded.get('name'), 'phone');
+    assert.equal(forwarded.get('categoryIds'), 'c1,c2');
+    assert.equal(forwarded.get('brandIds'), 'b1,b2');
+    assert.equal(forwarded.get('statuses'), 'Published,archived');
+    status = 404;
+    problem = { title: 'not_found' };
+    response = await fetch(origin + base + '/commands/' + 'a'.repeat(32), { headers });
+    assert.equal(response.status, 404);
+    problem = { title: 'invalid_product_fields', errors: { slug: ['x'.repeat(501)] } };
+    status = 400;
+    response = await fetch(origin + base + '/archive', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        requestId: 'a'.repeat(32),
+        productId: 'p1',
+        version: 'AAAAAAAAAAE=',
+        restore: false,
+      }),
+    });
+    assert.equal(response.status, 400);
+    const rejected = await response.json();
+    assert.equal(rejected.errors, undefined);
+    assert.ok(!JSON.stringify(rejected).includes('x'.repeat(501)));
+  } finally {
+    for (const s of [server, upstream]) s.closeAllConnections();
+    await Promise.all([server, upstream].map((s) => new Promise((resolve) => s.close(resolve))));
+  }
+});
+test('issued video proxy streams bounded range responses and never forwards a browser credential', async () => {
+  let unsafe = false;
+  const seen = [];
+  const tag = '"' + 'b'.repeat(64) + '"';
+  const upstream = http.createServer((req, res) => {
+    seen.push(req.headers);
+    res.writeHead(206, {
+      'Content-Type': 'video/mp4',
+      'Content-Length': '4',
+      'Content-Range': 'bytes 0-3/100',
+      ETag: tag,
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'X-Shop-Public-Resource': 'catalog-video-v1',
+      ...(unsafe ? { 'Set-Cookie': 'should-not-leak=1' } : {}),
+    });
+    res.end(Buffer.from([0, 1, 2, 3]));
+  });
+  upstream.listen(0, '127.0.0.1');
+  await once(upstream, 'listening');
+  const server = createAdminServer({ apiUrl: `http://127.0.0.1:${upstream.address().port}` });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const origin = `http://127.0.0.1:${server.address().port}`,
+    route = '/api/media/videos/' + 'a'.repeat(32) + '/clip.mp4';
+  try {
+    const response = await fetch(origin + route, {
+      headers: { Range: 'bytes=0-3', Cookie: 'private=1', Authorization: 'Bearer synthetic-only' },
+    });
+    assert.equal(response.status, 206);
+    assert.equal(response.headers.get('content-range'), 'bytes 0-3/100');
+    assert.equal((await response.arrayBuffer()).byteLength, 4);
+    assert.equal(seen[0].cookie, undefined);
+    assert.equal(seen[0].authorization, undefined);
+    assert.equal(seen[0].range, 'bytes=0-3');
+    unsafe = true;
+    assert.equal((await fetch(origin + route, { headers: { Range: 'bytes=0-3' } })).status, 503);
+    const before = seen.length;
+    assert.equal(
+      (await fetch(origin + route, { headers: { Range: 'bytes=0-3,5-8' } })).status,
+      400,
+    );
+    assert.equal(seen.length, before);
+  } finally {
+    for (const s of [server, upstream]) s.closeAllConnections();
+    await Promise.all([server, upstream].map((s) => new Promise((resolve) => s.close(resolve))));
   }
 });

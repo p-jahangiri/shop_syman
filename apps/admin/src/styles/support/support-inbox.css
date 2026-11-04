@@ -1,0 +1,87 @@
+.support-inbox-workspace .ticket-queue-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-block: 1rem;
+}
+
+.support-inbox-workspace .ticket-queue-switch > button {
+  --queue-accent: var(--muted-foreground, var(--muted));
+  display: grid;
+  align-content: start;
+  justify-content: stretch;
+  gap: 0.25rem;
+  min-block-size: 4.3rem;
+  padding: 0.65rem;
+  border-inline-start: 3px solid color-mix(in oklch, var(--queue-accent) 70%, var(--border));
+  background: var(--surface);
+  text-align: start;
+}
+
+.support-inbox-workspace .ticket-queue-switch > button[data-queue='Open'] {
+  --queue-accent: oklch(64% 0.15 72);
+}
+
+.support-inbox-workspace .ticket-queue-switch > button[data-queue='WaitingCustomer'] {
+  --queue-accent: oklch(63% 0.13 244);
+}
+
+.support-inbox-workspace .ticket-queue-switch > button[data-queue='all'] {
+  --queue-accent: var(--primary);
+}
+
+.support-inbox-workspace .ticket-queue-switch > button[aria-pressed='true'] {
+  background: color-mix(in oklch, var(--queue-accent) 15%, var(--surface));
+  border-color: var(--queue-accent);
+  color: var(--foreground);
+}
+
+.ticket-queue-card-top {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.25rem;
+  min-inline-size: 0;
+  font-size: 0.85rem;
+}
+
+.ticket-queue-card-top bdi {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.support-inbox-workspace .ticket-queue-switch small,
+.support-inbox-workspace .ticket-queue-search small,
+.support-inbox-workspace .ticket-list-count {
+  color: var(--muted-foreground, var(--muted));
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.support-inbox-workspace .ticket-list > li {
+  min-inline-size: 0;
+}
+
+.support-inbox-workspace .ticket-list button > strong {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.support-inbox-workspace .ticket-list button:hover,
+.support-inbox-workspace .ticket-queue-switch > button:hover {
+  border-color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 12%, var(--surface));
+  color: var(--foreground);
+}
+
+.support-inbox-workspace .ticket-list-state[data-state='WaitingCustomer'] {
+  border-color: color-mix(in oklch, oklch(63% 0.13 244) 65%, var(--border));
+  background: color-mix(in oklch, oklch(63% 0.13 244) 13%, var(--surface));
+}
+
+.support-inbox-workspace .ticket-result-note {
+  margin-block: 0.75rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.75rem;
+}

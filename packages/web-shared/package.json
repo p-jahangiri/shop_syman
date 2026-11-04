@@ -1,0 +1,22 @@
+{
+  "name": "@sayman/web-shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./components/*.css": "./components/*.css",
+    "./components/*": "./components/*.tsx",
+    "./lib/*.ts": "./lib/*.ts",
+    "./testing/*.ts": "./testing/*.ts"
+  },
+  "dependencies": {
+    "@microsoft/signalr": "10.0.11",
+    "zod": "4.6.7"
+  },
+  "peerDependencies": {
+    "react": "19.3.1"
+  },
+  "devDependencies": {
+    "@swc/core": "1.15.3"
+  }
+}

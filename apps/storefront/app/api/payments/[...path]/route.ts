@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { proxyPayment } from '@/lib/payment-proxy';
+import { proxyPayment } from '@/lib/orders/payment-proxy';
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },

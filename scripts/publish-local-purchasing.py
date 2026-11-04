@@ -28,9 +28,9 @@ UNIT = ROOT / 'backend/tests/Shop.Tests/TestResults/d56-unit-full.trx'
 BASELINE = ROOT / 'tmp/d55-api-prepared.json'
 BASELINE_RUNTIME = 'tmp/api-runtime-appearance-2bec55592ee04725bee0248fde2ed532'
 ALLOWED = {
-    'backend/src/Shop.Modules.Cms/Content.cs',
-    'backend/src/Shop.Modules.Cms/SupportContent.cs',
-    'backend/src/Shop.Modules.Cms/SitePurchaseRules.cs',
+    'backend/src/Shop.Modules.Cms/Persistence/Content.cs',
+    'backend/src/Shop.Modules.Cms/Services/SupportContent.cs',
+    'backend/src/Shop.Modules.Cms/Domain/SitePurchaseRules.cs',
     'backend/tests/Shop.Tests/CmsPurchaseDependencyTests.cs',
     'backend/tests/Shop.SqlTests/CmsPurchaseDependencySqlTests.cs',
     'backend/tests/Shop.SqlTests/PurchaseMethodAvailabilitySqlTests.cs',

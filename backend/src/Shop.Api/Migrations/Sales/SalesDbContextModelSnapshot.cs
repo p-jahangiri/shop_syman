@@ -241,9 +241,9 @@ namespace Shop.Api.Migrations.Sales
 
                     b.Property<string>("TaxMode")
                         .IsRequired()
-                        .HasMaxLength(16)
+                        .HasMaxLength(24)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(16)");
+                        .HasColumnType("varchar(24)");
 
                     b.Property<int?>("TaxRateBasisPoints")
                         .HasColumnType("int");
@@ -264,11 +264,11 @@ namespace Shop.Api.Migrations.Sales
 
                     b.ToTable("CheckoutChargePolicies", "sales", t =>
                         {
-                            t.HasCheckConstraint("CK_ChargePolicy_Shipping", "([ShippingMode] IN ('unconfigured','free') AND [ShippingFeeRial] IS NULL AND [ShippingFreeFromRial] IS NULL) OR ([ShippingMode]='flat' AND [ShippingFeeRial] IS NOT NULL AND [ShippingFeeRial]>0 AND ([ShippingFreeFromRial] IS NULL OR [ShippingFreeFromRial]>0))");
+                            t.HasCheckConstraint("CK_ChargePolicy_Shipping", "([ShippingMode] IN ('unconfigured','free','postpaid') AND [ShippingFeeRial] IS NULL AND [ShippingFreeFromRial] IS NULL) OR ([ShippingMode]='flat' AND [ShippingFeeRial] IS NOT NULL AND [ShippingFeeRial]>0 AND ([ShippingFreeFromRial] IS NULL OR [ShippingFreeFromRial]>0))");
 
                             t.HasCheckConstraint("CK_ChargePolicy_Singleton", "[Id]=1");
 
-                            t.HasCheckConstraint("CK_ChargePolicy_Tax", "([TaxMode] IN ('unconfigured','exempt') AND [TaxRateBasisPoints] IS NULL) OR ([TaxMode] IN ('exclusive','inclusive') AND [TaxRateBasisPoints] IS NOT NULL AND [TaxRateBasisPoints] BETWEEN 1 AND 10000)");
+                            t.HasCheckConstraint("CK_ChargePolicy_Tax", "([TaxMode] IN ('unconfigured','exempt','included_unitemized') AND [TaxRateBasisPoints] IS NULL) OR ([TaxMode] IN ('exclusive','inclusive') AND [TaxRateBasisPoints] IS NOT NULL AND [TaxRateBasisPoints] BETWEEN 1 AND 10000)");
 
                             t.HasCheckConstraint("CK_ChargePolicy_TaxRule", "[TaxBase] IN ('items','goods','goods_shipping') AND [TaxRounding] IN ('down','up','half_up')");
                         });
@@ -392,9 +392,9 @@ namespace Shop.Api.Migrations.Sales
                         .HasColumnType("bit");
 
                     b.Property<string>("TaxMode")
-                        .HasMaxLength(16)
+                        .HasMaxLength(24)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(16)");
+                        .HasColumnType("varchar(24)");
 
                     b.Property<int?>("TaxRateBasisPoints")
                         .HasColumnType("int");
@@ -2023,6 +2023,420 @@ namespace Shop.Api.Migrations.Sales
                         });
                 });
 
+            modelBuilder.Entity("Shop.Modules.Sales.RmaCase", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<DateTimeOffset>("ChangedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("ContainsDemo")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsOpen")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(2)");
+
+                    b.Property<long>("Number")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Number"));
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int>("OriginalSnapshotVersion")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("PolicyRevisionId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<byte[]>("ProtectedRequest")
+                        .IsRequired()
+                        .HasMaxLength(32768)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("SnapshotHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("PolicyRevisionId");
+
+                    b.HasIndex("OrderId", "IsOpen")
+                        .IsUnique()
+                        .HasFilter("[IsOpen]=1");
+
+                    b.HasIndex("OwnerId", "IsOpen");
+
+                    b.HasIndex("OwnerId", "Number");
+
+                    b.HasIndex("State", "Number");
+
+                    b.ToTable("RmaCases", "sales", t =>
+                        {
+                            t.HasCheckConstraint("CK_RmaCase_Facts", "[OriginalSnapshotVersion] IN(1,2) AND [Kind] IN('physicalReturn','digitalComplaint') AND [Locale] IN('fa','en') AND DATEPART(TZOFFSET,[CreatedAt])=0 AND DATEPART(TZOFFSET,[ChangedAt])=0 AND [ChangedAt]>=[CreatedAt] AND DATALENGTH([ProtectedRequest]) BETWEEN 1 AND 32768");
+
+                            t.HasCheckConstraint("CK_RmaCase_State", "([State] IN('submitted','reviewing') AND [Outcome] IS NULL AND [IsOpen]=1) OR ([State]='reviewed' AND (([Outcome]='followUp' AND [IsOpen]=1) OR ([Outcome]='declined' AND [IsOpen]=0))) OR ([State]='withdrawn' AND [Outcome] IS NULL AND [IsOpen]=0)");
+                        });
+                });
+
+            modelBuilder.Entity("Shop.Modules.Sales.RmaCaseCommand", b =>
+                {
+                    b.Property<string>("ActorId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("CommandId")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Audience")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8)");
+
+                    b.Property<string>("CaseId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<bool>("ContainsDemo")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<byte[]>("ProtectedResult")
+                        .IsRequired()
+                        .HasMaxLength(2097152)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("ResultHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.HasKey("ActorId", "CommandId");
+
+                    b.HasIndex("CaseId");
+
+                    b.ToTable("RmaCaseCommands", "sales", t =>
+                        {
+                            t.HasCheckConstraint("CK_RmaCaseCommand_Facts", "[Audience] IN('customer','staff') AND DATEPART(TZOFFSET,[At])=0 AND DATALENGTH([ProtectedResult]) BETWEEN 1 AND 2097152");
+                        });
+                });
+
+            modelBuilder.Entity("Shop.Modules.Sales.RmaCaseEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<string>("ActorId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(8)");
+
+                    b.Property<string>("CaseId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<byte[]>("ProtectedText")
+                        .IsRequired()
+                        .HasMaxLength(65536)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId", "Action")
+                        .IsUnique();
+
+                    b.HasIndex("CaseId", "Id");
+
+                    b.ToTable("RmaCaseEvents", "sales", t =>
+                        {
+                            t.HasCheckConstraint("CK_RmaCaseEvent_Facts", "[Author] IN('customer','staff') AND [Action] IN('submitted','startReview','completeReview','withdrawn') AND [State] IN('submitted','reviewing','reviewed','withdrawn') AND ([Outcome] IS NULL OR [Outcome] IN('followUp','declined')) AND DATEPART(TZOFFSET,[At])=0 AND DATALENGTH([ProtectedText]) BETWEEN 1 AND 65536");
+                        });
+                });
+
+            modelBuilder.Entity("Shop.Modules.Sales.RmaCaseLine", b =>
+                {
+                    b.Property<string>("CaseId")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("LineKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("HandedOffOrAvailableQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDigital")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<int>("OrderedQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("ProtectedFacts")
+                        .IsRequired()
+                        .HasMaxLength(131072)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("VariantId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("CaseId", "LineKey");
+
+                    b.ToTable("RmaCaseLines", "sales", t =>
+                        {
+                            t.HasCheckConstraint("CK_RmaCaseLine_Quantity", "[OrderedQuantity] BETWEEN 1 AND 1000000 AND [Quantity] BETWEEN 1 AND [HandedOffOrAvailableQuantity] AND [HandedOffOrAvailableQuantity]<=[OrderedQuantity] AND DATALENGTH([ProtectedFacts]) BETWEEN 1 AND 131072");
+                        });
+                });
+
+            modelBuilder.Entity("Shop.Modules.Sales.RmaPolicyCommand", b =>
+                {
+                    b.Property<string>("ActorId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("CommandId")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<byte[]>("ProtectedResult")
+                        .IsRequired()
+                        .HasMaxLength(2097152)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("ResultHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<string>("RevisionId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.HasKey("ActorId", "CommandId");
+
+                    b.HasIndex("RevisionId")
+                        .IsUnique();
+
+                    b.ToTable("RmaPolicyCommands", "sales", t =>
+                        {
+                            t.HasCheckConstraint("CK_RmaPolicyCommand_Facts", "DATEPART(TZOFFSET,[At])=0 AND DATALENGTH([ProtectedResult]) BETWEEN 1 AND 2097152");
+                        });
+                });
+
+            modelBuilder.Entity("Shop.Modules.Sales.RmaPolicyRevision", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("ActorId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ConditionsEn")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("ConditionsFa")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<bool>("DigitalComplaints")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("MaxOpenPerOwner")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("PhysicalReturns")
+                        .HasColumnType("bit");
+
+                    b.Property<byte[]>("ProtectedNote")
+                        .IsRequired()
+                        .HasMaxLength(16384)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int?>("WindowDays")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WindowMode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Revision")
+                        .IsUnique();
+
+                    b.ToTable("RmaPolicyRevisions", "sales", t =>
+                        {
+                            t.HasCheckConstraint("CK_RmaPolicy_Capacity", "[MaxOpenPerOwner] IS NULL OR [MaxOpenPerOwner] BETWEEN 1 AND 10000");
+
+                            t.HasCheckConstraint("CK_RmaPolicy_Facts", "[Revision] BETWEEN 1 AND 10000 AND DATEPART(TZOFFSET,[At])=0 AND DATALENGTH([ProtectedNote]) BETWEEN 1 AND 16384 AND LEN([ConditionsFa])>0 AND LEN([ConditionsEn])>0 AND ([Enabled]=0 OR [PhysicalReturns]=1 OR [DigitalComplaints]=1)");
+
+                            t.HasCheckConstraint("CK_RmaPolicy_Window", "([WindowMode]='manualReview' AND [WindowDays] IS NULL) OR ([WindowMode]='deliveryDays' AND [WindowDays] BETWEEN 1 AND 3650 AND [WindowDays] IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("Shop.Modules.Sales.SalesOrder", b =>
                 {
                     b.Property<string>("Id")
@@ -2164,10 +2578,15 @@ namespace Shop.Api.Migrations.Sales
                         .HasMaxLength(24)
                         .HasColumnType("nvarchar(24)");
 
+                    b.Property<bool>("TaxBreakdownKnown")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<bool>("TaxIncluded")
                         .HasColumnType("bit");
 
-                    b.Property<long>("TaxRial")
+                    b.Property<long?>("TaxRial")
                         .HasColumnType("bigint");
 
                     b.Property<byte[]>("Version")
@@ -2193,7 +2612,7 @@ namespace Shop.Api.Migrations.Sales
 
                     b.ToTable("Orders", "sales", t =>
                         {
-                            t.HasCheckConstraint("CK_Order_Amounts", "[ItemsSubtotalRial]>=0 AND [GoodsTotalRial]>=[ItemsSubtotalRial] AND [ShippingRial]>=0 AND [TaxRial]>=0 AND [PayableTotalRial]>0 AND CAST([PayableTotalRial] AS decimal(38,0))=CAST([GoodsTotalRial] AS decimal(38,0))+[ShippingRial]+CASE WHEN [TaxIncluded]=1 THEN 0 ELSE [TaxRial] END");
+                            t.HasCheckConstraint("CK_Order_Amounts", "[ItemsSubtotalRial]>=0 AND [GoodsTotalRial]>=[ItemsSubtotalRial] AND [ShippingRial]>=0 AND (([TaxBreakdownKnown]=1 AND [TaxRial] IS NOT NULL AND [TaxRial]>=0) OR ([TaxBreakdownKnown]=0 AND [TaxIncluded]=1 AND [TaxRial] IS NULL)) AND [PayableTotalRial]>0 AND CAST([PayableTotalRial] AS decimal(38,0))=CAST([GoodsTotalRial] AS decimal(38,0))+[ShippingRial]+CASE WHEN [TaxIncluded]=1 THEN 0 ELSE [TaxRial] END");
 
                             t.HasCheckConstraint("CK_Order_Dates", "[ExpiresAt]>[CreatedAt] AND [ChangedAt]>=[CreatedAt]");
 
@@ -2204,6 +2623,8 @@ namespace Shop.Api.Migrations.Sales
                             t.HasCheckConstraint("CK_Order_SnapshotVersion", "[SnapshotVersion] IS NULL OR [SnapshotVersion]=2");
 
                             t.HasCheckConstraint("CK_Order_State", "[State] IN ('AwaitingPayment','Paid','Cancelled','Expired','Fulfilled','CreditApproved')");
+
+                            t.HasCheckConstraint("CK_Order_TaxDisclosure", "([TaxBreakdownKnown]=1 AND COALESCE(JSON_VALUE([QuoteSnapshotJson],'$.ChargeRules.TaxMode'),'')<>'included_unitemized') OR ([TaxBreakdownKnown]=0 AND [TaxIncluded]=1 AND [TaxRial] IS NULL AND COALESCE(JSON_VALUE([QuoteSnapshotJson],'$.ChargeRules.TaxMode'),'')='included_unitemized' AND COALESCE(JSON_VALUE([QuoteSnapshotJson],'$.ChargeRules.TaxIncluded'),'')='true' AND JSON_VALUE([QuoteSnapshotJson],'$.ChargeRules.TaxRateBasisPoints') IS NULL AND JSON_VALUE([QuoteSnapshotJson],'$.TaxRial') IS NULL)");
                         });
                 });
 
@@ -2535,6 +2956,42 @@ namespace Shop.Api.Migrations.Sales
                             t.HasCheckConstraint("CK_OrderOutbox_Payload", "ISJSON([PayloadJson])=1 AND DATALENGTH([PayloadJson])<=16384");
 
                             t.HasCheckConstraint("CK_OrderOutbox_Progress", "[Attempts] BETWEEN 0 AND 1000000 AND ([LastAttemptAt] IS NULL OR [LastAttemptAt]>=[CreatedAt]) AND ([NextAttemptAt] IS NULL OR [NextAttemptAt]>=[CreatedAt]) AND ([DeliveredAt] IS NULL OR ([DeliveredAt]>=[CreatedAt] AND [NextAttemptAt] IS NULL))");
+                        });
+                });
+
+            modelBuilder.Entity("Shop.Modules.Sales.SalesSmsSignal", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(24)");
+
+                    b.Property<long>("OrderEventId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("TrackingCode")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderEventId")
+                        .IsUnique();
+
+                    b.HasIndex("ProcessedAt", "OrderEventId");
+
+                    b.ToTable("SmsSignals", "sales", t =>
+                        {
+                            t.HasCheckConstraint("CK_SalesSmsSignal_Kind", "[Kind] IN ('orderCreated','orderPaid','orderCancelled','orderShipped','creditApproved','orderDigitalReady')");
                         });
                 });
 
@@ -3174,6 +3631,57 @@ namespace Shop.Api.Migrations.Sales
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Shop.Modules.Sales.RmaCase", b =>
+                {
+                    b.HasOne("Shop.Modules.Sales.SalesOrder", null)
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Shop.Modules.Sales.RmaPolicyRevision", null)
+                        .WithMany()
+                        .HasForeignKey("PolicyRevisionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Shop.Modules.Sales.RmaCaseCommand", b =>
+                {
+                    b.HasOne("Shop.Modules.Sales.RmaCase", null)
+                        .WithMany()
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Shop.Modules.Sales.RmaCaseEvent", b =>
+                {
+                    b.HasOne("Shop.Modules.Sales.RmaCase", null)
+                        .WithMany("Events")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Shop.Modules.Sales.RmaCaseLine", b =>
+                {
+                    b.HasOne("Shop.Modules.Sales.RmaCase", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Shop.Modules.Sales.RmaPolicyCommand", b =>
+                {
+                    b.HasOne("Shop.Modules.Sales.RmaPolicyRevision", null)
+                        .WithMany()
+                        .HasForeignKey("RevisionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Shop.Modules.Sales.SalesOrder", b =>
                 {
                     b.HasOne("Shop.Modules.Sales.CheckoutQuote", null)
@@ -3217,6 +3725,17 @@ namespace Shop.Api.Migrations.Sales
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Shop.Modules.Sales.SalesSmsSignal", b =>
+                {
+                    b.HasOne("Shop.Modules.Sales.SalesOrderEvent", "OrderEvent")
+                        .WithOne()
+                        .HasForeignKey("Shop.Modules.Sales.SalesSmsSignal", "OrderEventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OrderEvent");
                 });
 
             modelBuilder.Entity("Shop.Modules.Sales.ShoppingCart", b =>
@@ -3268,6 +3787,13 @@ namespace Shop.Api.Migrations.Sales
                     b.Navigation("Lines");
 
                     b.Navigation("Units");
+                });
+
+            modelBuilder.Entity("Shop.Modules.Sales.RmaCase", b =>
+                {
+                    b.Navigation("Events");
+
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("Shop.Modules.Sales.SalesOrder", b =>

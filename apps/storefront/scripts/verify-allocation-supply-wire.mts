@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
-import { supplyDetailV2Schema, supplyPageV2Schema } from '../lib/supply-contract.ts';
+import { supplyDetailV2Schema, supplyPageV2Schema } from '../lib/market/supply-contract.ts';
 const directory = process.argv[2];
 if (!directory) throw new Error('Pass the actual SQL Supply2 capture directory.');
 const cases = [

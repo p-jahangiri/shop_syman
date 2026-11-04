@@ -74,7 +74,12 @@ public sealed class MarketAttributeSqlTests(MarketFixture fixture):IClassFixture
     [Fact] public async Task TypedViewsPreserveExistingDataAcrossDownAndReapplyAndNeverNeedMarketModelChanges()
     {
         await Seed();await using var scope=fixture.Sql.Factory.Services.CreateAsyncScope();var db=scope.ServiceProvider.GetRequiredService<CatalogDbContext>();var market=scope.ServiceProvider.GetRequiredService<MarketDbContext>();var before=await db.Products.Where(p=>p.CategoryId==Category).Select(p=>new{p.Id,p.Version}).OrderBy(p=>p.Id).ToArrayAsync();
-        var all=db.Database.GetMigrations().ToArray();var latest=all.Last();Assert.EndsWith("_MarketAttributeReadViews",latest);var migrator=db.GetService<IMigrator>();await migrator.MigrateAsync(all[^2]);await migrator.MigrateAsync(latest);
+        var all=db.Database.GetMigrations().ToArray();var own=Array.FindIndex(all,m=>m.EndsWith("_MarketAttributeReadViews",StringComparison.Ordinal));Assert.True(own>0);var migrator=db.GetService<IMigrator>();
+        // Exercise this historical view migration's own boundary even after
+        // newer Catalog migrations, then restore the complete current schema.
+        try{await migrator.MigrateAsync(all[own]);await migrator.MigrateAsync(all[own-1]);await migrator.MigrateAsync(all[own]);}
+        finally{await migrator.MigrateAsync(all[^1]);}
+        Assert.Equal(all,await db.Database.GetAppliedMigrationsAsync());
         var after=await db.Products.Where(p=>p.CategoryId==Category).Select(p=>new{p.Id,p.Version}).OrderBy(p=>p.Id).ToArrayAsync();Assert.Equal(before.Select(p=>(p.Id,Convert.ToBase64String(p.Version))),after.Select(p=>(p.Id,Convert.ToBase64String(p.Version))));Assert.False(db.Database.HasPendingModelChanges());Assert.False(market.Database.HasPendingModelChanges());
         using var anonymous=fixture.Sql.Factory.CreateClient();Assert.Equal(HttpStatusCode.OK,(await anonymous.PostAsJsonAsync("/api/market/fa/filters",new MarketFiltersInput(Category))).StatusCode);
         var page=await Values("memory","after-migration-values");Assert.Equal(3,page["total"]!.GetValue<int>());

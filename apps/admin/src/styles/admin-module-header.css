@@ -1,0 +1,99 @@
+.admin-module-header {
+  --module-accent: var(--primary);
+  display: grid;
+  gap: 0.75rem;
+  margin-block-end: 1.35rem;
+  min-inline-size: 0;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid color-mix(in oklch, var(--module-accent) 72%, var(--border));
+  border-radius: 1rem;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--surface) 89%, var(--module-accent)),
+    var(--surface) 72%
+  );
+}
+.admin-module-header[data-module='sales'] {
+  --module-accent: oklch(62% 0.13 228);
+}
+.admin-module-header[data-module='catalog'] {
+  --module-accent: var(--primary);
+}
+.admin-module-header[data-module='finance'] {
+  --module-accent: oklch(69% 0.15 71);
+}
+.admin-module-header[data-module='management'] {
+  --module-accent: oklch(64% 0.15 294);
+}
+.admin-module-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+.admin-module-icon {
+  display: grid;
+  place-items: center;
+  inline-size: clamp(2.6rem, 5vw, 3.6rem);
+  aspect-ratio: 1;
+  border-radius: 0.8rem;
+  background: color-mix(in oklch, var(--surface) 77%, var(--module-accent));
+  border: 1px solid color-mix(in oklch, var(--module-accent) 36%, var(--border));
+}
+.admin-module-copy {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.admin-module-copy h1 {
+  font-size: clamp(1.2rem, 2vw, 1.8rem);
+  line-height: 1.55;
+  margin: 0;
+}
+.admin-module-kicker {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.admin-module-context {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.admin-module-related {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  min-inline-size: 0;
+}
+.admin-module-related > span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-inline-end: 0.45rem;
+}
+.admin-module-related button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-block-size: 44px;
+  padding: 0.25rem 0.65rem;
+  color: var(--foreground);
+  background: var(--surface);
+}
+.admin-module-related button:hover:not(:disabled) {
+  border-color: var(--module-accent);
+  background: color-mix(in oklch, var(--surface) 91%, var(--module-accent));
+}
+@media (max-width: 540px) {
+  .admin-module-main {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.45rem 0.65rem;
+  }
+  .admin-module-main .page-help-trigger {
+    grid-column: 2;
+    justify-self: start;
+    min-block-size: 44px;
+  }
+  .admin-module-related > span {
+    flex-basis: 100%;
+  }
+}

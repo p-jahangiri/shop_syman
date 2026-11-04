@@ -35,6 +35,55 @@ public sealed partial class TicketSqlTests(SqlFixture fixture) : IClassFixture<S
     }
     private static string Value(JsonNode row,string key)=>row[key]!.GetValue<string>();
     private static string Version(JsonNode result)=>Value(result["ticket"]!,"version");
+    [Fact]
+    public async Task StaffQueueCountsAndTrackingIdLookupSpanPagesWithoutExposingCustomerQueues()
+    {
+        var person = await Customer();
+        using var customer = person.Client;
+        using var staff = await Staff();
+        var created = await Body(await customer.PostAsJsonAsync("/api/support/tickets/commands/" + Id(), Input()));
+        var id = Value(created["ticket"]!, "id");
+        await Body(await customer.PutAsJsonAsync($"/api/support/tickets/{id}/state/{Id()}", new ChangeTicketStateInput(Version(created), "Closed")));
+        await using (var scope = fixture.Factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SupportDbContext>();
+            var protection = scope.ServiceProvider.GetRequiredService<ITicketProtection>();
+            for (var i = 0; i < 51; i++)
+            {
+                var row = new SupportTicket { OwnerId = person.Owner.ToUpperInvariant(), MessageCount = 1, CreatedAt = DateTimeOffset.UtcNow, ChangedAt = DateTimeOffset.UtcNow };
+                row.ProtectedSubject = protection.Protect(row.Id, "subject", row.Id, "Newer sample");
+                db.Tickets.Add(row);
+            }
+            await db.SaveChangesAsync();
+        }
+
+        const string path = "/api/admin/support/tickets";
+        var open = await Body(await staff.GetAsync(path + "?state=Open"));
+        var counts = open["queueCounts"]!;
+        Assert.True(counts["open"]!.GetValue<int>() >= 51);
+        Assert.True(counts["closed"]!.GetValue<int>() >= 1);
+        Assert.Equal(50, open["items"]!.AsArray().Count);
+        Assert.DoesNotContain(open["items"]!.AsArray(), x => Value(x!, "id") == id);
+        var cursor = Uri.EscapeDataString(Value(open, "nextCursor"));
+        var next = await Body(await staff.GetAsync(path + "?state=Open&cursor=" + cursor));
+        Assert.NotEmpty(next["items"]!.AsArray());
+        Assert.False(next.AsObject().ContainsKey("queueCounts"));
+
+        var found = await Body(await staff.GetAsync(path + "?ticketId=" + id));
+        var ticket = Assert.Single(found["items"]!.AsArray())!;
+        Assert.Equal(id, Value(ticket, "id"));
+        Assert.Equal("Closed", Value(ticket, "state"));
+        Assert.Null(found["nextCursor"]);
+        Assert.Empty((await Body(await staff.GetAsync(path + "?ticketId=" + Id())))["items"]!.AsArray());
+        foreach (var query in new[] { "?ticketId=invalid", $"?ticketId={id}&state=Open", $"?ticketId={id}&cursor={cursor}", $"?ticketId={id}&ticketId={Id()}" })
+        {
+            using var denied = await staff.GetAsync(path + query);
+            Assert.Equal(HttpStatusCode.BadRequest, denied.StatusCode);
+        }
+        Assert.False((await Body(await customer.GetAsync("/api/support/tickets"))).AsObject().ContainsKey("queueCounts"));
+        using var customerLookup = await customer.GetAsync("/api/support/tickets?ticketId=" + id);
+        Assert.Equal(HttpStatusCode.BadRequest, customerLookup.StatusCode);
+    }
     [Fact]public async Task PrivateConversationReplyCloseReopenAndHistoricalReceiptKeepOwnersAndAuditSeparate()
     {
         var person=await Customer();using var customer=person.Client;using var staff=await Staff();var command=Id();var createPath="/api/support/tickets/commands/"+command;var created=await Body(await customer.PostAsJsonAsync(createPath,Input()),"created");var id=Value(created["ticket"]!,"id");Assert.Equal("Open",Value(created["ticket"]!,"state"));

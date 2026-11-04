@@ -4,7 +4,7 @@
 
 ## مالکیت و نگهداری
 
-Sales مالک schema هفتم `sales` و جدول‌های `Carts` و `CartLines` است. migration پانزدهم `ServerCarts` و SQL idempotent در `backend/sql/sales.sql` قرار دارند. سبد فقط شناسهٔ تنوع و تعداد را نگه می‌دارد؛ قیمت یا هویت ارسالی مرورگر مرجع نیست. FK میان ماژول‌ها وجود ندارد. Catalog از `ICartCatalogReader` و Inventory از `IInventoryReader` مصرف می‌شوند؛ Sales context آن‌ها را نمی‌خواند.
+Sales مالک schema هفتم `sales` و جدول‌های `Carts` و `CartLines` است. migration پانزدهم `ServerCarts` و SQL idempotent در `database/sqlserver/snapshots/sales.sql` قرار دارند. سبد فقط شناسهٔ تنوع و تعداد را نگه می‌دارد؛ قیمت یا هویت ارسالی مرورگر مرجع نیست. FK میان ماژول‌ها وجود ندارد. Catalog از `ICartCatalogReader` و Inventory از `IInventoryReader` مصرف می‌شوند؛ Sales context آن‌ها را نمی‌خواند.
 
 مشتری با sub توکن معتبر access شناخته می‌شود. API هیچ OwnerId یا CartId قابل انتخابی ندارد. توکن ناقص MFA و Authorization نامعتبر به سبد مهمان برنمی‌گردند. مهمان یک توکن تصادفی۲۵۶بیتی در کوکی HttpOnly/SameSite=Strict دارد؛ فقط SHA256 آن در SQL ذخیره می‌شود. کوکی `sayman_cart` با Path=/api/cart در Production به Secure نیاز دارد. عمر ثابت۳۰روز مرز فنی اولیه است؛ سیاست نهایی نگهداری و پاک‌سازی داده هنوز تأیید/پیاده نشده است. سبد حساب تا گردش پاک‌سازی آینده محفوظ می‌ماند.
 

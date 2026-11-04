@@ -2,7 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
-  publicDir: '../storefront/public',
+  // The picker is hoisted; resolve its optional Jalali peer from this workspace.
+  resolve: { dedupe: ['date-fns-jalali'] },
   server: {
     host: '127.0.0.1',
     port: 5173,

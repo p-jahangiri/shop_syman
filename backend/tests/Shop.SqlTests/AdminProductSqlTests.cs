@@ -38,6 +38,20 @@ public sealed class AdminProductSqlTests(SqlFixture fixture):IClassFixture<SqlFi
         var client=fixture.Factory.CreateClient(new(){HandleCookies=false});client.DefaultRequestHeaders.Add("Origin","http://127.0.0.1:3173");client.DefaultRequestHeaders.Add("X-Sayman-Client","admin");client.DefaultRequestHeaders.Add("X-Sayman-Admin","1");
         var pending=await Json(await client.PostAsJsonAsync("/api/auth/password",new{Identifier=account.Username,account.Password}));client.DefaultRequestHeaders.Authorization=new("Bearer",pending["accessToken"]!.GetValue<string>());Assert.Equal(HttpStatusCode.Forbidden,(await client.GetAsync("/api/admin/products")).StatusCode);var setup=await Json(await client.PostAsJsonAsync("/api/auth/mfa/setup",new{}));client.DefaultRequestHeaders.Authorization=new("Bearer",setup["accessToken"]!.GetValue<string>());var signed=await Json(await client.PostAsJsonAsync("/api/auth/mfa/verify",new{Code=Totp.Code(setup["secret"]!.GetValue<string>(),DateTimeOffset.UtcNow.ToUnixTimeSeconds()/30)}));client.DefaultRequestHeaders.Authorization=new("Bearer",signed["accessToken"]!.GetValue<string>());return client;
     }
+    [Fact]
+    public async Task ProductPageRejectsAmbiguousOrUnknownFiltersBeforeReadingRows()
+    {
+        using var admin = await Staff("Administrator");
+        foreach (var query in new[] { "status=Draft&status=Published", "categoryId=p1&categoryId=p1", "unused=Draft" })
+        {
+            using var result = await admin.GetAsync("/api/admin/products?" + query);
+            Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+            Assert.Contains("no-store", result.Headers.CacheControl!.ToString());
+            Assert.DoesNotContain("\"items\"", await result.Content.ReadAsStringAsync());
+        }
+        await Json(await admin.GetAsync("/api/admin/products?status=Draft"));
+    }
+
     [Fact] public async Task MetadataOnlyAndReadOnlyLookupDoNotAuditAndSingleDetailSupportsVersionedEditing()
     {
         using var admin=await Staff("Administrator");var metadata=await Json(await admin.GetAsync("/api/admin/catalog?metadataOnly=true"));Assert.Empty(metadata["products"]!.AsArray());Assert.NotEmpty(metadata["categories"]!.AsArray());Assert.NotEmpty((await Json(await admin.GetAsync("/api/admin/catalog")))["products"]!.AsArray());

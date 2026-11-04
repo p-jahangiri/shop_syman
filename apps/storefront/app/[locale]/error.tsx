@@ -1,5 +1,5 @@
 'use client';
-import { useI18n, useStorefront } from '@/components/locale-provider';
+import { useI18n, useStorefront } from '@/components/navigation/locale-provider';
 import { RefreshCcw } from 'lucide-react';
 export default function ErrorPage({ reset }: { error: Error; reset: () => void }) {
   const { t } = useI18n();

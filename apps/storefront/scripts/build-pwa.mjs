@@ -17,10 +17,9 @@ await copyFile(
   path.join(root, 'public/pwa/fonts/LICENSE.txt'),
 );
 const inputs = [
-  'components/pwa-provider.tsx',
-  'lib/service-worker.js',
-  'lib/offline-catalog.ts',
-  'lib/media-paths.ts',
+  'components/offline/pwa-provider.tsx',
+  'lib/offline/service-worker.js',
+  'lib/offline/offline-catalog.ts',
   'app/pwa/icons/[locale]/[size]/route.tsx',
   'public/pwa/offline-fa.html',
   'public/pwa/offline-en.html',
@@ -38,8 +37,11 @@ for (const filename of inputs) {
   hash.update(filename);
   hash.update(await readFile(path.join(root, filename)));
 }
+const mediaPaths = '@sayman/web-shared/lib/media/media-paths.ts';
+hash.update(mediaPaths);
+hash.update(await readFile(new URL(import.meta.resolve(mediaPaths))));
 const version = hash.digest('hex').slice(0, 16);
-const template = await readFile(path.join(root, 'lib/service-worker.js'), 'utf8');
+const template = await readFile(path.join(root, 'lib/offline/service-worker.js'), 'utf8');
 await writeFile(
   path.join(root, 'public/sw.js'),
   template.replace('__SAYMAN_PWA_VERSION__', version),

@@ -194,6 +194,202 @@ namespace Shop.Api.Migrations.Identity
                     b.ToTable("Audit", "identity");
                 });
 
+            modelBuilder.Entity("Shop.Modules.Identity.CustomerOtpChallenge", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)")
+                        .UseCollation("Latin1_General_100_BIN2");
+
+                    b.Property<string>("CanonicalPhone")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(13)");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LifetimeSeconds")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(300);
+
+                    b.Property<int>("MaxAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(5);
+
+                    b.Property<byte[]>("ProtectedCode")
+                        .IsRequired()
+                        .HasMaxLength(32768)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("ProviderMessageId")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("RequestId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<DateTimeOffset>("ResendAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("ResendSeconds")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(60);
+
+                    b.Property<string>("SettingsKeyRevision")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<DateTimeOffset?>("SupersededAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("RequestId")
+                        .IsUnique();
+
+                    b.HasIndex("CanonicalPhone", "CreatedAt");
+
+                    b.ToTable("CustomerOtpChallenges", "identity", t =>
+                        {
+                            t.HasCheckConstraint("CK_CustomerOtp_Attempts", "[MaxAttempts] BETWEEN 1 AND 10 AND [FailedAttempts] BETWEEN 0 AND [MaxAttempts]");
+
+                            t.HasCheckConstraint("CK_CustomerOtp_Code", "DATALENGTH([ProtectedCode]) BETWEEN 1 AND 32768");
+
+                            t.HasCheckConstraint("CK_CustomerOtp_State", "[State] IN ('Prepared','Dispatching','Accepted','Rejected','Unknown')");
+
+                            t.HasCheckConstraint("CK_CustomerOtp_Timing", "[LifetimeSeconds] BETWEEN 60 AND 600 AND [ResendSeconds] BETWEEN 30 AND 300 AND [ResendSeconds]<[LifetimeSeconds] AND [ExpiresAt]=DATEADD(second,[LifetimeSeconds],[CreatedAt]) AND [ResendAt]=DATEADD(second,[ResendSeconds],[CreatedAt])");
+                        });
+                });
+
+            modelBuilder.Entity("Shop.Modules.Identity.CustomerSmsSettings", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("CodeParameterName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("GenericName")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .HasColumnType("nvarchar(25)");
+
+                    b.Property<string>("KeyRevision")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<string>("NameParameterName")
+                        .HasMaxLength(50)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<byte[]>("ProtectedApiKey")
+                        .HasMaxLength(32768)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<int>("TemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CustomerSmsSettings", "identity", t =>
+                        {
+                            t.HasCheckConstraint("CK_CustomerSms_Key", "[ProtectedApiKey] IS NULL OR DATALENGTH([ProtectedApiKey]) BETWEEN 1 AND 32768");
+
+                            t.HasCheckConstraint("CK_CustomerSms_Mode", "([Mode]='live' AND [TemplateId]>0 AND [TemplateId]<>123456) OR ([Mode]='sandbox' AND [TemplateId]=123456 AND [CodeParameterName]='Code' AND [NameParameterName] IS NULL)");
+
+                            t.HasCheckConstraint("CK_CustomerSms_Singleton", "[Id]='customer-sms'");
+                        });
+                });
+
+            modelBuilder.Entity("Shop.Modules.Identity.CustomerSmsSettingsCommand", b =>
+                {
+                    b.Property<string>("ActorId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RequestId")
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("ProtectedFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(32768)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<byte[]>("ProtectedReceipt")
+                        .IsRequired()
+                        .HasMaxLength(32768)
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("ActorId", "RequestId");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("ActorId", "RequestId"), false);
+
+                    b.ToTable("CustomerSmsSettingsCommands", "identity");
+                });
+
             modelBuilder.Entity("Shop.Modules.Identity.MfaRecoveryCode", b =>
                 {
                     b.Property<string>("UserId")
@@ -279,6 +475,12 @@ namespace Shop.Api.Migrations.Identity
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<string>("CanonicalPhone")
+                        .HasMaxLength(13)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(13)")
+                        .UseCollation("Latin1_General_100_BIN2");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
@@ -350,6 +552,10 @@ namespace Shop.Api.Migrations.Identity
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CanonicalPhone")
+                        .IsUnique()
+                        .HasFilter("[CanonicalPhone] IS NOT NULL");
 
                     b.HasIndex("NormalizedEmail")
                         .IsUnique()

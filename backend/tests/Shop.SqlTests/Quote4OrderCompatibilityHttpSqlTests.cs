@@ -63,6 +63,8 @@ public sealed partial class SourcingConversionHttpSqlTests
         if(reservation?.State==StockReservationState.Active)await sp.GetRequiredService<IStockReservations>().ReleaseAsync(s.Owner,old.ReservationId,"synthetic-compatibility-cleanup",default);
         // Only this case's exact synthetic old history is removed, so the
         // shared HTTP fixture's other cases retain their zero-order baseline.
+        await sales.SmsSignals.Where(signal => signal.OrderEvent!.OrderId == old.Id &&
+            sales.Orders.Any(order => order.Id == old.Id && order.OwnerId == s.Owner)).ExecuteDeleteAsync();
         await sales.Orders.Where(o=>o.Id==old.Id&&o.OwnerId==s.Owner).ExecuteDeleteAsync();await sales.Quotes.Where(q=>q.Id==old.QuoteId).ExecuteDeleteAsync();
         await inventory.ReservationEvents.Where(e=>e.ReservationId==old.ReservationId).ExecuteDeleteAsync();await inventory.ReservationItems.Where(i=>i.ReservationId==old.ReservationId).ExecuteDeleteAsync();await inventory.Reservations.Where(r=>r.Id==old.ReservationId&&r.OwnerId==s.Owner).ExecuteDeleteAsync();return true;
     });

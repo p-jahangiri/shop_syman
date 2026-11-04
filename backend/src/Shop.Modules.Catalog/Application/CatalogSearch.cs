@@ -5,10 +5,10 @@ namespace Shop.Modules.Catalog.Application;
 public record AttributeFilterInput(string Key, string[] Values);
 public record CatalogSearchInput(string? CategoryId = null, string? Query = null, string[]? BrandIds = null,
     string? MinPriceRial = null, string? MaxPriceRial = null, bool AvailableOnly = false,
-    string Sort = "selected", int Page = 1, int PageSize = 12, AttributeFilterInput[]? Attributes = null);
+    string Sort = "selected", int Page = 1, int PageSize = 12, AttributeFilterInput[]? Attributes = null, string? Condition = null);
 public record ProductLookupInput(string[]? ProductIds = null, string[]? VariantIds = null, string[]? Slugs = null);
 public record CatalogSearchQuery(string? CategoryId, string[] Tokens, string[] BrandIds, long? MinPriceRial, long? MaxPriceRial,
-    bool AvailableOnly, string Sort, int Page, int PageSize, AttributeFilterInput[] Attributes)
+    bool AvailableOnly, string Sort, int Page, int PageSize, AttributeFilterInput[] Attributes, string? Condition = null)
 {
     public static CatalogSearchQuery Create(CatalogSearchInput input)
     {
@@ -19,8 +19,11 @@ public record CatalogSearchQuery(string? CategoryId, string[] Tokens, string[] B
         var tokens = PersianText.Normalize(input.Query ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Distinct().ToArray();
         if (tokens.Length > 8) throw new BusinessException("invalid_search_query", "Use at most eight search terms.");
         var min = PurchaseLimits.Parse(input.MinPriceRial); var max = PurchaseLimits.Parse(input.MaxPriceRial); PurchaseLimits.Validate(min, max);
-        return new(string.IsNullOrWhiteSpace(input.CategoryId) ? null : input.CategoryId, tokens, brands, min, max, input.AvailableOnly, input.Sort, input.Page, input.PageSize, attributes);
+        return new(string.IsNullOrWhiteSpace(input.CategoryId) ? null : input.CategoryId, tokens, brands, min, max, input.AvailableOnly, input.Sort, input.Page, input.PageSize, attributes, ValidateCondition(input.Condition));
     }
+    public static string? ValidateCondition(string? condition) => condition is null or "new" or "used"
+        ? condition
+        : throw new BusinessException("invalid_catalog_condition", "Use new or used for the catalogue condition.");
     public static void ValidateLookup(ProductLookupInput input)
     {
         var ids = (input.ProductIds ?? []).Concat(input.VariantIds ?? []).ToArray(); var slugs = input.Slugs ?? [];
@@ -34,8 +37,8 @@ public record AttributeFacetDto(string Key, string Label, string DataType, strin
 public record BrandFacetDto(string Id, string Name);
 public record CatalogFiltersDto(BrandFacetDto[] Brands, AttributeFacetDto[] Attributes, string? MaxPriceRial);
 
-public record FacetValuesInput(string CategoryId, string Key, string? Query = null, int Page = 1, int PageSize = 20, string[]? SelectedValues = null);
-public record FacetValuesQuery(string CategoryId, string Key, string[] Tokens, int Page, int PageSize, string[] SelectedValues)
+public record FacetValuesInput(string CategoryId, string Key, string? Query = null, int Page = 1, int PageSize = 20, string[]? SelectedValues = null, string? Condition = null);
+public record FacetValuesQuery(string CategoryId, string Key, string[] Tokens, int Page, int PageSize, string[] SelectedValues, string? Condition = null)
 {
     public static FacetValuesQuery Create(FacetValuesInput input)
     {
@@ -44,7 +47,7 @@ public record FacetValuesQuery(string CategoryId, string Key, string[] Tokens, i
             throw new BusinessException("invalid_facet_query", "Use a category, attribute key, bounded search/page and at most 20 unique selected values.");
         var tokens = PersianText.Normalize(input.Query ?? "").Split(' ',StringSplitOptions.RemoveEmptyEntries).Distinct().ToArray();
         if (tokens.Length > 8) throw new BusinessException("invalid_facet_query", "Use at most eight search terms.");
-        return new(input.CategoryId,input.Key,tokens,input.Page,input.PageSize,selected);
+        return new(input.CategoryId,input.Key,tokens,input.Page,input.PageSize,selected,CatalogSearchQuery.ValidateCondition(input.Condition));
     }
 }
 public record FacetValuesPage(int Version, string Locale, string Key, FacetValueDto[] Values, FacetValueDto[] SelectedValues, int Total, int Page, int PageSize, int TotalPages);

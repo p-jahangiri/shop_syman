@@ -82,9 +82,9 @@ try:
         (directory/'main.tsx').write_text("""import React,{useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
-import {ProductsPage} from '../../apps/admin/src/products';
-import {ProductPicker} from '../../apps/admin/src/product-picker';
-import '../../apps/admin/src/style.css';
+import {ProductsPage} from '../../apps/admin/src/pages/catalog/products';
+import {ProductPicker} from '../../apps/admin/src/features/catalog/product-picker';
+import '../../apps/admin/src/styles/style.css';
 const client=new QueryClient();
 const data={products:[],attributes:[],categories:[{id:'c0',translations:[{locale:'fa',name:'دستهٔ نخست'}]},{id:'c1',translations:[{locale:'fa',name:'دستهٔ دوم'}]}],brands:[{id:'b0',name:'برند نخست'},{id:'b1',name:'برند دوم'}]};
 function Layout(){const [picker,setPicker]=useState(false);const [selected,setSelected]=useState(['p-demo099','missing-product']);return <main style={{padding:16,maxWidth:1200,margin:'auto'}}><p role="note">پیش‌نمایش مستقل مدیریت کالا · دادهٔ نمونه، بدون ورود و SQL</p><div className="row-buttons"><button onClick={()=>setPicker(false)}>فهرست آزمایشی کالاها</button><button onClick={()=>setPicker(true)}>انتخاب آزمایشی بلوک</button></div>{picker?<section className="panel"><h2>انتخاب کالا برای بلوک آزمایشی</h2><ProductPicker value={selected} onChange={setSelected}/><output role="status" aria-label="شناسه‌های انتخاب‌شدهٔ آزمایشی">{JSON.stringify(selected)}</output></section>:<ProductsPage data={data as never} methods={[]} plans={[]} writable={false}/>}</main>}

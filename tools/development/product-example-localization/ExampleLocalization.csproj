@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <Reference Include="$(AcceptedApiDirectory)/*.dll" />
+  </ItemGroup>
+  <Target Name="RequireAcceptedArtifact" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(AcceptedApiDirectory)/Shop.Api.dll')" Text="Use the verified canonical API artifact; never a replacement backend build." />
+  </Target>
+</Project>

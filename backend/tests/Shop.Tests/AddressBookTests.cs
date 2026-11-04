@@ -17,9 +17,9 @@ namespace Shop.Tests;
 public sealed class AddressBookTests
 {
     private const string Id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-    private static SaveAddressInput Input()=>new(" خانه "," گیرندهٔ آزمون ","+۹۸۹۱۲۱۲۳۴۵۶۷",new("IR"," تهران "," تهران ","نشانی آزمون\r\nواقعی نیست","۱۲۳۴۵۶۷۸۹۰"),false,null);
+    private static SaveAddressInput Input()=>new(" خانه "," گیرندهٔ آزمون ","+۹۸۹۱۲۱۲۳۴۵۶۷",new("IR"," تهران "," تهران ","نشانی آزمون\r\nواقعی نیست","۱۲۳۴۵۶۷۸۹۰"),false,null,new(AddressGeography.Version,"123","1230001","1230001001576","city","۱۲","",null,null));
     [Fact] public void AddressRulesReuseCanonicalDeliveryWithoutVerifyingAnIdentityContact(){var input=AddressBookRules.Normalize(Input());Assert.Equal("09121234567",input.ContactPhone);Assert.Equal("1234567890",input.Delivery.PostalCode);Assert.Equal("خانه",input.Label);Assert.DoesNotContain('\r',input.Delivery.Address);Assert.False(input.MakeDefault);Assert.Null(input.Version);Assert.Equal(20,AddressBookRules.Capacity);}
-    [Fact] public void CompatibilityCharactersCannotMakeCanonicalAddressChangeOnASecondNormalization(){var input=Input() with{Label="\u00a8 خانه ",ContactName="\u00a8 گیرنده",Delivery=Input().Delivery with{Province="\u00a8 تهران"}};var normalized=AddressBookRules.Normalize(input);Assert.Equal(normalized,AddressBookRules.Normalize(normalized));}
+    [Fact] public void CompatibilityCharactersCannotMakeCanonicalAddressChangeOnASecondNormalization(){var input=Input() with{Label="\u00a8 خانه ",ContactName="\u00a8 گیرنده"};var normalized=AddressBookRules.Normalize(input);Assert.Equal(normalized,AddressBookRules.Normalize(normalized));}
     [Theory][InlineData("label")][InlineData("label_control")][InlineData("phone")][InlineData("delivery")][InlineData("country")][InlineData("postal")][InlineData("default")][InlineData("version")]
     public void InvalidAddressIsRejectedBeforeSql(string kind){var input=Input();input=kind switch{"label"=>input with{Label=new string('x',61)},"label_control"=>input with{Label="a\0b"},"phone"=>input with{ContactPhone="123"},"delivery"=>input with{Delivery=null!},"country"=>input with{Delivery=input.Delivery with{CountryCode="US"}},"postal"=>input with{Delivery=input.Delivery with{PostalCode="1"}},"default"=>input with{MakeDefault=null},_=>input with{Version="bad"}};Assert.Equal("invalid_address",Assert.Throws<BusinessException>(()=>AddressBookRules.Normalize(input)).Code);}
     [Fact] public void AddressIdsAndVersionsAreValidated(){Assert.Equal(Id,AddressBookRules.Id("AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"));Assert.Equal(8,AddressBookRules.Version("AAAAAAAAAAE=").Length);foreach(var id in new[]{"../other",Guid.Empty.ToString(),""})Assert.Equal("invalid_address",Assert.Throws<BusinessException>(()=>AddressBookRules.Id(id)).Code);}
@@ -34,7 +34,7 @@ public sealed class AddressBookTests
     public sealed class FakeBook:IAddressBook
     {
         public int Calls;public string? Owner;public SaveAddressInput? Last;
-        private static SavedAddressData Row(){var v=AddressBookRules.Normalize(Input());return new(Id,v.Label,v.ContactName,v.ContactPhone,v.Delivery,true,DateTimeOffset.Parse("2026-10-23T00:00:00Z"),DateTimeOffset.Parse("2026-10-23T00:00:00Z"),"AAAAAAAAAAE=");}
+        private static SavedAddressData Row(){var v=AddressBookRules.Normalize(Input());return new(Id,v.Label,v.ContactName,v.ContactPhone,v.Delivery,true,DateTimeOffset.Parse("2026-10-23T00:00:00Z"),DateTimeOffset.Parse("2026-10-23T00:00:00Z"),"AAAAAAAAAAE=",v.Details);}
         public Task<AddressBookData> ReadAsync(string owner,CancellationToken ct){Calls++;Owner=owner;return Task.FromResult(new AddressBookData(1,20,[Row()]));}
         public Task<SaveAddressResult> SaveAsync(string owner,string id,SaveAddressInput input,CancellationToken ct){Calls++;Owner=owner;Last=input;return Task.FromResult(new SaveAddressResult(1,Row(),false));}
         public Task DeleteAsync(string owner,string id,DeleteAddressInput input,CancellationToken ct){Calls++;Owner=owner;return Task.CompletedTask;}

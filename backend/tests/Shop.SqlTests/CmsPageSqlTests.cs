@@ -33,11 +33,43 @@ public sealed class CmsPageSqlTests:IClassFixture<SqlFixture>,IDisposable
     private static async Task<JsonNode> Create(HttpClient c,string? slug=null,bool demo=true)=>await Read(await c.PostAsJsonAsync("/api/admin/pages/commands/"+Id(),new CmsPageWrite("Create",Slug:slug??"qa-"+Id(),IsDemo:demo,Content:Content())));
     private static Task<JsonNode> Write(HttpClient c,JsonNode p,string action,CmsPageContent? content=null,string? restore=null,string? command=null)=>ReadWrite(c,Path(p)+"/commands/"+(command??Id()),new(action,S(p,"version"),Content:content,RestoreRevisionId:restore,Confirmed:action!="Save"));
     private static async Task<JsonNode> ReadWrite(HttpClient c,string path,CmsPageWrite input)=>await Read(await c.PostAsJsonAsync(path,input));
+    [Fact]
+    public async Task ContentEditorCanPrepareAndRecoverPageDraftButCannotChangePublicationOrSettings()
+    {
+        using var writer = await Staff("ContentEditor");
+        using var publisher = await Staff();
+        using var anonymous = sql.Factory.CreateClient(new() { HandleCookies = false });
+        var page = await Create(writer);
+        var path = Path(page);
+        var publishedPath = "/api/content/pages/fa/" + S(page, "slug");
+        page = await Write(writer, page, "Save", Content("پیش‌نویس نویسنده"));
+        var receipt = await Read(await writer.GetAsync(path + "/commands/" + S(page, "commandId")));
+        Assert.Equal("Save", S(receipt, "action"));
+        using (var hidden = await anonymous.GetAsync(publishedPath))
+            Assert.Equal(HttpStatusCode.NotFound, hidden.StatusCode);
+        foreach (var action in new[] { "Publish", "Restore", "Unpublish" })
+        {
+            using var denied = await writer.PostAsJsonAsync(path + "/commands/" + Id(),
+                new CmsPageWrite(action, S(page, "version"), RestoreRevisionId: action == "Restore" ? Id() : null, Confirmed: true));
+            Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+        }
+        foreach (var endpoint in new[] { "/api/admin/content", "/api/admin/redirects", "/api/admin/reviews" })
+        {
+            using var denied = await writer.GetAsync(endpoint);
+            Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+        }
+        using var images = await writer.GetAsync("/api/admin/media/capabilities");
+        Assert.Equal(HttpStatusCode.OK, images.StatusCode);
+        using var videos = await writer.GetAsync("/api/admin/media/videos/capabilities");
+        Assert.Equal(HttpStatusCode.Forbidden, videos.StatusCode);
+        await Write(publisher, page, "Publish");
+        Assert.Equal("پیش‌نویس نویسنده", S(await Read(await anonymous.GetAsync(publishedPath)), "title"));
+    }
     [Fact]public async Task DraftIsPrivatePublishIsBilingualAndRestorePreservesIndependentDraft()
     {
         using var staff=await Staff();using var anon=sql.Factory.CreateClient(new(){HandleCookies=false});var p=await Create(staff);var pub="/api/content/pages/fa/"+S(p,"slug");using(var missing=await anon.GetAsync(pub))Assert.Equal(HttpStatusCode.NotFound,missing.StatusCode);
         var draft=await Read(await staff.GetAsync(Path(p)));Assert.NotNull(draft["draft"]);Assert.Null(draft["published"]);p=await Write(staff,p,"Publish");var first=p.DeepClone();var fa=await Read(await anon.GetAsync(pub));var en=await Read(await anon.GetAsync(pub.Replace("/fa/","/en/")));Assert.Equal("fa",S(fa,"locale"));Assert.Equal("en",S(en,"locale"));Assert.Equal(S(fa,"revisionId"),S(en,"revisionId"));Assert.DoesNotContain("actorId",fa.ToJsonString());Assert.DoesNotContain("draft",fa.ToJsonString());
-        await using(var scope=sql.Factory.Services.CreateAsyncScope())await Assert.ThrowsAsync<BusinessException>(()=>new CmsPageService(scope.ServiceProvider.GetRequiredService<CmsDbContext>(),false).PublicAsync(S(p,"slug"),"fa",default));
+        await using(var scope=sql.Factory.Services.CreateAsyncScope())await Assert.ThrowsAsync<BusinessException>(()=>new CmsPageService(scope.ServiceProvider.GetRequiredService<CmsDbContext>(),false,scope.ServiceProvider.GetRequiredService<IPublicImageReferences>()).PublicAsync(S(p,"slug"),"fa",default));
         p=await Write(staff,p,"Save",Content("پیش‌نویس منتشرنشده"));Assert.Equal(S(fa,"title"),S(await Read(await anon.GetAsync(pub)),"title"));p=await Write(staff,p,"Publish");Assert.Equal("پیش‌نویس منتشرنشده",S(await Read(await anon.GetAsync(pub)),"title"));p=await Write(staff,p,"Save",Content("این پیش‌نویس باید بماند"));p=await Write(staff,p,"Restore",restore:S(first,"revisionId"));Assert.NotEqual(S(first,"revisionId"),S(p,"revisionId"));Assert.Equal(S(fa,"title"),S(await Read(await anon.GetAsync(pub)),"title"));draft=await Read(await staff.GetAsync(Path(p)));Assert.Equal("این پیش‌نویس باید بماند",S(draft["draft"]!["fa"]!,"title"));
         var publishedReceipt=p.DeepClone();p=await Write(staff,p,"Unpublish");using(var hidden=await anon.GetAsync(pub))Assert.Equal(HttpStatusCode.NotFound,hidden.StatusCode);var receipt=await Read(await staff.GetAsync(Path(p)+"/commands/"+S(publishedReceipt,"commandId")));Assert.Equal(S(publishedReceipt,"revisionId"),S(receipt,"revisionId"));Assert.True(receipt["replayed"]!.GetValue<bool>());var history=await Read(await staff.GetAsync(Path(p)+"/history"));Assert.Equal(4,history["items"]!.AsArray().Count);Assert.Equal("Unpublish",S(history["items"]![0]!,"action"));
     }

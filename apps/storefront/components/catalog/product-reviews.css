@@ -1,0 +1,213 @@
+.product-reviews {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+.reviews-heading,
+.review-card header,
+.review-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.review-list {
+  display: grid;
+  gap: 1rem;
+}
+.review-card,
+.review-editor {
+  padding: 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: 1.2rem;
+  min-width: 0;
+}
+.review-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 2;
+}
+.review-meta {
+  justify-content: flex-start;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.review-card blockquote {
+  margin: 1rem 0 0;
+  padding-inline-start: 1rem;
+  border-inline-start: 3px solid var(--primary);
+}
+.review-editor form,
+.review-editor fieldset {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.review-editor fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.review-editor label,
+.review-report label {
+  display: grid;
+  gap: 0.5rem;
+}
+.review-editor input:not([type='checkbox'], [type='radio'], [type='file']),
+.review-editor select,
+.review-editor textarea,
+.review-report select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--background);
+  padding: 0.75rem;
+  color: inherit;
+  font: inherit;
+}
+.review-form-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+.review-editor .review-consent {
+  display: flex;
+  align-items: flex-start;
+  line-height: 1.8;
+}
+.review-consent input {
+  margin-top: 0.4rem;
+  flex-shrink: 0;
+}
+.review-report {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: end;
+  margin-top: 1rem;
+}
+.review-report p {
+  flex-basis: 100%;
+}
+.review-stars,
+.review-rating-options {
+  display: inline-flex;
+  direction: ltr;
+  align-items: center;
+  gap: 3px;
+  color: var(--muted);
+}
+.review-stars [data-filled='true'],
+.review-rating-options [data-filled='true'] svg {
+  color: #a26507;
+  fill: #e9ab3f;
+}
+.review-editor .review-rating-input {
+  display: block;
+}
+.review-rating-input legend {
+  font-weight: 650;
+  margin-block-end: 0.2rem;
+}
+.review-rating-input small {
+  display: block;
+  color: var(--muted);
+}
+.review-editor .review-rating-options label {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+}
+.review-rating-options label:hover,
+.review-rating-options label:focus-within {
+  border-color: currentColor;
+  color: var(--primary);
+}
+.review-rating-options input,
+.review-photo-pick input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.review-photo-input {
+  display: grid;
+  justify-items: start;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.85rem;
+}
+.review-photo-input small {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+}
+.review-photo-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.review-photo-tools button,
+.review-editor .review-photo-pick {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--background);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.review-photo-pick:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.review-photo-thumb {
+  width: 112px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 0.6rem;
+}
+.review-public-photo {
+  display: inline-flex;
+  margin-block: 0.3rem 0.6rem;
+}
+.review-photo-error,
+.review-photo-input .review-photo-error {
+  color: #a12532;
+}
+.review-demo {
+  border: 1px solid var(--border);
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.4rem;
+}
+@media (max-width: 600px) {
+  .review-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .review-card,
+  .review-editor {
+    padding: 1rem;
+  }
+  .reviews-heading {
+    align-items: stretch;
+  }
+  .reviews-heading > button {
+    width: 100%;
+  }
+}

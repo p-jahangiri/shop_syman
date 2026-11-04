@@ -1,0 +1,179 @@
+.quick-price-dialog .MuiDialog-paper {
+  background: var(--surface);
+  background-image: none;
+  color: var(--foreground);
+}
+
+.quick-price-dialog .MuiDialog-paperFullScreen {
+  border-radius: 0;
+}
+
+.quick-price-dialog .quick-price-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 18px clamp(16px, 3vw, 28px);
+}
+
+.quick-price-heading .quick-price-symbol {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 13px;
+  background: color-mix(in oklch, var(--primary) 14%, var(--surface));
+  color: var(--primary);
+}
+
+.quick-price-heading .quick-price-product {
+  margin-block-start: 4px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.quick-price-dialog .quick-price-close {
+  width: 44px;
+  height: 44px;
+  color: var(--foreground);
+}
+
+.quick-price-dialog .quick-price-body {
+  padding: 20px clamp(16px, 3vw, 28px);
+  border-color: var(--border);
+}
+
+.quick-price-dialog .quick-price-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 14px clamp(16px, 3vw, 28px) max(14px, env(safe-area-inset-bottom));
+}
+
+.quick-price-dialog .quick-price-footer-buttons {
+  margin: 0;
+  margin-inline-start: auto;
+}
+
+.variant-workspace .variant-workspace-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 14px;
+}
+
+.variant-workspace .variant-grid-frame {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-height: min(34rem, 55dvh);
+}
+
+.variant-grid-frame .MuiDataGrid-root {
+  --DataGrid-t-header-background-base: var(--surface-soft);
+  --DataGrid-rowBorderColor: var(--border);
+  --DataGrid-t-color-border-base: var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.variant-grid-frame .MuiDataGrid-columnHeaderTitle {
+  font-weight: 750;
+}
+
+.variant-grid-frame .MuiDataGrid-columnSeparator {
+  color: var(--border);
+}
+
+.variant-grid-frame .MuiDataGrid-cell {
+  display: flex;
+  align-items: center;
+  padding-inline: 12px;
+}
+
+.variant-grid-frame .MuiDataGrid-cell:focus-within:has(.MuiOutlinedInput-root.Mui-focused) {
+  outline: none;
+}
+
+.variant-grid-frame .MuiDataGrid-footerContainer {
+  background: var(--surface-soft);
+  border-color: var(--border);
+}
+
+.variant-grid-frame .variant-grid-input {
+  width: 100%;
+  padding-block: 7px;
+}
+
+.variant-grid-frame .variant-grid-input .MuiOutlinedInput-root {
+  min-height: 44px;
+  border-radius: 8px;
+}
+
+.variant-grid-frame .variant-grid-input .MuiOutlinedInput-input {
+  min-height: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  padding: 11px 10px;
+  font-size: 0.875rem;
+}
+
+.variant-grid-frame .variant-grid-money .MuiOutlinedInput-input {
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.variant-workspace .variant-grid-sku {
+  display: inline-block;
+  max-width: 100%;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.variant-workspace .variant-grid-identity {
+  align-items: center;
+  gap: 8px;
+  white-space: normal;
+}
+
+.variant-workspace .variant-grid-swatch {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  border: 1px solid var(--muted);
+  border-radius: 50%;
+}
+
+.variant-workspace .variant-workspace-card {
+  overflow-wrap: anywhere;
+}
+
+.variant-workspace .variant-bulk-prices {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--primary);
+  border-radius: 12px;
+  background: color-mix(in oklch, var(--primary) 7%, var(--surface));
+}
+
+@media (max-width: 760px) {
+  .quick-price-dialog .quick-price-heading {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .quick-price-heading .quick-price-symbol {
+    display: none;
+  }
+
+  .quick-price-dialog .quick-price-body {
+    padding-block: 16px;
+  }
+}

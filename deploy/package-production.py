@@ -25,8 +25,10 @@ SOURCE_ROOTS = (
     "apps/storefront",
     "apps/admin",
     "packages/design-tokens",
+    "packages/web-shared",
     "backend/src",
 )
+COMPONENTS = ("all", "admin", "storefront", "api", "database")
 ROOT_FILES = (
     "package.json",
     "package-lock.json",
@@ -52,7 +54,7 @@ SOURCE_SUFFIXES = {
 }
 EXCLUDED_DIRECTORIES = {
     "node_modules", "bin", "obj", "dist", "out", "tmp", "artifacts", "docs",
-    "tests", "test", "__tests__", "__pycache__", "coverage", "TestResults",
+    "tests", "test", "testing", "__tests__", "__pycache__", "coverage", "TestResults",
     ".vercel", ".cache", ".tools", ".git", ".ssh",
 }
 SECRET_SUFFIXES = {
@@ -78,8 +80,9 @@ def forbidden(relative: str) -> bool:
         or ".." in path.parts
         or any(part in EXCLUDED_DIRECTORIES or part.startswith(".next") for part in path.parts)
         or name.startswith(".env")
-        or name in {"AGENTS.md", ".DS_Store", "appsettings.Local.json", "appsettings.Development.json", "appsettings.Testing.json"}
+        or name in {"AGENTS.md", ".DS_Store", "next-env.d.ts", "appsettings.Local.json", "appsettings.Development.json", "appsettings.Testing.json"}
         or ".test." in name
+        or ".test-" in name
         or ".spec." in name
         or path.suffix.lower() in SECRET_SUFFIXES
         or relative == "apps/storefront/public/sw.js"
@@ -150,6 +153,11 @@ def source_snapshot(root: Path) -> dict[str, tuple[bytes, int]]:
             relative = path.relative_to(root).as_posix()
             if source_file_allowed(relative):
                 snapshot[relative] = read_regular(path)
+    for relative in ("database/compose.sqlserver.yaml", "database/README.md"):
+        snapshot[relative] = read_regular(root / relative)
+    snapshots = root / "database/sqlserver/snapshots"
+    for path in (*sorted(snapshots.glob("*.sql")), snapshots / "README.md"):
+        snapshot[path.relative_to(root).as_posix()] = read_regular(path)
     return dict(sorted(snapshot.items()))
 
 
@@ -233,10 +241,14 @@ def production_files(source: dict[str, tuple[bytes, int]]) -> tuple[dict[str, tu
     return result, transforms
 
 
-def export(root: Path, output: Path, overlays: list[Path]) -> dict:
+def export(root: Path, output: Path, overlays: list[Path], component: str = "all") -> dict:
+    if component not in COMPONENTS:
+        raise ValueError("Unknown production component.")
+    if overlays and component != "all":
+        raise ValueError("Hosting overlays require the combined export.")
     if output.exists() or output.is_symlink():
         raise ValueError("Output must be a new directory; existing files are never overwritten.")
-    if output == root or any(output.is_relative_to(root / prefix) for prefix in (*SOURCE_ROOTS, "deploy", ".git")):
+    if output == root or any(output.is_relative_to(root / prefix) for prefix in (*SOURCE_ROOTS, "database", "deploy", ".git")):
         raise ValueError("Output cannot be the checkout or a source/deployment directory.")
     if any(output == overlay or output.is_relative_to(overlay) for overlay in overlays):
         raise ValueError("Output cannot be inside an overlay directory.")
@@ -250,6 +262,24 @@ def export(root: Path, output: Path, overlays: list[Path]) -> dict:
     for index, snapshot in enumerate(overlay_sources):
         exported.update(snapshot)
         provenance.update({name: f"overlay:{index + 1}" for name in snapshot})
+    if component != "all":
+        common = {".gitignore", ".dockerignore"}
+        if component in ("admin", "storefront"):
+            common.update(("package.json", "package-lock.json"))
+            prefixes = (f"apps/{component}/", "packages/")
+            package = json.loads(exported["package.json"][0])
+            package["workspaces"] = [f"apps/{component}", "packages/*"]
+            commands = {"build:admin"} if component == "admin" else {"build", "start"}
+            package["scripts"] = {
+                key: value for key, value in package["scripts"].items() if key in commands
+            }
+            exported["package.json"] = canonical_json(package), exported["package.json"][1]
+        else:
+            prefixes = ("backend/",) if component == "api" else ("database/",)
+        exported = {
+            name: content for name, content in exported.items()
+            if name in common or name.startswith(prefixes)
+        }
 
     # Changes during collection must never produce a mixed source release.
     def assert_stable():
@@ -269,6 +299,7 @@ def export(root: Path, output: Path, overlays: list[Path]) -> dict:
             entries.append({"path": name, "sha256": digest(data), "bytes": len(data), "mode": mode, "origin": provenance[name]})
         manifest = {
             "formatVersion": 1,
+            "component": component,
             "sourceTreeSha256": tree_hash(source),
             "overlayTreeSha256": [tree_hash(snapshot) for snapshot in overlay_sources],
             "productionTreeSha256": tree_hash(exported),
@@ -290,10 +321,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
     parser.add_argument("--output", type=Path, required=True, help="New source export directory; never an existing checkout.")
+    parser.add_argument("--component", choices=COMPONENTS, default="all")
     parser.add_argument("--overlay", type=Path, action="append", default=[], help="Optional reviewed hosting configuration directory; may be repeated in precedence order.")
     args = parser.parse_args()
     try:
-        manifest = export(args.root.resolve(), args.output.resolve(), [directory.resolve() for directory in args.overlay])
+        manifest = export(args.root.resolve(), args.output.resolve(),
+                          [directory.resolve() for directory in args.overlay], args.component)
     except (OSError, ValueError, ET.ParseError) as error:
         print(f"Production export failed: {error}", file=sys.stderr)
         return 1

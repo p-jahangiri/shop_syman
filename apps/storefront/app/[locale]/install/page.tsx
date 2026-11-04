@@ -1,4 +1,4 @@
-import { InstallGuide } from '@/components/install-guide';
+import { InstallGuide } from '@/components/offline/install-guide';
 export const metadata = { robots: { index: false, follow: false } };
 export default function InstallPage() {
   return <InstallGuide />;

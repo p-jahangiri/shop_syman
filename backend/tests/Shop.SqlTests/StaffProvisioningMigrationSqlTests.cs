@@ -16,7 +16,7 @@ public sealed class StaffProvisioningMigrationSqlTests : IAsyncLifetime
     public Task InitializeAsync() => fixture.InitializeAsync();
     public Task DisposeAsync() => fixture.DisposeAsync();
     [Fact]
-    public async Task EmptyNewHistoriesCanDowngradeAndRestoreWithoutDeletingExistingAccounts()
+    public async Task LatestEmptyHistoriesCanDowngradeAndRestoreWithoutDeletingExistingAccounts()
     {
         await using var scope = fixture.Sql.Factory.Services.CreateAsyncScope();
         var identity = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
@@ -40,10 +40,13 @@ public sealed class StaffProvisioningMigrationSqlTests : IAsyncLifetime
         await using var scope = fixture.Sql.Factory.Services.CreateAsyncScope(); var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         Assert.StartsWith("SaymanTest_", db.Database.GetDbConnection().Database);
         var user = await db.Users.AsNoTracking().SingleAsync(x => x.UserName == input.UserName);
-        var previous = db.Database.GetMigrations().Reverse().Skip(1).First();
-        try {
-            var error = await Assert.ThrowsAsync<SqlException>(() => db.GetService<IMigrator>().MigrateAsync(previous)); Assert.Equal(51000, error.Number);
-        } finally { await db.Database.MigrateAsync(); }
+        var applied = (await db.Database.GetAppliedMigrationsAsync()).ToArray();
+        var assembly = db.GetService<IMigrationsAssembly>();
+        var migration = assembly.CreateMigration(assembly.Migrations["20261028222547_AdministratorProvisionedStaff"], db.Database.ProviderName!);
+        var guard = Assert.IsType<Microsoft.EntityFrameworkCore.Migrations.Operations.SqlOperation>(migration.DownOperations[0]);
+        var error = await Assert.ThrowsAsync<SqlException>(() => db.Database.ExecuteSqlRawAsync(guard.Sql));
+        Assert.Equal(51000, error.Number);
+        Assert.Equal(applied, await db.Database.GetAppliedMigrationsAsync());
         Assert.True((await db.Users.AsNoTracking().SingleAsync(x => x.Id == user.Id)).MustChangePassword);
         Assert.Single(await db.StaffCreationCommands.AsNoTracking().Where(x => x.UserId == user.Id).ToArrayAsync());
         var flags = await Assert.ThrowsAsync<SqlException>(() => db.Database.ExecuteSqlInterpolatedAsync($"UPDATE [identity].[AspNetUsers] SET [ProvisionedByAdministrator]=0 WHERE [Id]={user.Id}")); Assert.Equal(547, flags.Number);

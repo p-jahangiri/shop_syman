@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
-import { publicOrigin } from '@/lib/seo';
-import { sitemapManifests } from '@/lib/sitemap-projection';
-import { sitemapEnvironment } from '@/lib/sitemap-http';
+import { publicOrigin } from '@/lib/seo/seo';
+import { sitemapManifests } from '@/lib/seo/sitemap-projection';
+import { sitemapEnvironment } from '@/lib/seo/sitemap-http';
 export const dynamic = 'force-dynamic';
 export default async function robots(): Promise<MetadataRoute.Robots> {
   const snapshots = await sitemapManifests(sitemapEnvironment());

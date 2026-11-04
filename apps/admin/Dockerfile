@@ -2,15 +2,13 @@
 FROM node:22-bookworm-slim@sha256:7af03b14a13c8cdd38e45058fd957bf00a72bbe17feac43b1c15a689c029c732 AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-COPY apps/storefront/package.json ./apps/storefront/package.json
 COPY apps/admin/package.json ./apps/admin/package.json
 COPY packages/design-tokens/package.json ./packages/design-tokens/package.json
-RUN --mount=type=cache,target=/root/.npm npm ci --include=dev --include=optional --no-audit --no-fund --maxsockets=5 --fetch-retries=3 --fetch-retry-mintimeout=3000 --fetch-retry-maxtimeout=15000
+COPY packages/web-shared/package.json ./packages/web-shared/package.json
+RUN --mount=type=cache,target=/root/.npm npm ci --workspace @sayman/admin --include=dev --include=optional --no-audit --no-fund --maxsockets=5 --fetch-retries=3 --fetch-retry-mintimeout=3000 --fetch-retry-maxtimeout=15000
 COPY apps/admin/ ./apps/admin/
-COPY apps/storefront/public/ ./apps/storefront/public/
-COPY apps/storefront/lib/ ./apps/storefront/lib/
-COPY apps/storefront/components/ ./apps/storefront/components/
 COPY packages/design-tokens/ ./packages/design-tokens/
+COPY packages/web-shared/ ./packages/web-shared/
 # Vite embeds this public origin in its browser bundle. It is the only frontend
 # build setting; ADMIN_API_URL and secrets are supplied to the runtime instead.
 ARG VITE_STOREFRONT_URL
@@ -23,6 +21,7 @@ WORKDIR /app
 ENV NODE_ENV=production PORT=8080 HOSTNAME=0.0.0.0
 COPY --from=build --chown=node:node /app/apps/admin/dist/ ./dist/
 COPY --chown=node:node apps/admin/server.mjs ./server.mjs
+COPY --chown=node:node apps/admin/public-video-proxy.mjs ./public-video-proxy.mjs
 USER node
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \

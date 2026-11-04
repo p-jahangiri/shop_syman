@@ -25,6 +25,17 @@ GitHub خصوصی روی شاخهٔ `main` متصل و push شده است. در 
 python3 deploy/package-production.py --output /private/tmp/sayman-production-next
 ```
 
+برای بردن یک بخش به میزبان یا مخزن جدا، نام آن بخش را مشخص کنید.
+
+```sh
+python3 deploy/package-production.py --component admin --output /private/tmp/sayman-admin
+python3 deploy/package-production.py --component storefront --output /private/tmp/sayman-storefront
+python3 deploy/package-production.py --component api --output /private/tmp/sayman-api
+python3 deploy/package-production.py --component database --output /private/tmp/sayman-database
+```
+
+هر خروجی رابط شامل همان برنامه، دو بستهٔ مشترک و lockfile است. از ریشهٔ خروجی، `npm ci --workspace @sayman/admin` یا `npm ci --workspace @sayman/storefront` را اجرا کنید و سپس `npm run build:admin` یا `npm run build` را بزنید. خروجی API با `dotnet build backend/src/Shop.Api/Shop.Api.csproj` ساخته می‌شود. خروجی دیتابیس پیکربندی Compose و خروجی‌های تاریخی SQL را دارد. [راهنمای دیتابیس](../database/README.md)
+
 این ابزار checkout/Git را تغییر نمی‌دهد؛ فایل‌ها و hashها را در `production-source-manifest.json` ثبت می‌کند و تغییر هم‌زمان سورس را رد می‌کند. تغییرهای فقط در بسته: محدودکردن scriptهای npm بهbuild/start، حذف ارجاع دیتاستDevelopment منتشرنشدنی ازcsproj و حذفstageآزمون/COPYSeedازDockerfileبک‌اند. ثبت/pushشاخه جدا از export است و باید بدونcheckout/stashپوشهٔ مشترک انجام شود. برای انتشار tag بعدی، پس از مشخص‌شدن میزبان و دسترسی‌ها باید workflow متناسب با همین شاخه فعال شود؛ مسیر قدیمیmainخودکار به آن منتقل نشده است.
 
 ### زیرساخت لازم برای نسخهٔ متصل

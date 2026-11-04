@@ -2,6 +2,7 @@ import type { NextConfig } from 'next';
 import path from 'node:path';
 const config: NextConfig = {
   output: 'standalone',
+  transpilePackages: ['@sayman/web-shared'],
   // A separate artifact lets QA run without replacing the current local server.
   distDir:
     process.env.SHOP_ISOLATED_BUILD === '1'

@@ -11,7 +11,7 @@ namespace Shop.SqlTests;
 public sealed class AddressBookSqlTests(OrderFixture fixture):IClassFixture<OrderFixture>
 {
     private static string Id()=>Guid.NewGuid().ToString("N");
-    private static SaveAddressInput Input(string label="خانه",bool makeDefault=false,string? version=null)=>new(label,"گیرندهٔ آزمون","09121234567",new("IR","تهران","تهران","نشانی آزمون؛ دادهٔ واقعی نیست","1234567890"),makeDefault,version);
+    private static SaveAddressInput Input(string label="خانه",bool makeDefault=false,string? version=null)=>new(label,"گیرندهٔ آزمون","09121234567",new("IR","تهران","تهران","نشانی آزمون؛ دادهٔ واقعی نیست","1234567890"),makeDefault,version,new(AddressGeography.Version,"123","1230001","1230001001576","city","۱۲","",null,null));
     private static async Task<JsonNode> Book(HttpClient c)=>await OrderFixture.Json(await c.GetAsync("/api/addresses"));
     private static async Task<JsonNode> Save(HttpClient c,string id,SaveAddressInput input,HttpStatusCode status=HttpStatusCode.Created)=>await OrderFixture.Json(await c.PutAsJsonAsync("/api/addresses/"+id,input),status);
     private static async Task Remove(HttpClient c,string id,string version,HttpStatusCode status=HttpStatusCode.NoContent){using var r=await c.SendAsync(new(HttpMethod.Delete,"/api/addresses/"+id){Content=JsonContent.Create(new DeleteAddressInput(version))});Assert.Equal(status,r.StatusCode);}

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
-import { CustomerSourcing } from '@/components/customer-sourcing';
-import { serverI18n } from '@/lib/server-locale';
+import { CustomerSourcing } from '@/components/market/customer-sourcing';
+import { serverI18n } from '@/lib/navigation/server-locale';
 export async function generateMetadata() {
   const { locale } = await serverI18n();
   return {

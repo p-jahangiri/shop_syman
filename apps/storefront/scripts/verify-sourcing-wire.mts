@@ -7,7 +7,7 @@ import {
   sourcingRequestPageSchema,
   sourcingEventsSchema,
   sourcingMutationSchema,
-} from '../lib/sourcing-contract.ts';
+} from '@sayman/web-shared/lib/market/sourcing-contract.ts';
 const directory = process.argv[2];
 if (!directory) throw new Error('Supply the response-only SQL wire capture directory.');
 const read = async (name: string) =>

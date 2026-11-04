@@ -1,19 +1,24 @@
-import { getCatalogPage, getCatalogProducts, getCatalogFilters } from '@/lib/catalog-server';
-import { ProductsScope } from '@/components/locale-provider';
-import { pageMetadata } from '@/lib/seo';
+import {
+  getCatalogPage,
+  getCatalogProducts,
+  getCatalogFilters,
+} from '@/lib/catalog/catalog-server';
+import { ProductsScope } from '@/components/navigation/locale-provider';
+import { pageMetadata } from '@/lib/seo/seo';
 import { Fragment } from 'react';
-import { serverI18n } from '@/lib/server-locale';
-import Link from '@/components/localized-link';
-import Image from '@/components/content-image';
-import { ArrowLeft, ArrowUpLeft, Sparkles, Check, CreditCard } from 'lucide-react';
-import { ProductGrid } from '@/components/product-card';
-import { HomeCollection } from '@/components/home-collection';
-import { Button } from '@/components/ui';
-import { Spotlight } from '@/components/spotlight';
-import { ScrollRail } from '@/components/scroll-rail';
-import { activeHomeBlocks, curatedProducts } from '@/lib/home-blocks';
-import type { HomeBlock } from '@/lib/types';
-import { isPurchaseContentEnabled, isPurchaseHrefEnabled } from '@/lib/purchasing';
+import { serverI18n } from '@/lib/navigation/server-locale';
+import Link from '@/components/navigation/localized-link';
+import Image from '@/components/media/content-image';
+import { ArrowLeft, ArrowUpLeft, Sparkles, Check, CreditCard, PackageSearch } from 'lucide-react';
+import { ProductGrid } from '@/components/catalog/product-card';
+import { HomeCollection } from '@/components/content/home-collection';
+import { Button } from '@/components/shared/ui';
+import { Spotlight } from '@/components/catalog/spotlight';
+import { activeHomeBlocks, curatedProducts } from '@/lib/content/home-blocks';
+import type { HomeBlock } from '@sayman/web-shared/lib/shared/types.ts';
+import { isPurchaseContentEnabled, isPurchaseHrefEnabled } from '@/lib/catalog/purchasing';
+import { isUsedCatalogHref } from '@sayman/web-shared/lib/content/appearance.ts';
+import './home-page.css';
 const lines = (text: string) =>
   text.split('\n').map((line, i) => (
     <Fragment key={i}>
@@ -32,48 +37,65 @@ export async function generateMetadata() {
   );
 }
 export default async function HomePage() {
-  const { locale, t, digits, site, categories, purchaseMethods } = await serverI18n();
+  const { locale, t, site, categories, purchaseMethods } = await serverI18n();
+  const showUsedProducts = site.appearance?.showUsedProducts !== false;
+  const linkVisible = (href: string) =>
+    isPurchaseHrefEnabled(href, purchaseMethods) && (showUsedProducts || !isUsedCatalogHref(href));
   const now = Date.now();
   const blocks: HomeBlock[] = site.homeBlocks ?? [
     { id: 'categories', kind: 'categories', enabled: true, title: t('دنیای دیجیتال تو') },
     { id: 'collection', kind: 'collection', enabled: true },
   ];
-  const active = activeHomeBlocks(blocks, now).filter((block) =>
-    isPurchaseContentEnabled(block, purchaseMethods),
+  const active = activeHomeBlocks(blocks, now).filter(
+    (block) =>
+      isPurchaseContentEnabled(block, purchaseMethods) &&
+      (showUsedProducts || !block.href || !isUsedCatalogHref(block.href)),
   );
   const productBlocks = active.filter(
     (b) => b.kind === 'products' || b.kind === 'collection' || b.kind === 'spotlight',
   );
-  const byBlock = new Map(
-    await Promise.all(
+  const [productRows, brands] = await Promise.all([
+    Promise.all(
       productBlocks.map(async (b) => {
-        const limit = b.kind === 'collection' ? 4 : (b.limit ?? 4);
-        const records =
+        const limit = b.limit ?? 4;
+        const result =
           b.kind === 'spotlight' && !b.productIds?.length
-            ? []
+            ? { products: [] }
             : b.productIds?.length
-              ? await getCatalogProducts(locale, { productIds: b.productIds })
-              : (await getCatalogPage(locale, { categoryId: b.categoryId, pageSize: limit }))
-                  .products;
-        const ordered = b.productIds?.length ? curatedProducts(b, records) : records;
+              ? { products: await getCatalogProducts(locale, { productIds: b.productIds }) }
+              : await getCatalogPage(locale, {
+                  categoryId: b.categoryId,
+                  condition: 'new',
+                  pageSize: limit,
+                });
+        const ordered = b.productIds?.length
+          ? curatedProducts(b, result.products)
+          : result.products;
         return [
           b.id,
-          ordered.filter((p) => !b.categoryId || p.category === b.categoryId).slice(0, limit),
+          {
+            products: ordered
+              .filter((p) => !b.categoryId || p.category === b.categoryId)
+              .slice(0, limit),
+            variantIds: 'matchingVariantIds' in result ? result.matchingVariantIds : undefined,
+          },
         ] as const;
       }),
     ),
-  );
-  const products = [...byBlock.values()].flat();
+    active.some((b) => b.kind === 'brands')
+      ? getCatalogFilters(locale, undefined, undefined, 'new').then((filters) => filters.brands)
+      : [],
+  ]);
+  const byBlock = new Map(productRows);
+  const products = [...byBlock.values()].flatMap((row) => row.products);
   const heroImage =
     site.hero.image ?? products.find((p) => p.featured)?.image ?? products[0]?.image;
-  const brands = active.some((b) => b.kind === 'brands')
-    ? (await getCatalogFilters(locale)).brands
-    : [];
   const heading = (block: HomeBlock) => (
     <div className="section-heading">
       <div>
         {block.eyebrow && <span className="eyebrow">{block.eyebrow}</span>}
         {block.title && <h2>{lines(block.title)}</h2>}
+        {block.description && <p className="home-section-description">{block.description}</p>}
       </div>
       {block.href && block.action && (
         <Link href={block.href} className="text-link">
@@ -88,12 +110,18 @@ export default async function HomePage() {
       <div className="home-page">
         <div className="container">
           {isPurchaseContentEnabled(site.hero, purchaseMethods) ? (
-            <section className="hero" aria-labelledby="home-hero-title">
+            <section
+              className="hero"
+              aria-labelledby="home-hero-title"
+              data-has-art={Boolean(heroImage || site.hero.visualTitle || site.hero.floatingTitle)}
+            >
               <div className="hero-copy">
-                <span className="hero-eyebrow">
-                  <span />
-                  {site.hero.eyebrow}
-                </span>
+                {site.hero.eyebrow && (
+                  <span className="hero-eyebrow">
+                    <span aria-hidden="true" />
+                    {site.hero.eyebrow}
+                  </span>
+                )}
                 <h1 id="home-hero-title">
                   {site.hero.title.split('\n').map((line, i) => (
                     <Fragment key={i}>
@@ -104,7 +132,7 @@ export default async function HomePage() {
                 </h1>
                 <p>{site.hero.description}</p>
                 <div className="hero-actions">
-                  {isPurchaseHrefEnabled(site.hero.actionHref ?? '/catalog', purchaseMethods) && (
+                  {site.hero.action.trim() && linkVisible(site.hero.actionHref ?? '/catalog') && (
                     <Button asChild>
                       <Link href={site.hero.actionHref ?? '/catalog'}>
                         {site.hero.action}
@@ -112,32 +140,20 @@ export default async function HomePage() {
                       </Link>
                     </Button>
                   )}
-                  {isPurchaseHrefEnabled(
-                    site.hero.secondaryHref ?? '/installments',
-                    purchaseMethods,
-                  ) && (
-                    <Link
-                      href={site.hero.secondaryHref ?? '/installments'}
-                      className="hero-secondary"
-                    >
-                      {site.hero.secondary}
-                      <ArrowLeft size={16} />
-                    </Link>
-                  )}
+                  {site.hero.secondary.trim() &&
+                    linkVisible(site.hero.secondaryHref ?? '/installments') && (
+                      <Link
+                        href={site.hero.secondaryHref ?? '/installments'}
+                        className="hero-secondary"
+                      >
+                        {site.hero.secondary}
+                        <ArrowLeft size={16} />
+                      </Link>
+                    )}
                 </div>
                 {site.hero.footnote && (
                   <div className="hero-bottom">
-                    <div className="hero-mini-icons" aria-hidden="true">
-                      <span>
-                        <Check size={14} />
-                      </span>
-                      <span>
-                        <Sparkles size={14} />
-                      </span>
-                      <span>
-                        <CreditCard size={14} />
-                      </span>
-                    </div>
+                    <Sparkles size={16} aria-hidden="true" />
                     <span>{site.hero.footnote}</span>
                   </div>
                 )}
@@ -153,7 +169,7 @@ export default async function HomePage() {
                 {heroImage && (
                   <Image
                     src={heroImage}
-                    alt={site.hero.title.replaceAll('\n', ' ')}
+                    alt=""
                     width={700}
                     height={560}
                     loading="eager"
@@ -163,17 +179,19 @@ export default async function HomePage() {
                 )}
                 {site.hero.floatingTitle && (
                   <div className="hero-floating">
-                    <span className="floating-icon">
+                    <span className="floating-icon" aria-hidden="true">
                       <Sparkles size={21} />
                     </span>
                     <div>
                       <strong>{site.hero.floatingTitle}</strong>
-                      <span>{site.hero.floatingDescription}</span>
+                      {site.hero.floatingDescription && (
+                        <span>{site.hero.floatingDescription}</span>
+                      )}
                     </div>
                   </div>
                 )}
                 <span className="hero-index" aria-hidden="true">
-                  01 <i />
+                  <i />
                   {site.latinName}
                 </span>
               </div>
@@ -181,37 +199,51 @@ export default async function HomePage() {
           ) : (
             <h1 className="sr-only">{site.name}</h1>
           )}
-          <div className="preview-note">
-            <span className="live-dot" />
-            {t('پیش‌نمایش فروشگاه سایمان · کالاها و شرایط نمونه‌اند؛ خرید واقعی فعال نیست.')}
-          </div>
           {active.map((block) => {
             if (block.kind === 'categories')
               return (
                 <section key={block.id} className="category-section">
                   {heading(block)}
-                  <ScrollRail label={block.title ?? t('دنیای دیجیتال تو')}>
-                    <div className="category-grid">
-                      {categories.map((c, i) => (
-                        <Link
-                          key={c.key}
-                          href={`/catalog?category=${encodeURIComponent(c.key)}`}
-                          className={`category-card category-${c.key}`}
-                          data-tone={i % 4}
-                        >
-                          <div>
-                            <span className="category-index">{digits(i + 1)}</span>
-                            <h3>{c.name}</h3>
-                            <p>{c.description}</p>
-                            <span className="category-arrow">
-                              <ArrowUpLeft size={20} />
-                            </span>
-                          </div>
-                          <Image src={c.image} alt="" width={230} height={184} sizes="160px" />
-                        </Link>
-                      ))}
-                    </div>
-                  </ScrollRail>
+                  <div className="category-grid">
+                    {categories.map((c, i) => (
+                      <Link
+                        key={c.key}
+                        href={`/catalog?category=${encodeURIComponent(c.key)}`}
+                        className="category-card"
+                        data-tone={i % 4}
+                      >
+                        <div className="home-category-copy">
+                          <h3>{c.name}</h3>
+                          {c.description && <p>{c.description}</p>}
+                        </div>
+                        <div className="home-category-visual" aria-hidden="true">
+                          <span className="category-arrow">
+                            <ArrowUpLeft size={16} />
+                          </span>
+                          <Image src={c.image} alt="" width={124} height={99} sizes="124px" />
+                        </div>
+                      </Link>
+                    ))}
+                    {showUsedProducts && (
+                      <Link
+                        href="/catalog?condition=used"
+                        className="category-card home-category-used"
+                      >
+                        <div className="home-category-copy">
+                          <h3>{locale === 'fa' ? 'کالاهای کارکرده' : 'Used products'}</h3>
+                          <p>
+                            {locale === 'fa' ? 'همراه با جزئیات وضعیت کالا' : 'Browse by condition'}
+                          </p>
+                        </div>
+                        <div className="home-category-visual" aria-hidden="true">
+                          <span className="category-arrow">
+                            <ArrowUpLeft size={16} />
+                          </span>
+                          <PackageSearch className="home-category-symbol" strokeWidth={1.4} />
+                        </div>
+                      </Link>
+                    )}
+                  </div>
                 </section>
               );
             if (block.kind === 'collection')
@@ -220,14 +252,21 @@ export default async function HomePage() {
                   key={block.id}
                   eyebrow={block.eyebrow}
                   title={block.title}
+                  description={block.description}
                   action={block.action}
-                  initialProducts={byBlock.get(block.id) ?? []}
+                  href={block.href}
+                  categoryId={block.categoryId}
+                  pageSize={block.limit ?? 4}
+                  initialProducts={byBlock.get(block.id)?.products ?? []}
+                  initialVariantIds={byBlock.get(block.id)?.variantIds}
                 />
               );
             if (block.kind === 'promotions') {
               const promotions =
-                block.items?.filter((item) => isPurchaseContentEnabled(item, purchaseMethods)) ??
-                [];
+                block.items?.filter(
+                  (item) =>
+                    isPurchaseContentEnabled(item, purchaseMethods) && linkVisible(item.href),
+                ) ?? [];
               if (!promotions.length) return null;
               return (
                 <section key={block.id} className="promo-grid">
@@ -265,26 +304,32 @@ export default async function HomePage() {
                 <Spotlight
                   key={block.id}
                   block={block}
-                  products={byBlock.get(block.id) ?? []}
+                  products={byBlock.get(block.id)?.products ?? []}
                   locale={locale}
                 />
               );
             if (block.kind === 'products') {
-              const items = byBlock.get(block.id) ?? [];
-              return items.length ? (
+              const row = byBlock.get(block.id);
+              return row?.products.length ? (
                 <section key={block.id} className="deals-section">
                   {heading(block)}
-                  <ProductGrid items={items} />
+                  <ProductGrid items={row.products} variantIds={row.variantIds} />
                 </section>
               ) : null;
             }
-            if (block.kind === 'brands')
+            if (block.kind === 'brands' && brands.length)
               return (
                 <section key={block.id} className="brands-section">
-                  <span>{block.description}</span>
+                  {heading({ ...block, title: block.title ?? t('برندها') })}
                   <div className="brands-row">
                     {brands.map((brand) => (
-                      <span key={brand.id}>{brand.name}</span>
+                      <Link
+                        key={brand.id}
+                        href={`/catalog?brand=${encodeURIComponent(brand.id)}`}
+                        data-wordmark={brand.name.toLowerCase()}
+                      >
+                        <bdi>{brand.name}</bdi>
+                      </Link>
                     ))}
                   </div>
                 </section>

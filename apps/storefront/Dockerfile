@@ -4,13 +4,14 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY package.json package-lock.json ./
 COPY apps/storefront/package.json ./apps/storefront/package.json
-COPY apps/admin/package.json ./apps/admin/package.json
 COPY packages/design-tokens/package.json ./packages/design-tokens/package.json
-RUN --mount=type=cache,target=/root/.npm npm ci --include=dev --include=optional --no-audit --no-fund --maxsockets=5 --fetch-retries=3 --fetch-retry-mintimeout=3000 --fetch-retry-maxtimeout=15000
+COPY packages/web-shared/package.json ./packages/web-shared/package.json
+RUN --mount=type=cache,target=/root/.npm npm ci --workspace @sayman/storefront --include=dev --include=optional --no-audit --no-fund --maxsockets=5 --fetch-retries=3 --fetch-retry-mintimeout=3000 --fetch-retry-maxtimeout=15000
 
 FROM dependencies AS build
 COPY apps/storefront ./apps/storefront
 COPY packages/design-tokens ./packages/design-tokens
+COPY packages/web-shared ./packages/web-shared
 # All rendered shop data is read at request time. No API credentials, local
 # environment files or running database are needed to produce this artifact.
 RUN SHOP_DATA_MODE=api SHOP_ENABLE_PREVIEW=false npm run build

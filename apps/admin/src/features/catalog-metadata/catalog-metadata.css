@@ -1,0 +1,118 @@
+.catalog-meta-heading,
+.catalog-meta-heading-label,
+.catalog-option-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.catalog-meta-heading-label > div {
+  min-width: 0;
+}
+.catalog-meta-icon {
+  display: grid;
+  place-items: center;
+  width: 45px;
+  height: 45px;
+  border-radius: 13px;
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 14%, var(--surface));
+}
+.catalog-meta-icon[data-kind='attributes'] {
+  color: light-dark(#266078, #89c6df);
+  background: light-dark(#e6f2f8, #203844);
+}
+.catalog-meta-icon[data-kind='brands'] {
+  color: light-dark(#785623, #e4c17c);
+  background: light-dark(#f8eddb, #3c3220);
+}
+.catalog-meta-title {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+.catalog-meta-record {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.catalog-meta-record img {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+.catalog-meta-title small,
+.catalog-option-heading p {
+  color: var(--muted);
+}
+.catalog-meta-form fieldset.catalog-meta-fields {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.catalog-meta-form-grid,
+.catalog-option-row {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+.catalog-rule-section {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface-soft);
+}
+.catalog-option-heading {
+  justify-content: space-between;
+}
+.catalog-option-heading h3,
+.catalog-option-heading p {
+  margin: 0;
+}
+.catalog-option-heading p {
+  font-size: 0.85rem;
+}
+.catalog-rule-list {
+  display: grid;
+  gap: 8px;
+  max-height: 27rem;
+  overflow: auto;
+  padding: 3px;
+}
+.catalog-rule {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+.catalog-rule-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding-block: 6px;
+  border-block-start: 1px solid var(--border);
+}
+.catalog-option-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+}
+@media (max-width: 640px) {
+  .catalog-meta-form-grid,
+  .catalog-option-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .catalog-option-row {
+    padding-block-end: 10px;
+    border-block-end: 1px solid var(--border);
+  }
+}

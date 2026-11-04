@@ -34,4 +34,39 @@ public sealed partial class CashOrderPaymentSqlTests
         await Scope(async sp=>{var service=new CashPaymentReadService(sp.GetRequiredService<PaymentsDbContext>(),true);var first=await service.PageAsync(owner,new(null,order),null,default);Assert.Equal(50,first.Items.Length);Assert.NotNull(first.NextCursor);var second=await service.PageAsync(owner,new(null,order),first.NextCursor,default);Assert.Equal(3,second.Items.Length);Assert.Null(second.NextCursor);Assert.Equal(53,first.Items.Concat(second.Items).Select(x=>x.Id).Distinct().Count());Assert.Equal(first.Items.Select(x=>x.Id).OrderDescending(StringComparer.Ordinal),first.Items.Select(x=>x.Id));
             foreach(var action in new Func<Task>[] {async()=>{await service.PageAsync("other-owner",new(null,order),first.NextCursor,default);},async()=>{await service.PageAsync(owner,new("created",order),first.NextCursor,default);}})Assert.Equal("invalid_payment_filter",(await Assert.ThrowsAsync<BusinessException>(action)).Code);Assert.Empty((await new CashPaymentReadService(sp.GetRequiredService<PaymentsDbContext>(),false).PageAsync(owner,new(null,order),null,default)).Items);return true;});
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RepeatedFiltersAndVerificationForAnotherGatewayAccountFailClosed(bool onlyCaseDiffers)
+    {
+        var payment = await PendingAttempt();
+        using var customer = payment.Scenario.Client;
+        using var duplicateOrder = await fixture.Admin.GetAsync(
+            $"/api/admin/payments/attempts?orderId={payment.Scenario.Order}&orderId={payment.Scenario.Order}");
+        using var duplicateCursor = await customer.GetAsync(
+            $"/api/payments/orders/{payment.Scenario.Order}?cursor=&cursor=");
+        Assert.Equal(HttpStatusCode.BadRequest, duplicateOrder.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, duplicateCursor.StatusCode);
+
+        await Settle(payment);
+        await Scope(async services =>
+        {
+            var db = services.GetRequiredService<PaymentsDbContext>();
+            var account = await db.CashAttempts.Where(row => row.Id == payment.Attempt)
+                .Select(row => row.AccountKey).SingleAsync();
+            var incorrect = onlyCaseDiffers ? account.ToUpperInvariant() : "unrelated-account";
+            Assert.NotEqual(account, incorrect);
+            Assert.Equal(1, await db.CashVerifications.Where(row => row.AttemptId == payment.Attempt)
+                .ExecuteUpdateAsync(update => update.SetProperty(row => row.AccountKey, incorrect)));
+            return true;
+        });
+
+        using var admin = await fixture.Admin.GetAsync($"/api/admin/payments/attempts?orderId={payment.Scenario.Order}");
+        using var detail = await customer.GetAsync($"/api/payments/attempts/{payment.Attempt}");
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, admin.StatusCode);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, detail.StatusCode);
+        Assert.Contains("no-store", admin.Headers.CacheControl!.ToString());
+        Assert.Contains("no-store", detail.Headers.CacheControl!.ToString());
+    }
 }

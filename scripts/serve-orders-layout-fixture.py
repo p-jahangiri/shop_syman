@@ -23,8 +23,8 @@ qa = root / 'tmp/orders-layout-qa'
 qa.mkdir(exist_ok=True)
 control = qa / 'control.json'
 control.write_text('{"auth":"guest"}\n')
-source = """import {storefrontSnapshot} from './apps/storefront/lib/fixtures.ts';
-import {localizeData} from './apps/storefront/lib/i18n.ts';
+source = """import {storefrontSnapshot} from './apps/storefront/lib/data/fixtures.ts';
+import {localizeData} from './apps/storefront/lib/navigation/i18n.ts';
 process.stdout.write(JSON.stringify(Object.fromEntries(['fa','en'].map(locale=>[locale,localizeData(storefrontSnapshot,locale)]))));"""
 snapshots = json.loads(subprocess.check_output(['node', '--experimental-strip-types', '--input-type=module', '-e', source], cwd=root))
 counts = Counter()

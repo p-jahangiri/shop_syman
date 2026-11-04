@@ -49,7 +49,7 @@ Model input شامل categoryId/brandId/slug/translations/attributes/imageUrls/v
 
 ## اجرا و شواهد
 
-- source و اصلی۲۳ migration/هشت schema دارند:۲۲ view داخلی Catalog و۲۳ Market.Listings. model check هر دو Context بدون تغییر جامانده و SQL idempotent در backend/sql/catalog.sql و market.sql تولید شدند.
+- source و اصلی۲۳ migration/هشت schema دارند:۲۲ view داخلی Catalog و۲۳ Market.Listings. model check هر دو Context بدون تغییر جامانده و SQL idempotent در database/sqlserver/snapshots/catalog.sql و market.sql تولید شدند.
 - ۴۵۱ واحد بک‌اند موفق‌اند. مجموعهٔ کامل۱۴۲ SQL با صفر شکست/skip موفق شد؛ سپس یک SQL مستقل نمونهٔ توسعه، بی‌تکراری و عدم ساخت حساب/SKU/Stock را پاس کرد. مجموعهٔ۱۴۳تایی پس از افزودن این یک مورد دوباره یک‌جا اجرا نشده است.
 - ۱۱ مورد بازار: MFA/نقش، مدل بدون SKU، استقلال انتشار، نسخهٔ قدیمی، rollback مدل/audit، مبلغ Int64 رشته‌ای/تازگی، Hidden، جست‌وجوی ارقام فارسی، انتشار ناقص، نمونهٔ ممنوع در Production، فهرست۵۰/۳ و cursor، حفظ قیمت/قواعد SKU. اجرای نخست۶موفق/۱شکست، به خطای EF مقایسهٔ null روی entity بدون کلید در left join رسید؛ با مقایسهٔ ModelId اصلاح شد. انتظار نقش ContentManager هم با catalog.read موجود هماهنگ شد؛ مجوز تغییر نکرد. اجرای بعد۷، سپس۱۱ و کل۱۴۲ موفق‌اند. شواهد market-sql-* و market-all-sql-* محفوظ‌اند.
 - fixture SQL جدید پوشهٔ key ring خودش را0700 می‌سازد و بعد از حذف موفق SQL و توقف Factory فقط همان پوشهٔ GUID را حذف می‌کند؛ شکست cleanup SQL، کلیدش را برای بررسی حفظ می‌کند. فایل شخصی/volume حذف نشده است.

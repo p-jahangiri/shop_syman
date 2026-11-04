@@ -1,0 +1,55 @@
+.customer-otp-login {
+  min-width: 0;
+}
+.customer-account-page .auth-tabs button[aria-pressed='true'] {
+  background: var(--surface-soft);
+  color: var(--primary);
+  font-weight: 600;
+}
+.customer-account-page .auth-tabs button {
+  min-height: 44px;
+}
+.customer-otp-login .small-note {
+  line-height: 1.9;
+}
+.customer-otp-mobile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-block: 12px;
+}
+.customer-otp-mobile bdi {
+  font-variant-numeric: tabular-nums;
+}
+.customer-otp-mobile button,
+.customer-otp-resend {
+  color: var(--primary);
+  border-radius: 8px;
+  min-height: 44px;
+  padding: 8px;
+}
+.customer-otp-resend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.customer-otp-resend:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+.customer-otp-login input[autocomplete='one-time-code'] {
+  text-align: center;
+  letter-spacing: 0.3em;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.customer-otp-login .notice {
+  margin-bottom: 16px;
+  line-height: 1.9;
+}

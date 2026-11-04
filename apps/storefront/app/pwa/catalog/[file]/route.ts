@@ -1,4 +1,4 @@
-import { getOfflineCatalog } from '@/lib/offline-data';
+import { getOfflineCatalog } from '@/lib/offline/offline-data';
 export async function GET(request: Request, { params }: { params: Promise<{ file: string }> }) {
   const { file } = await params;
   const locale = file === 'fa.json' ? 'fa' : file === 'en.json' ? 'en' : null;

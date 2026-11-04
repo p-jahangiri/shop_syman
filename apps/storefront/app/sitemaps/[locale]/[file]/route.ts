@@ -1,4 +1,4 @@
-import { sitemapEnvironment, sitemapFileResponse } from '@/lib/sitemap-http';
+import { sitemapEnvironment, sitemapFileResponse } from '@/lib/seo/sitemap-http';
 export const dynamic = 'force-dynamic';
 export async function GET(
   request: Request,

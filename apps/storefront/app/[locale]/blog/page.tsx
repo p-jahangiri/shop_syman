@@ -1,12 +1,12 @@
-import ContentImage from '@/components/content-image';
+import ContentImage from '@/components/media/content-image';
 import { cache } from 'react';
 import NextLink from 'next/link';
-import { serverI18n } from '@/lib/server-locale';
-import { fetchBlogList } from '@/lib/cms-blog-fetch';
-import { pageMetadata } from '@/lib/seo';
-import { localeHref } from '@/lib/i18n';
-import type { Locale } from '@/lib/types';
-import '@/components/blog.css';
+import { serverI18n } from '@/lib/navigation/server-locale';
+import { fetchBlogList } from '@/lib/content/cms-blog-fetch';
+import { pageMetadata } from '@/lib/seo/seo';
+import { localeHref } from '@/lib/navigation/i18n';
+import type { Locale } from '@sayman/web-shared/lib/shared/types.ts';
+import '@sayman/web-shared/components/content/blog.css';
 export const dynamic = 'force-dynamic';
 type Query = Record<string, string | string[] | undefined>;
 const load = cache((locale: Locale, tag: unknown, cursor: unknown) =>

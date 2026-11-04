@@ -1,8 +1,24 @@
 # معماری و قرارداد ادامهٔ پروژه
 
-## وضعیت فعلی
+## اجزای سامانه
 
-فروشگاه Next.js هم preview صریح و هم API mode متصل به SQL دارد. روت فقط metadata و صفحات query/lookup محدود می‌خوانند. آخرین اعمال اصلی۱۷ migration هفت schema و seed محلی است؛۵۹ سناریوی SQL در اجرای قبلی موفق و چهار مورد تازه هنوز اجرا نشده‌اند؛ بعضی ماژول‌ها هنوز اسکلت‌اند. uploader عمومی Catalog، گالری و proxy تصویر آماده‌اند؛ پذیرش واقعی ClamAV/S3 و سیاست Ready بدون ارجاع باقی‌اند. سبد و نشست مشتری، quote و سیاست هزینهٔ سروری به رابط وصل‌اند؛ quote رابطه‌ای و snapshot چندماژولی Serializable در composition root هماهنگ می‌شود. رزرو داخلی Inventory آماده است؛ سفارش، اتصال رزرو checkout و پرداخت واقعی باقی‌اند. مرز دقیق در `CHECKOUT-QUOTES.md` است.
+فروشگاه Next.js صفحات عمومی را سمت سرور رندر می‌کند و داده را با query و lookup صفحه‌بندی‌شده از API می‌خواند. پنل React/Vite از پراکسی هم‌مبدأ به عملیات مجاز API می‌رسد. API با ASP.NET Core ماژول‌های دامنه را روی SQL Server ترکیب می‌کند. سرویس‌های اختیاری مثل پرداخت و پیامک به قرارداد و تنظیم واقعی هر ارائه‌دهنده وابسته‌اند. [وضعیت اجرای محلی و پذیرش](STATUS.md) · [مرزهای فعلی API](API.md)
+
+## محل کد هر قابلیت
+
+| بخش | مسیرهای کد |
+| --- | --- |
+| پنل | `src/app` راه‌اندازی و بارگذاری صفحه، `src/pages/<domain>` صفحه‌ها، `src/features/<domain>` فرم و مدل اختصاصی، `src/components` رابط مشترک، `src/layout` ناوبری و پوسته |
+| داده و وضعیت پنل | `src/api/contracts/<domain>` قراردادهای داده، `src/api` کلاینت، `src/auth` نشست و مجوز، `src/state` وضعیت و دفتر ثبت فرمان‌ها، `src/hooks` هوک‌ها، `src/utils` ابزار مشترک و `src/styles` سبک‌ها |
+| فروشگاه | `app/[locale]` صفحه‌ها، `app/api` BFF، `components/<domain>` رابط هر حوزه و `lib/<domain>` منطق و قراردادهای آن. برای نمونه، `components/catalog` رابط و `lib/catalog` منطق کاتالوگ را نگه می‌دارند. |
+| ورودی HTTP | `Shop.Api/Endpoints` نگاشت مسیرهای Minimal API، `Contracts` ورودی‌های اختصاصی، `Mapping` تبدیل پاسخ، `Filters` فیلترها و `Security` قواعد دسترسی. ثبت وابستگی‌ها در `Composition` و هماهنگی تراکنش‌ها در `Transactions` است. |
+| ماژول‌های بک‌اند | `Services` گردش‌کار، `Queries` خواندن، `Contracts` DTO و قرارداد، `Persistence` مدل EF و ذخیره‌سازی، `Mapping` تبدیل و `Domain` قواعد دامنه. کاتالوگ از تفکیک موجود `Application`، `Domain` و `Infrastructure` هم استفاده می‌کند. مخزن رسانه در `Catalog/Media/Repositories` است. |
+
+آزمون‌های رابط‌ها در `apps/admin/tests` و `apps/storefront/tests` قرار دارند. قراردادهای بین ماژول‌های بک‌اند در `Shop.SharedKernel/Contracts` بر اساس حوزه گروه‌بندی شده‌اند. هنگام افزودن فایل، نقش اصلی آن محل قرارگیری را تعیین می‌کند.
+
+فروشگاه و پنل از `packages/web-shared` برای قراردادهای HTTP، اجزای رابط مشترک و ابزارهای کلاینت استفاده می‌کنند. هر برنامه دارایی‌های عمومی خودش را دارد. آدرس API فروشگاه با `SHOP_API_URL` و آدرس API پنل با `ADMIN_API_URL` تنظیم می‌شود. بک‌اند جایگزین می‌تواند با همان قرارداد HTTP، خطاها، مجوزها و گردش نشست این رابط‌ها را سرو کند.
+
+سرویس و خروجی‌های SQL در `database` هستند. API اتصال را از `ConnectionStrings__Shop` می‌گیرد. پیاده‌سازی EF و migrationهای SQL Server در سمت بک‌اند قرار دارند. [راهنمای دیتابیس](../database/README.md)
 
 ## معماری هدف
 
@@ -18,7 +34,7 @@ flowchart LR
   Modules --> Integrations[Payment SMS Shipping adapters]
 ```
 
-هر ماژول DbContext/schema و migration خود را دارد؛ دسترسی مستقیم به DbContext ماژول دیگر انجام نمی‌شود. گردش‌های چندماژولی باید از قرارداد و event پایدار استفاده کنند؛ outbox گردش سفارش هنوز پیاده نشده است. قرارداد خواندنی versioned موجودی اکنون view متعلق به Inventory است که Catalog آن را keyless می‌خواند (`CATALOG-QUERY.md`)؛ mutation از این مسیر وجود ندارد. idempotency دفتر اصلاح انبار پیاده شده و تست اصلاح تکراری/همزمان روی SQL واقعی پاس شده است. staging و production از هم جدا می‌مانند.
+هر ماژول DbContext، طرحواره و migration خودش را دارد. گردش‌های چندماژولی از قراردادهای خواندن و نوشتن و رویدادهای پایدار استفاده می‌کنند. برای نمونه، Sales مالک Outbox سفارش است و Catalog نمای نسخه‌دار و فقط‌خواندنی Inventory را برای نمایش موجودی می‌خواند. اصلاح انبار از قرارداد نوشتن Inventory با کنترل تکرار و هم‌زمانی انجام می‌شود. [قرارداد خواندن کاتالوگ](CATALOG-QUERY.md) · [رزرو و موجودی](INVENTORY-RESERVATIONS.md)
 
 ## ERD اولیهٔ هستهٔ کاتالوگ
 
@@ -48,7 +64,7 @@ erDiagram
   CreditApplication ||--o{ ChequeInstallment : schedule
 ```
 
-این ERD نقشهٔ کامل هدف است؛ Catalog/Inventory/Identity/CMS/Payments/Credit/Sales migration دارند، اما جداول Orders و چند قابلیت نمودار هنوز پیاده نشده‌اند؛ Reservations داخلی Inventory اکنون پیاده شده است (`INVENTORY-RESERVATIONS.md`). پانزده migration فعلی با موفقیت روی SQL محلی اعمال شده‌اند. قواعدی مانند چرخهٔ دسته، گزینهٔ معتبر ویژگی، `Reserved <= OnHand`، سقف اعتبار و مجوز مدارک باید در مدل و تست تراکنشی اعمال شوند.
+این ERD نمای اولیهٔ ارتباط موجودیت‌هاست. تعریف جاری جداول در مدل EF و migrationهای هر ماژول ثبت شده است. مسیرهای فعلی سفارش و رزرو در راهنماهای عملیات ثبت شده‌اند. [سفارش موقت](TEMPORARY-ORDERS.md) · [رزرو و موجودی](INVENTORY-RESERVATIONS.md)
 
 ## قرارداد پول
 

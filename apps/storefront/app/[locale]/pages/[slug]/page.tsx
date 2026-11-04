@@ -1,11 +1,13 @@
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import NextLink from 'next/link';
-import { serverI18n } from '@/lib/server-locale';
-import { fetchCmsPage } from '@/lib/cms-page-fetch';
-import { pageMetadata } from '@/lib/seo';
-import { localeHref } from '@/lib/i18n';
-import { CmsPageView } from '@/components/cms-page-view';
+import { serverI18n } from '@/lib/navigation/server-locale';
+import { fetchCmsPage } from '@/lib/content/cms-page-fetch';
+import { pageMetadata } from '@/lib/seo/seo';
+import { localeHref } from '@/lib/navigation/i18n';
+import { CmsPageView } from '@sayman/web-shared/components/content/cms-page-view';
+import { isPurchaseHrefEnabled } from '@/lib/catalog/purchasing';
+import { isUsedCatalogHref } from '@sayman/web-shared/lib/content/appearance.ts';
 export const dynamic = 'force-dynamic';
 const load = cache((slug: string, locale: 'fa' | 'en') =>
   fetchCmsPage(slug, locale, {
@@ -30,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   );
 }
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
-  const { locale } = await serverI18n(),
+  const { locale, purchaseMethods, site } = await serverI18n(),
     { slug } = await params,
     result = await load(slug, locale);
   if (result.status === 'missing') notFound();
@@ -43,6 +45,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         locale={locale}
         isDemo={p.isDemo}
         link={(href, label) => <NextLink href={localeHref(href, locale)}>{label}</NextLink>}
+        canLink={(href) =>
+          isPurchaseHrefEnabled(href, purchaseMethods) &&
+          (site.appearance?.showUsedProducts !== false || !isUsedCatalogHref(href))
+        }
       />
     </div>
   );

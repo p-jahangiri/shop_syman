@@ -1,8 +1,8 @@
-import { PhoneComparison } from '@/components/phone-market';
-import { getPhoneItem } from '@/lib/phone-discovery-server';
-import { marketIdSchema } from '@/lib/market-contract';
-import { serverI18n } from '@/lib/server-locale';
-import { pageMetadata, type SearchQuery } from '@/lib/seo';
+import { PhoneComparison } from '@/components/market/phone-market';
+import { getPhoneItem } from '@/lib/market/phone-discovery-server';
+import { marketIdSchema } from '@sayman/web-shared/lib/market/market-contract.ts';
+import { serverI18n } from '@/lib/navigation/server-locale';
+import { pageMetadata, type SearchQuery } from '@/lib/seo/seo';
 export const dynamic = 'force-dynamic';
 export async function generateMetadata() {
   const s = await serverI18n();

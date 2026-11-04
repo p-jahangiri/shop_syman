@@ -1,0 +1,228 @@
+.service-workspace {
+  min-inline-size: 0;
+}
+
+.service-workspace-header {
+  margin-block-end: 1rem;
+  padding-block-end: 1.1rem;
+  border-block-end: 1px solid var(--border);
+}
+
+.service-workspace-header h2 {
+  margin-block: 0.4rem 0.3rem;
+}
+
+.service-eyebrow,
+.service-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.service-eyebrow {
+  color: var(--muted-foreground, var(--muted));
+  font-size: 0.85rem;
+}
+
+.service-action,
+.service-view-switch > button {
+  min-block-size: 2.75rem;
+}
+
+.service-view-switch,
+.support-inbox-workspace .ticket-queue-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-block: 0.85rem;
+}
+
+.service-view-switch > button[aria-pressed='true'],
+.support-inbox-workspace .ticket-queue-switch > button[aria-pressed='true'] {
+  border-color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 15%, var(--surface));
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.service-result-summary {
+  margin-block: 0.7rem;
+  color: var(--muted-foreground, var(--muted));
+  font-size: 0.86rem;
+}
+
+.service-workspace button.service-inline-action {
+  display: inline-flex;
+  padding: 0.3rem;
+  min-block-size: 2rem;
+  border-color: transparent;
+  background: transparent;
+  color: var(--foreground);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  overflow-wrap: anywhere;
+}
+
+.service-workspace .service-inline-action:hover {
+  border-color: var(--border);
+}
+
+.service-review-preview {
+  display: -webkit-box;
+  max-inline-size: 31ch;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  margin-block: 0.35rem;
+  color: var(--muted-foreground, var(--muted));
+}
+
+.service-state,
+.support-inbox-workspace .ticket-list-state {
+  display: inline-flex;
+  align-items: center;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  padding: 0.18rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--foreground);
+  font-size: 0.8rem;
+}
+
+.service-state[data-state='Pending'],
+.support-inbox-workspace .ticket-list-state[data-state='Open'] {
+  border-color: color-mix(in oklch, oklch(61% 0.14 71) 44%, var(--border));
+  background: color-mix(in oklch, oklch(70% 0.15 78) 18%, var(--surface));
+}
+
+.service-state[data-state='Approved'] {
+  background: color-mix(in oklch, var(--primary) 16%, var(--surface));
+}
+
+.service-state[data-state='Reported'] {
+  background: color-mix(in oklch, oklch(61% 0.17 24) 15%, var(--surface));
+}
+
+.service-review-detail {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--surface-soft);
+  overflow-wrap: anywhere;
+}
+
+.service-review-detail h3 {
+  margin-block: 0.75rem;
+}
+
+.service-review-actions,
+.service-more {
+  margin-block-start: 0.8rem;
+}
+
+.support-inbox-workspace .ticket-workspace {
+  grid-template-columns: minmax(15rem, 1fr) minmax(0, 1.65fr);
+  gap: 1rem;
+}
+
+.support-inbox-workspace .ticket-panel {
+  padding: clamp(0.85rem, 2vw, 1.35rem);
+}
+
+.support-inbox-workspace .ticket-selection-empty {
+  border-style: dashed;
+  text-align: center;
+  padding-block: 3rem;
+  color: var(--muted-foreground, var(--muted));
+}
+
+.support-inbox-workspace .ticket-queue-switch > button {
+  padding-inline: 0.65rem;
+}
+
+.support-inbox-workspace .ticket-list {
+  gap: 0.55rem;
+  max-block-size: min(58vh, 40rem);
+  overflow: auto;
+  padding: 0.18rem;
+}
+
+.support-inbox-workspace .ticket-list button {
+  padding: 0.65rem 0.8rem;
+  background: var(--surface);
+}
+
+.support-inbox-workspace .ticket-list button[aria-current='page'] {
+  background: color-mix(in oklch, var(--primary) 12%, var(--surface));
+  box-shadow: inset -3px 0 0 var(--primary);
+}
+
+.support-inbox-workspace .ticket-list .ticket-list-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.support-inbox-workspace .ticket-conversation h2:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.support-inbox-workspace .ticket-message {
+  max-inline-size: min(100%, 40rem);
+}
+
+.support-inbox-workspace .ticket-message.support {
+  margin-inline-start: auto;
+  inline-size: fit-content;
+  min-inline-size: min(100%, 15rem);
+  background: color-mix(in oklch, var(--primary) 10%, var(--surface));
+}
+
+.support-inbox-workspace .ticket-selected-file {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 940px) {
+  .support-inbox-workspace .ticket-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .support-inbox-workspace
+    .ticket-workspace[data-selected]
+    .ticket-inbox:not(:has(.ticket-command)),
+  .support-inbox-workspace .ticket-workspace[data-selected] .ticket-inbox > :not(.ticket-command) {
+    display: none;
+  }
+
+  .support-inbox-workspace .ticket-list {
+    max-block-size: none;
+  }
+
+  .support-inbox-workspace .ticket-selection-empty {
+    display: none;
+  }
+}
+
+@media (max-width: 540px) {
+  .service-workspace-header {
+    align-items: flex-start;
+  }
+
+  .service-view-switch > button {
+    flex: 1 1 auto;
+  }
+
+  .customers-page .staff-identity {
+    min-inline-size: 11rem;
+  }
+}

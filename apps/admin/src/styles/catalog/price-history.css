@@ -1,0 +1,234 @@
+.price-history {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.price-history-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+.price-history-heading h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.price-history-heading p {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.price-history-emblem {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 1rem;
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 10%, transparent);
+}
+.price-history-refresh {
+  margin-inline-start: auto;
+  min-height: 44px;
+}
+.price-history-guide {
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  padding: 0.85rem 1rem;
+  background: var(--surface-soft);
+}
+.price-history-guide summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 24px;
+}
+.price-history-guide p {
+  font-size: 0.82rem;
+  line-height: 1.95;
+  margin-bottom: 0;
+}
+.price-history-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  width: 100%;
+}
+.price-history .admin-filter-main {
+  flex-wrap: wrap;
+}
+.price-history .admin-filter-primary {
+  flex: 1 1 100%;
+}
+.price-history .admin-filter-actions {
+  margin-inline-start: 0;
+}
+.price-history input,
+.price-history select {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+}
+.price-history-time-note {
+  margin: -0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.73rem;
+  line-height: 1.8;
+}
+.price-history-scope,
+.price-history-current {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  font-size: 0.8rem;
+}
+.price-history-scope {
+  color: var(--muted);
+}
+.price-history-current {
+  padding: 0.8rem 1rem;
+  border-radius: 0.85rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+}
+.price-history-current .badge {
+  margin-inline-start: 0.5rem;
+}
+.price-history-chart-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.9rem;
+  color: var(--muted);
+}
+.price-history-chart-hint p {
+  margin: 0;
+  font-size: 0.8rem;
+}
+.price-history-chart {
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+  min-width: 0;
+}
+.price-history-chart figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+.price-history-chart figcaption span,
+.price-history-chart p {
+  font-size: 0.73rem;
+  color: var(--muted);
+}
+.price-history-chart p {
+  line-height: 1.8;
+}
+.price-history-chart ol {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+.price-history-chart li {
+  display: grid;
+  grid-template-columns: minmax(6rem, 9rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border);
+  padding-block: 0.3rem;
+}
+.price-history-chart time {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.price-history-chart svg {
+  width: 100%;
+  height: 28px;
+  direction: ltr;
+}
+.price-history-axis {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.price-history-interval {
+  stroke: currentColor;
+  stroke-width: 3;
+}
+.price-history-old-dot {
+  stroke: currentColor;
+  fill: var(--surface);
+  stroke-width: 2;
+}
+.price-history-new-dot {
+  fill: currentColor;
+}
+.price-history .is-increase {
+  color: var(--primary);
+}
+.price-history .is-decrease {
+  color: var(--danger);
+}
+.price-history-change {
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
+  white-space: nowrap;
+}
+.price-history-table {
+  min-width: 0;
+}
+.price-history-table td {
+  font-variant-numeric: tabular-nums;
+}
+.price-history-table td small {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 0.3rem;
+}
+.price-history-table bdi {
+  overflow-wrap: anywhere;
+}
+.price-history-pagination {
+  flex-wrap: wrap;
+}
+.price-history button {
+  min-height: 44px;
+}
+@media (max-width: 600px) {
+  .price-history-heading {
+    align-items: flex-start;
+  }
+  .price-history-heading > div {
+    flex: 1;
+    min-width: 0;
+  }
+  .price-history-refresh {
+    width: 100%;
+    margin-inline-start: 0;
+  }
+  .price-history-filter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .price-history-chart {
+    padding: 0.75rem;
+  }
+  .price-history-chart li {
+    grid-template-columns: 5.2rem minmax(0, 1fr);
+    gap: 0.25rem;
+  }
+  .price-history-pagination > span {
+    flex: 1 1 100%;
+    text-align: center;
+    order: -1;
+  }
+}

@@ -1,5 +1,7 @@
 # فهرست و ویرایش شرایط خرید در پنل
 
+در D87 از فرم روش و طرح، ابتدا خلاصهٔ مبلغ ریالی، وضعیت، دسته و شرایط مرتبط را بازبینی کنید و سپس ذخیره را تأیید کنید. نرخ‌های طرح در فرم به درصد و حداکثر دو رقم اعشار وارد می‌شوند؛ سرور همچنان مقدار صحیح basis point و نسخهٔ مورد انتظار را دریافت می‌کند. پاسخ نامشخص نیازمند بازخوانی فهرست است. مرحلهٔ بازبینی جای کنترل مجوز و نسخه در سرور را نمی‌گیرد. مرجع طراحی: [راهنمای مجوز عملیات OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html).
+
 پذیرش جدید 2026-10-23: D20 توقف فضا را رفع کرد؛ **۱۲۹/۱۲۹ SQL واقعی** شامل آزمون‌های این برش موفق شدند. اعداد compile-only و توقف D19 متن زیر تاریخی‌اند؛ QA مرورگر متصل، main migration۱۸–۲۱ و Linux x64/بار هنوز جدا باقی‌اند. وضعیت جاری در [STATUS](STATUS.md) است.
 
 وضعیت 2026-10-23: سورس و آزمون مستقل آماده؛ پذیرش SQL/MFA و ذخیرهٔ متصل هنوز باقی است. D19 همچنان منتظر اعلام پایان آزادسازی فضاست. در این برش SQL/Docker، migration اصلی، runtime اصلی و Redis چت تغییر نکردند. migration تازه‌ای لازم نیست؛ سورس۲۰ و اصلی۱۷ است و۱۸/۱۹/۲۰ مربوط به برش‌های قبلی همچنان اعمال نشده‌اند.
@@ -41,7 +43,7 @@ summary شامل methods/enabledMethods/plans/enabledPlans به‌صورت رش�
 
 - **۳۷۲ بک‌اند موفق**:۱۹ تازه +۳۵۳ رگرسیون؛ فیلتر/cursor/scope، SQL translation محدود، سیاست کامل دسترسی، رد query تکراری و قرارداد native HTTP با reader مصنوعی. SQL یا JWT واقعی در این suite اجرا نشده‌اند.
 - **۳۱ contract پنل موفق**: پنج تازه، شامل schema/filter/detail، حفظ دستهٔ غایب، bigint، فرم با ارقام فارسی و رد شروط ناقص. TypeScript و build Vite مستقل `tmp/finance-admin-dist` موفق؛ dist زنده دست‌نخورده است. entry۳۳۱٫۲۳ + schemas preload۸۵٫۶۳، جمع اولیه۴۱۶٫۸۶/gzip۱۲۹٫۴۷kB و finance lazy۱۶٫۳۴/gzip۴٫۸۵kB است؛ هشدار۵۰۰kB ندارد و شاهد CWV/عملکرد دستگاه نیست.
-- **پنج wire**: پاسخ واقعی ASP.NET test host با reader مصنوعی در schema تولید TypeScript؛ null صریح، سقف long و شمارندهٔ بالای۲^۵۳ حفظ شدند. `scripts/verify-finance-wire.mts` و `artifacts/checks/finance-wire/report.json`.
+- **پنج wire**: پاسخ واقعی ASP.NET test host با reader مصنوعی در schema تولید TypeScript؛ null صریح، سقف long و شمارندهٔ بالای۲^۵۳ حفظ شدند. `scripts/verification/verify-finance-wire.mts` و `artifacts/checks/finance-wire/report.json`.
 - **۳۰ UI محدود** با کامپوننت‌های تولید و transport نمونه؛ تمام سه ذخیره رد شد. روش۵۰/۵۰/۱، صفحهٔ دوم طرح، جست‌وجوی مورد خارج صفحهٔ اول، خالی/فیلتر، جزئیات/دستهٔ غایب/مبلغ دقیق، reset با نسخهٔ یکسان، unknown/conflict، قرارداد خراب و خطای سرویس/retry، بدون metadata، read-only و موبایل۳۹۰×۸۴۴ بررسی شدند.۰ خواندن legacy کامل و۰ Cookie/Authorization در fixture بود. این شاهد نقش/MFA یا ذخیرهٔ واقعی نیست.
 - fixture ابتدا در حالت پاسخ ناسازگار، dictionary مشترک خودش را تغییر می‌داد و recovery هم پاسخ ناسازگار می‌گرفت؛ کپی مستقل ردیف اصلاح و فقط fixture اثبات‌شدهٔ خود پروژه restart شد. UI تولید پاسخ خراب را درست رد می‌کرد. دو lifecycle،۳۲ درخواست و console قبل/تب fresh نهایی صفر بودند. مقدار نام/توضیح/مبلغ/کلید log نشد؛ فقط ساختار و categoryIdهای ثابت نمونه ثبت شد.
 - **پنج SQL فقط compile/discovery**:۱۰۱ روش و فارسی/category/legacy،۱۰۱ طرح و summary، تغییر فقط دسته/نسخهٔ stale و دو writer همزمان در هر دو ماژول، تغییر میان header/rules با interceptor، نقش مالی/MFA واقعی در برابر نقش محتوا. **کل۹۶؛۵۹ شاهد اجرای قبلی و۳۷ تازه اجرا نشده‌اند.** هیچ‌کدام از پنج مورد این برش اجرا نشده است.

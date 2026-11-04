@@ -4,7 +4,7 @@
 
 ## داده و مالکیت
 
-Inventory مالک `Reservations`، `ReservationItems`، `ReservationEvents`، موجودی و دفتر تغییر است. migration چهاردهم `StockReservations` و SQL idempotent در `backend/sql/inventory.sql` قرار دارند. Sales تنها `IStockReservations` در SharedKernel را مصرف خواهد کرد؛ context ماژول دیگری در Inventory مصرف نمی‌شود.
+Inventory مالک `Reservations`، `ReservationItems`، `ReservationEvents`، موجودی و دفتر تغییر است. migration چهاردهم `StockReservations` و SQL idempotent در `database/sqlserver/snapshots/inventory.sql` قرار دارند. Sales تنها `IStockReservations` در SharedKernel را مصرف خواهد کرد؛ context ماژول دیگری در Inventory مصرف نمی‌شود.
 
 هر رزرو یک owner، OrderId و RequestId دارد. OrderId و RequestId به UUID بدون خط‌تیره نرمال می‌شوند. ترکیب owner/request و نیز OrderId یکتا هستند. شناسهٔ رزرو از owner/request به‌شکل پایدار ساخته می‌شود تا قفل آن پیش از هر خواندن SQL مشخص باشد؛ این شناسه مجوز دسترسی نیست و تمام عملیات مالک را بررسی می‌کنند. owner و actor شناسهٔ داخلی ASCII تا۶۴ حرف هستند؛ PII و اطلاعات پرداخت در رویداد ذخیره نمی‌شود.
 

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { isProcessedImage } from '@/lib/media-paths';
+import { isProcessedImage } from '@sayman/web-shared/lib/media/media-paths.ts';
 export const dynamic = 'force-dynamic';
 const noStore = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
 export async function GET(

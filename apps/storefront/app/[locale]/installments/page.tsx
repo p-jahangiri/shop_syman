@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation';
-import { serverI18n } from '@/lib/server-locale';
-import { getCatalogProducts } from '@/lib/catalog-server';
-import { lookupInputSchema } from '@/lib/catalog-contract';
-import { ProductsScope } from '@/components/locale-provider';
-import { Installments } from '@/components/installments';
-import { isPurchaseKindEnabled } from '@/lib/purchasing';
+import { serverI18n } from '@/lib/navigation/server-locale';
+import { getCatalogProducts } from '@/lib/catalog/catalog-server';
+import { lookupInputSchema } from '@/lib/catalog/catalog-contract';
+import { ProductsScope } from '@/components/navigation/locale-provider';
+import { Installments } from '@/components/credit/installments';
+import { isPurchaseKindEnabled } from '@/lib/catalog/purchasing';
 export async function generateMetadata() {
   const { t, locale, purchaseMethods } = await serverI18n();
   return {

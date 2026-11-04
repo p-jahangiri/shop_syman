@@ -49,9 +49,46 @@ public sealed class DigitalDeliveryRuleTests
     }
     [Fact]public void RemainingDigitalUnitsReserveEnoughFutureBoundedBatches()
     {
-        var v=View(61,200);var keys=new HashSet<string>{"digital"};
+        var v=View(61,32);var keys=new HashSet<string>{"digital"};
         Assert.Throws<BusinessException>(()=>FulfillmentCapacityRules.Plan(v,Select(v,new PartialDispatchSelection("digital",1,[])),keys,true));
-        FulfillmentCapacityRules.Plan(v,Select(v,new PartialDispatchSelection("digital",100,[])),keys,true);
-        Assert.Throws<BusinessException>(()=>FulfillmentCapacityRules.Plan(v,Select(v,new PartialDispatchSelection("digital",101,[])),keys,true));
+        FulfillmentCapacityRules.Plan(v,Select(v,new PartialDispatchSelection("digital",16,[])),keys,true);
+        var large=View(61,200);
+        Assert.Equal("fulfillment_capacity_conflict",Assert.Throws<BusinessException>(()=>FulfillmentCapacityRules.Plan(large,Select(large,new PartialDispatchSelection("digital",100,[])),keys,true)).Code);
+        var tooMany=View(0,101,0);
+        Assert.Throws<BusinessException>(()=>FulfillmentCapacityRules.Plan(tooMany,Select(tooMany,new PartialDispatchSelection("digital",101,[])),keys,true));
+    }
+    [Fact]public void PhysicalDispatchAlsoReservesFutureDigitalByteCapacity()
+    {
+        var v=View(61,33);var keys=new HashSet<string>{"digital"};
+        Assert.Equal("fulfillment_capacity_conflict",Assert.Throws<BusinessException>(()=>FulfillmentCapacityRules.Plan(v,Select(v,new PartialDispatchSelection("physical",1,[])),keys,false)).Code);
+        v=View(61,32);FulfillmentCapacityRules.Plan(v,Select(v,new PartialDispatchSelection("physical",1,[])),keys,false);
+        Assert.Equal(16,DigitalDeliveryRules.GuaranteedUnitsPerFutureBatch);
+    }
+    [Fact]public void EncryptedEnvelopeSerializationPreservesMaximumLiteralTextWithoutHtmlExpansion()
+    {
+        foreach(var text in new[]{new string('<',4096),new string('"',4096),new string('\\',4096),new string('آ',2048),string.Concat(Enumerable.Repeat("😀",1024)),new string('\u2028',1365)+"x","x"+new string('\t',4095)}){
+            var normalized=DigitalDeliveryRules.Normalize(Input()with{Lines=[new("digital",[text])]});
+            var json=DigitalDeliveryRules.SerializeEncryptedEnvelope(new{schemaVersion=1,ownerId=new string('o',64),orderId=Id(),deliveryId=Id(),itemId=Id(),lineKey=new string('l',64),position=100,content=normalized.Lines[0].Contents[0]});
+            Assert.True(System.Text.Encoding.UTF8.GetByteCount(json)<16384-1024);
+            using var doc=JsonDocument.Parse(json);Assert.Equal(text,doc.RootElement.GetProperty("content").GetString());
+        }
+    }
+    [Fact]public void NewOrdersReserveWorstCaseByteCapacityForEveryDigitalUnitAndAnyPhysicalHandoff()
+    {
+        DigitalDeliveryRules.RequireOrderCapacity([(true,1024)]);
+        Assert.Equal("digital_delivery_order_capacity_conflict",Assert.Throws<BusinessException>(()=>DigitalDeliveryRules.RequireOrderCapacity([(true,1025)])).Code);
+        DigitalDeliveryRules.RequireOrderCapacity([(true,1008),(false,1)]);
+        Assert.Throws<BusinessException>(()=>DigitalDeliveryRules.RequireOrderCapacity([(true,1009),(false,1)]));
+        DigitalDeliveryRules.RequireOrderCapacity([(true,504),(true,504),(false,1000000)]);
+        Assert.Throws<BusinessException>(()=>DigitalDeliveryRules.RequireOrderCapacity([(true,505),(true,504),(false,1)]));
+        DigitalDeliveryRules.RequireOrderCapacity([(false,1000000)]);
+    }
+    [Fact]public void NewDigitalOrderMetadataUsesTheActualStrictEscapedJsonBudgetWithoutTruncation()
+    {
+        DigitalDeliveryRules.RequireOrderCapacity([(true,16,"LICENSE","مجوز",new string('آ',600))]);
+        Assert.Equal("digital_delivery_metadata_capacity_conflict",Assert.Throws<BusinessException>(()=>DigitalDeliveryRules.RequireOrderCapacity([(true,1,"LICENSE","مجوز",new string('آ',700))])).Code);
+        Assert.Throws<BusinessException>(()=>DigitalDeliveryRules.RequireOrderCapacity([(true,1,"LICENSE",new string('<',700),"label")]));
+        Assert.Throws<BusinessException>(()=>DigitalDeliveryRules.RequireOrderCapacity([(true,1,new string('"',2100),"License","label")]));
+        DigitalDeliveryRules.RequireOrderCapacity([(false,1,"PHYSICAL","Physical",new string('آ',10000))]);
     }
 }

@@ -1,12 +1,12 @@
-import { isCreditClearancePath } from '@/lib/credit-clearance-contract';
-import { proxyCreditClearance } from '@/lib/credit-clearance-proxy';
-import { isChequeApprovalPath } from '@/lib/cheque-approval-contract';
-import { proxyChequeApproval } from '@/lib/cheque-approval-proxy';
-import { proxyCreditUpfront } from '@/lib/credit-upfront-proxy';
-import { isCreditUpfrontPath } from '@/lib/credit-upfront-contract';
-import { proxyCreditSchedules } from '@/lib/credit-schedule-proxy';
-import { proxyChequeLedger } from '@/lib/cheque-ledger-proxy';
-import { isChequeLedgerPath } from '@/lib/cheque-ledger-contract';
+import { isCreditClearancePath } from '@sayman/web-shared/lib/credit/credit-clearance-contract.ts';
+import { proxyCreditClearance } from '@/lib/credit/credit-clearance-proxy';
+import { isChequeApprovalPath } from '@sayman/web-shared/lib/credit/cheque-approval-contract.ts';
+import { proxyChequeApproval } from '@/lib/credit/cheque-approval-proxy';
+import { proxyCreditUpfront } from '@/lib/credit/credit-upfront-proxy';
+import { isCreditUpfrontPath } from '@sayman/web-shared/lib/credit/credit-upfront-contract.ts';
+import { proxyCreditSchedules } from '@/lib/credit/credit-schedule-proxy';
+import { proxyChequeLedger } from '@/lib/credit/cheque-ledger-proxy';
+import { isChequeLedgerPath } from '@sayman/web-shared/lib/credit/cheque-ledger-contract.ts';
 export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const u = new URL(request.url),

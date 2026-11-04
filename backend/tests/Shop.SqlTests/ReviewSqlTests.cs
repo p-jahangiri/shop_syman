@@ -2,9 +2,11 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Shop.Modules.Catalog.Infrastructure;
+using Shop.Modules.Catalog.Media;
 using Shop.Modules.Identity;
 using Shop.Modules.Reviews;
 using Shop.Modules.Sales;
@@ -29,6 +31,131 @@ public sealed class ReviewSqlTests(SqlFixture fixture):IClassFixture<SqlFixture>
     private static async Task<JsonNode> Body(HttpResponseMessage response,string? capture=null){using(response){var raw=await response.Content.ReadAsStringAsync();if(capture is not null&&Environment.GetEnvironmentVariable("SHOP_REVIEWS_WIRE_DIR") is {Length:>0} dir){Directory.CreateDirectory(dir);await File.WriteAllTextAsync(Path.Combine(dir,capture+".json"),raw);}Assert.True(response.IsSuccessStatusCode,$"{response.StatusCode}: {raw}");Assert.Contains("no-store",response.Headers.CacheControl!.ToString());return JsonNode.Parse(raw)!;}}
     private async Task<string> Product(){await using var scope=fixture.Factory.Services.CreateAsyncScope();var db=scope.ServiceProvider.GetRequiredService<CatalogDbContext>();var p=await db.Products.AsNoTracking().SingleAsync(p=>p.Id=="p1");var copy=new Shop.Modules.Catalog.Domain.Product{Slug="review-"+Id(),CategoryId=p.CategoryId,BrandId=p.BrandId,Status="Published"};db.Products.Add(copy);await db.SaveChangesAsync();return copy.Id;}
     private static async Task<JsonNode> Moderate(HttpClient admin,JsonNode review,string action,string? commandId=null,string? reply=null)=>await Body(await admin.PutAsJsonAsync($"/api/admin/reviews/{review["id"]}/commands/{commandId??Id()}",new ModerateReviewInput(review["version"]!.GetValue<string>(),review["content"]!["revisionId"]!.GetValue<string>(),action,"دلیل نمونهٔ بررسی",reply)));
+
+    [Fact]
+    public async Task PhotoRequiresApprovalForCurrentRevisionAndRemainsPrivateForItsOwnerAndModerators()
+    {
+        var person=await Customer();using var account=person.Client;
+        var other=await Customer();using var otherClient=other.Client;
+        using var admin=await Administrator();using var anonymous=fixture.Factory.CreateClient();
+        var scanner=new ReviewTestScanner();
+        using var scanHost=fixture.Factory.WithWebHostBuilder(builder=>builder.ConfigureTestServices(services=>services.AddSingleton<IImageScanner>(scanner)));
+        using var customer=scanHost.CreateClient(new(){HandleCookies=false});
+        customer.DefaultRequestHeaders.Add("Origin","http://127.0.0.1:3000");
+        customer.DefaultRequestHeaders.Authorization=account.DefaultRequestHeaders.Authorization;
+        var product=await Product();
+        var basePath=$"/api/reviews/products/{product}";
+        var valid=new ReviewPhotoInput("replace","image.png","image/png",Png());
+        var command=Id();
+        var input=Input() with{Photo=valid};
+        using(var unavailable=await account.PutAsJsonAsync($"{basePath}/commands/{command}",input))
+            Assert.Equal(HttpStatusCode.ServiceUnavailable,unavailable.StatusCode);
+        Assert.Null((await Body(await customer.GetAsync($"{basePath}/mine")))["review"]);
+        using(var forged=await customer.PutAsJsonAsync($"{basePath}/commands/{command}",input with{Photo=valid with{Name="image.svg"}}))
+            Assert.Equal(HttpStatusCode.BadRequest,forged.StatusCode);
+        Assert.Equal(0,scanner.Calls);
+        var saved=(await Body(await customer.PutAsJsonAsync($"{basePath}/commands/{command}",input)))["review"]!;
+        Assert.True(saved["hasPhoto"]!.GetValue<bool>());
+        var replay=await Body(await customer.PutAsJsonAsync($"{basePath}/commands/{command}",input));
+        Assert.True(replay["replayed"]!.GetValue<bool>());
+        Assert.Equal(1,scanner.Calls);
+        var photoPath=PhotoPath(saved);
+        await AssertNotFound(anonymous,photoPath);
+        await AssertNotFound(otherClient,$"{photoPath}/mine");
+        var ownerBytes=await AssertImage(customer,$"{photoPath}/mine");
+        var staffPath=$"/api/admin/reviews/{saved["id"]}/photos/{saved["content"]!["revisionId"]}";
+        Assert.Equal(ownerBytes,await AssertImage(admin,staffPath));
+        using(var forbidden=await account.GetAsync(staffPath))Assert.Equal(HttpStatusCode.Forbidden,forbidden.StatusCode);
+        var published=(await Moderate(admin,saved,"Approve"))["review"]!;
+        Assert.Equal(ownerBytes,await AssertImage(anonymous,photoPath));
+        var page=await Body(await anonymous.GetAsync(basePath));
+        Assert.True(Assert.Single(page["items"]!.AsArray())!["hasPhoto"]!.GetValue<bool>());
+        var kept=(await Body(await customer.PutAsJsonAsync($"{basePath}/commands/{Id()}",Input(published["version"]!.GetValue<string>()) with{Photo=new("keep")})))["review"]!;
+        var newPhotoPath=PhotoPath(kept);
+        await AssertNotFound(anonymous,photoPath);
+        await AssertNotFound(customer,$"{photoPath}/mine");
+        await AssertNotFound(anonymous,newPhotoPath);
+        Assert.Equal(ownerBytes,await AssertImage(customer,$"{newPhotoPath}/mine"));
+        var republished=(await Moderate(admin,kept,"Approve"))["review"]!;
+        Assert.Equal(ownerBytes,await AssertImage(anonymous,newPhotoPath));
+        var hidden=(await Moderate(admin,republished,"Hide"))["review"]!;
+        await AssertNotFound(anonymous,newPhotoPath);
+        var removed=(await Body(await customer.PutAsJsonAsync($"{basePath}/commands/{Id()}",Input(hidden["version"]!.GetValue<string>()) with{Photo=new("remove")})))["review"]!;
+        Assert.Null(removed["hasPhoto"]);
+        await AssertNotFound(customer,$"{PhotoPath(removed)}/mine");
+        await using var scope=fixture.Factory.Services.CreateAsyncScope();
+        var db=scope.ServiceProvider.GetRequiredService<ReviewsDbContext>();
+        var reviewId=saved["id"]!.GetValue<string>();
+        var revisions=await db.Revisions.Where(r=>r.ReviewId==reviewId).Select(r=>r.PhotoId).ToArrayAsync();
+        Assert.Equal(3,revisions.Length);
+        Assert.Single(revisions.Where(r=>r is not null).Distinct());
+        string PhotoPath(JsonNode row)=>$"{basePath}/photos/{row["id"]}/{row["content"]!["revisionId"]}";
+    }
+
+    [Fact]
+    public async Task DevelopmentReviewsNeverCountAsVerifiedAndAreHiddenOutsideDevelopment()
+    {
+        var product=await Product();using var admin=await Administrator();
+        await using var scope=fixture.Factory.Services.CreateAsyncScope();
+        var services=scope.ServiceProvider;
+        var db=services.GetRequiredService<ReviewsDbContext>();
+        var demoOwner=ReviewService.DemoOwnerPrefix+Id();
+        var saved=await services.GetRequiredService<ReviewService>().SaveAsync(demoOwner,product,Id(),Input(),CancellationToken.None);
+        Assert.True(saved.Review!.IsDemo);
+        var row=System.Text.Json.JsonSerializer.SerializeToNode(saved.Review,new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
+        await Moderate(admin,row,"Approve");
+        var development=await services.GetRequiredService<ReviewService>().PublicAsync(product,null,CancellationToken.None);
+        Assert.True(Assert.Single(development.Items).IsDemo);
+        Assert.False(development.Items[0].VerifiedBuyer);
+        Assert.Equal(1,development.RatingCounts[3]);
+        var production=new ReviewService(db,services.GetRequiredService<IReviewProductReader>(),services.GetRequiredService<IReviewPurchaseReader>(),
+            services.GetRequiredService<TimeProvider>(),services.GetRequiredService<IReviewPhotoProcessor>(),new(false));
+        var page=await production.PublicAsync(product,null,CancellationToken.None);
+        Assert.Empty(page.Items);
+        Assert.All(page.RatingCounts,count=>Assert.Equal(0,count));
+        Assert.Empty((await production.AdminAsync(null,product,null,CancellationToken.None)).Items);
+        Assert.Null(await production.OwnAsync(demoOwner,product,CancellationToken.None));
+    }
+
+    private static async Task AssertNotFound(HttpClient client,string path)
+    {
+        using var response=await client.GetAsync(path);
+        Assert.Equal(HttpStatusCode.NotFound,response.StatusCode);
+        Assert.True(response.Headers.CacheControl?.NoStore);
+    }
+
+    private static async Task<byte[]> AssertImage(HttpClient client,string path)
+    {
+        using var response=await client.GetAsync(path);
+        Assert.Equal(HttpStatusCode.OK,response.StatusCode);
+        Assert.Equal("image/webp",response.Content.Headers.ContentType?.MediaType);
+        Assert.True(response.Headers.CacheControl?.NoStore);
+        Assert.Contains("nosniff",response.Headers.GetValues("X-Content-Type-Options"));
+        var bytes=await response.Content.ReadAsByteArrayAsync();
+        Assert.True(ReviewPhotos.IsWebp(bytes));
+        return bytes;
+    }
+
+    private static string Png()
+    {
+        using var bitmap=new SkiaSharp.SKBitmap(20,20);
+        bitmap.Erase(SkiaSharp.SKColors.Olive);
+        using var output=bitmap.Encode(SkiaSharp.SKEncodedImageFormat.Png,100);
+        return Convert.ToBase64String(output.ToArray());
+    }
+
+    private sealed class ReviewTestScanner:IImageScanner
+    {
+        public bool Configured=>true;
+        public int Calls {get;private set;}
+        public Task ScanAsync(ReadOnlyMemory<byte> input,CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+            Assert.NotEmpty(input.ToArray());
+            Calls++;
+            return Task.CompletedTask;
+        }
+    }
     [Fact]
     public async Task PendingApprovalReplyReportEditAndHideRespectRevisionAndDoNotExposeOwner()
     {

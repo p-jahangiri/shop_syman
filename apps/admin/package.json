@@ -9,25 +9,37 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@emotion/cache": "11.14.0",
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.1",
     "@fontsource/vazirmatn": "5.3.0",
     "@hookform/resolvers": "5.2.2",
     "@microsoft/signalr": "10.0.11",
+    "@mui/material": "9.5.0",
+    "@mui/stylis-plugin-rtl": "9.5.0",
+    "@mui/x-data-grid": "9.17.0",
+    "@mui/x-date-pickers": "9.17.0",
     "@sayman/design-tokens": "0.1.0",
     "@tanstack/react-query": "5.104.5",
     "@tanstack/react-table": "8.21.3",
+    "date-fns-jalali": "4.4.0-0",
     "lucide-react": "1.61.0",
     "qrcode.react": "4.2.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "react-hook-form": "7.90.0",
-    "zod": "4.6.7"
+    "stylis": "4.4.0",
+    "zod": "4.6.7",
+    "@sayman/web-shared": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "26.6.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@types/stylis": "4.2.7",
     "@vitejs/plugin-react": "6.1.2",
     "typescript": "7.0.2",
-    "vite": "8.3.5"
+    "vite": "8.3.5",
+    "@swc/core": "1.15.3"
   }
 }

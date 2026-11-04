@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { proxyCreditApplications } from '@/lib/credit-application-proxy';
+import { proxyCreditApplications } from '@/lib/credit/credit-application-proxy';
 async function handle(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   return proxyCreditApplications(request, (await params).path, {
     SHOP_API_URL: process.env.SHOP_API_URL,

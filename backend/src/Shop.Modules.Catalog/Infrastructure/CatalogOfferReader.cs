@@ -103,7 +103,7 @@ public sealed class CatalogOfferReader(CatalogDbContext db,TimeProvider time):IC
             if(p.Attributes.Any(a=>category.Attributes.All(assigned=>assigned.AttributeId!=a.AttributeId)))throw CatalogOfferSnapshots.Unavailable();
             var visible=category.Attributes.Where(a=>a.ShowInSpecs||a.IsComparable).Select(a=>a.AttributeId).ToHashSet(StringComparer.Ordinal);
             var attributes=p.Attributes.Where(a=>visible.Contains(a.AttributeId)).OrderBy(a=>a.AttributeId,StringComparer.Ordinal).Select(a=>Attribute(a.AttributeId,a.ValueTextFa,a.ValueTextEn,a.ValueNumber,a.ValueBool,a.ValueOptionId,a.Selections.Select(s=>s.OptionId).ToArray())).ToArray();
-            var images=p.Media.OrderBy(m=>m.SortOrder).ThenBy(m=>m.Id,StringComparer.Ordinal).Select(m=>m.Url).ToArray();
+            var images=p.Media.Where(m=>m.Type=="image").OrderBy(m=>m.SortOrder).ThenBy(m=>m.Id,StringComparer.Ordinal).Select(m=>m.Url).ToArray();
             modelMap.Add(p.Id,new(p.Id,p.Slug,p.CategoryId,categoryFa.Name,categoryEn.Name,p.BrandId,brand.Name,fa.Name,en.Name,fa.Description,en.Description,images,attributes));
         }
         var result=new Dictionary<string,OfferSkuSnapshot>(StringComparer.Ordinal);

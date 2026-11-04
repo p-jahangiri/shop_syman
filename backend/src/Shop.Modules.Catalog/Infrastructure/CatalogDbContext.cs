@@ -36,13 +36,15 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
         }
     }
     private static string SearchValue(string value) { var normalized = PersianText.Normalize(value); if (normalized.Length is < 1 or > 500) throw new BusinessException("invalid_search_text", "Catalog text must contain one to 500 normalized characters."); return normalized; }
-    public override int SaveChanges(bool acceptAllChangesOnSuccess) { NormalizeSearch(); return base.SaveChanges(acceptAllChangesOnSuccess); }
-    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default) { NormalizeSearch(); return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken); }
+    public override int SaveChanges(bool acceptAllChangesOnSuccess) { UsedItemModel.Guard(this); NormalizeSearch(); return base.SaveChanges(acceptAllChangesOnSuccess); }
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default) { UsedItemModel.Guard(this); NormalizeSearch(); return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken); }
 
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.HasDefaultSchema("catalog");
         UsedItemModel.Configure(b);
+        ProductWorkspaceModel.Configure(b);
+        PublicVideoModel.Configure(b);
         AccountingLinkModel.Configure(b);
         AccountingImportModel.Configure(b);
         b.Entity<PublicImageAsset>(e=>{e.ToTable("PublicImages",t=>{t.HasCheckConstraint("CK_PublicImage_Status","[Status] IN ('Staged','Ready','Failed','Cleaning','Purged')");t.HasCheckConstraint("CK_PublicImage_Size","[InputBytes] > 0 AND [InputBytes] <= 8388608 AND [Width] > 0 AND [Height] > 0");});e.HasKey(x=>x.Id);e.Property(x=>x.Id).HasMaxLength(32);e.Property(x=>x.Status).HasMaxLength(16);e.Property(x=>x.CleanupLeaseId).HasMaxLength(32);e.Property(x=>x.OriginalSha256).HasMaxLength(64);e.Property(x=>x.CreatedBy).HasMaxLength(64);e.Property(x=>x.Version).IsRowVersion();e.HasIndex(x=>new{x.Status,x.CreatedAt});e.HasMany(x=>x.Variants).WithOne().HasForeignKey(x=>x.AssetId).OnDelete(DeleteBehavior.Cascade);});
@@ -70,6 +72,7 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
         b.Entity<Product>(e => {
             e.Property(x => x.Slug).HasMaxLength(150);
             e.HasIndex(x => x.Slug).IsUnique(); e.HasIndex(x => new { x.CategoryId, x.Status });
+            e.HasIndex(x=>new{x.ArchivedAt,x.UpdatedAt,x.Id});
             e.HasOne<Category>().WithMany().HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Brand>().WithMany().HasForeignKey(x => x.BrandId).OnDelete(DeleteBehavior.Restrict);
             e.HasMany(x => x.Translations).WithOne().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
@@ -79,7 +82,7 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
             e.HasMany(x => x.PurchaseMethods).WithOne().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
             e.HasMany(x => x.CreditPlans).WithOne().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
             e.Property(x => x.Status).HasMaxLength(20); e.Property(x => x.SellerId).HasMaxLength(64);
-            e.ToTable(t => t.HasCheckConstraint("CK_Product_Status", "[Status] IN ('Draft','Published','Hidden')"));
+            e.ToTable(t => { t.HasCheckConstraint("CK_Product_Status", "[Status] IN ('Draft','Published','Hidden')"); t.HasCheckConstraint("CK_Product_ArchivedVisibility", "[ArchivedAt] IS NULL OR [Status] = 'Hidden'"); });
         });
         b.Entity<ProductTranslation>(e => { e.HasKey(x => new { x.ProductId, x.Locale }); e.Property(x => x.Locale).HasMaxLength(2); e.Property(x => x.Name).HasMaxLength(250); e.HasIndex(x => x.Name); e.Property(x => x.SearchName).HasMaxLength(500); e.HasIndex(x => x.SearchName); });
         b.Entity<ProductVariant>(e => {
@@ -103,7 +106,7 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
             e.HasOne<AttributeOption>().WithMany().HasForeignKey(x => new { x.AttributeId, Id = x.ValueOptionId }).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.AttributeId, x.ValueNumber }); e.HasIndex(x => new { x.AttributeId, x.ValueOptionId });
         });
-        b.Entity<ProductMedia>(e => { e.Property(x => x.Url).HasMaxLength(1500); e.Property(x=>x.AssetId).HasMaxLength(32); e.HasOne<PublicImageAsset>().WithMany().HasForeignKey(x=>x.AssetId).OnDelete(DeleteBehavior.Restrict); });
+        b.Entity<ProductMedia>(e => { e.Property(x => x.Url).HasMaxLength(1500); e.Property(x=>x.VideoAssetId).HasMaxLength(32); e.HasOne<PublicVideoAsset>().WithMany().HasForeignKey(x=>x.VideoAssetId).OnDelete(DeleteBehavior.Restrict); e.Property(x=>x.AssetId).HasMaxLength(32); e.HasOne<PublicImageAsset>().WithMany().HasForeignKey(x=>x.AssetId).OnDelete(DeleteBehavior.Restrict); });
         b.Entity<ProductPurchaseMethod>().HasKey(x => new { x.ProductId, x.MethodId });
         b.Entity<ProductCreditPlan>().HasKey(x => new { x.ProductId, x.PlanId });
         b.Entity<VariantPurchaseMethod>().HasKey(x => new { x.VariantId, x.MethodId });

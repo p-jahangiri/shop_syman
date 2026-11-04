@@ -17,5 +17,5 @@ public sealed record AdminProductDetail(int SchemaVersion,AdminEditableProduct P
         p.Attributes.Select(a=>new AdminValue(a.AttributeId,a.ValueTextFa,a.ValueTextEn,a.ValueNumber,a.ValueBool,a.ValueOptionId,a.Selections.Select(s=>new AdminSelection(s.OptionId)).ToArray())).ToArray(),
         p.Variants.OrderBy(v=>v.Id,StringComparer.Ordinal).Select(v=>new AdminVariant(v.Id,Convert.ToBase64String(v.Version),v.Sku,v.PriceRial.ToString(CultureInfo.InvariantCulture),v.CompareAtPriceRial?.ToString(CultureInfo.InvariantCulture),v.Color,v.ColorNameFa,v.ColorNameEn,v.LabelFa,v.LabelEn,v.WarrantyFa,v.WarrantyEn,v.IsActive,
             v.Attributes.Select(a=>new AdminValue(a.AttributeId,a.ValueTextFa,a.ValueTextEn,a.ValueNumber,a.ValueBool,a.ValueOptionId,[])).ToArray(),v.PurchaseMethods.Select(m=>new AdminMethod(m.MethodId)).ToArray())).ToArray(),
-        p.Media.OrderBy(m=>m.SortOrder).Select(m=>new AdminMedia(m.Url,m.SortOrder)).ToArray(),p.PurchaseMethods.Select(m=>new AdminMethod(m.MethodId)).ToArray(),p.CreditPlans.Select(m=>new AdminPlan(m.PlanId)).ToArray()));
+        p.Media.Where(m=>m.Type=="image").OrderBy(m=>m.SortOrder).Select(m=>new AdminMedia(m.Url,m.SortOrder)).ToArray(),p.PurchaseMethods.Select(m=>new AdminMethod(m.MethodId)).ToArray(),p.CreditPlans.Select(m=>new AdminPlan(m.PlanId)).ToArray()));
 }

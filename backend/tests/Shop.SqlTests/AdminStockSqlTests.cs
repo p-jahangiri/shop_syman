@@ -31,6 +31,18 @@ public sealed class AdminStockSqlTests(SqlFixture fixture) : IClassFixture<SqlFi
         await using var final=fixture.Factory.Services.CreateAsyncScope();var service=final.ServiceProvider.GetRequiredService<AdminStockService>();var empty=await service.FindAsync(expected[0],CancellationToken.None);Assert.Null(empty.Version);Assert.Equal(0,empty.OnHand);Assert.Equal(0,empty.Reserved);var saved=await service.FindAsync(expected[1],CancellationToken.None);Assert.NotNull(saved.Version);Assert.Equal(8,saved.Available);
         var inactive=await service.PageAsync(AdminStockQuery.Create("كيبورد ۱۲ "+key,"false"),null,CancellationToken.None);var last=Assert.Single(inactive.Items);Assert.Equal(expected[100],last.VariantId);Assert.Equal("Draft",last.ProductStatus);
         Assert.Equal(100,await final.ServiceProvider.GetRequiredService<InventoryDbContext>().Stock.CountAsync(x=>expected.Contains(x.VariantId)));
+
+        var workspace = final.ServiceProvider.GetRequiredService<IAdminStockWorkspace>();
+        var low = await workspace.ReadAsync(AdminStockWorkspaceQuery.Create("كيبورد ۱۲ "+key, "all", 0, 3, "available", "asc", 0, 25), CancellationToken.None);
+        Assert.Equal(1, low.Total);
+        Assert.Equal(expected[0], Assert.Single(low.Items).Id);
+        var ascending = await workspace.ReadAsync(AdminStockWorkspaceQuery.Create(key, "true", null, null, "available", "asc", 0, 25), CancellationToken.None);
+        var next = await workspace.ReadAsync(AdminStockWorkspaceQuery.Create(key, "true", null, null, "available", "asc", 1, 25), CancellationToken.None);
+        var descending = await workspace.ReadAsync(AdminStockWorkspaceQuery.Create(key, "true", null, null, "available", "desc", 0, 25), CancellationToken.None);
+        Assert.Equal(100, ascending.Total);
+        Assert.Equal(expected.Take(25), ascending.Items.Select(i => i.Id));
+        Assert.Equal(expected.Skip(25).Take(25), next.Items.Select(i => i.Id));
+        Assert.Equal(expected.Skip(1).Take(25), descending.Items.Select(i => i.Id));
     }
     private static async Task<JsonNode> Json(HttpResponseMessage result){using(result){Assert.True(result.IsSuccessStatusCode,await result.Content.ReadAsStringAsync());Assert.Contains("no-store",result.Headers.CacheControl!.ToString());return JsonNode.Parse(await result.Content.ReadAsStringAsync())!;}}
     private async Task<HttpClient> Staff(string role)
@@ -45,6 +57,11 @@ public sealed class AdminStockSqlTests(SqlFixture fixture) : IClassFixture<SqlFi
         using var manager=await Staff("InventoryManager");var page=await Json(await manager.GetAsync("/api/admin/inventory/variants"));var row=page["items"]!.AsArray()[0]!;Assert.True(page["items"]!.AsArray().Count<=50);var one=await Json(await manager.GetAsync("/api/admin/inventory/variants/"+row["variantId"]!.GetValue<string>()));Assert.Equal(row["variantId"]!.GetValue<string>(),one["variantId"]!.GetValue<string>());
         var summary=await Json(await manager.GetAsync("/api/admin/inventory/summary"));foreach(var key in new[]{"stockRecords","availableVariants","reservedVariants"})Assert.True(long.Parse(summary[key]!.GetValue<string>(),CultureInfo.InvariantCulture)>=0);
         var catalog=await Json(await manager.GetAsync("/api/admin/catalog/summary"));Assert.True(long.Parse(catalog["products"]!.GetValue<string>(),CultureInfo.InvariantCulture)>0);Assert.Equal(HttpStatusCode.NotFound,(await manager.GetAsync("/api/admin/inventory/variants/missing-variant")).StatusCode);
+        var workspace = await Json(await manager.GetAsync("/api/admin/inventory/workspace/variants?pageSize=25&sort=sku"));
+        Assert.True(workspace["total"]!.GetValue<int>() > 0);
+        Assert.Equal(25, workspace["pageSize"]!.GetValue<int>());
+        Assert.Equal(HttpStatusCode.BadRequest, (await manager.GetAsync("/api/admin/inventory/workspace/variants?minAvailable=4&maxAvailable=2")).StatusCode);
         using var content=await Staff("ContentManager");Assert.Equal(HttpStatusCode.Forbidden,(await content.GetAsync("/api/admin/inventory/variants")).StatusCode);Assert.Equal(HttpStatusCode.Forbidden,(await content.GetAsync("/api/admin/inventory/summary")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await content.GetAsync("/api/admin/inventory/workspace/variants")).StatusCode);
     }
 }

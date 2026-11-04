@@ -12,7 +12,7 @@ root=Path(__file__).resolve().parent.parent
 with socket.socket() as probe:
     try:probe.bind(('127.0.0.1',3002))
     except OSError:raise SystemExit('Port 3002 is occupied. No existing process was changed.')
-source="""import {storefrontSnapshot} from './apps/storefront/lib/fixtures.ts';import {localizeData} from './apps/storefront/lib/i18n.ts';import {previewFilters} from './apps/storefront/lib/catalog-preview.ts';process.stdout.write(JSON.stringify(Object.fromEntries(['fa','en'].map(locale=>[locale,{snapshot:{...localizeData(storefrontSnapshot,locale),locale},filters:Object.fromEntries(storefrontSnapshot.categories.map(c=>[c.key,previewFilters(locale,c.key)]))}]))));"""
+source="""import {storefrontSnapshot} from './apps/storefront/lib/data/fixtures.ts';import {localizeData} from './apps/storefront/lib/navigation/i18n.ts';import {previewFilters} from './apps/storefront/lib/catalog/catalog-preview.ts';process.stdout.write(JSON.stringify(Object.fromEntries(['fa','en'].map(locale=>[locale,{snapshot:{...localizeData(storefrontSnapshot,locale),locale},filters:Object.fromEntries(storefrontSnapshot.categories.map(c=>[c.key,previewFilters(locale,c.key)]))}]))));"""
 fixtures=json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',source],cwd=root))
 def options(locale,key):
     values=fixtures[locale]['filters']['phones']['attributes'];facet=next(v for v in values if v['key']==key)

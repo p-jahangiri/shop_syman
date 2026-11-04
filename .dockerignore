@@ -32,3 +32,15 @@ deploy/shared
 **/__pycache__
 **/*.pyc
 **/.pytest_cache
+**/.DS_Store
+**/coverage
+**/.ssh
+**/*.ldf
+**/*.dump
+apps/**/*.test.*
+apps/**/*.test-*
+apps/**/*.spec.*
+apps/storefront/next-env.d.ts
+apps/admin/tests
+apps/storefront/tests
+packages/web-shared/testing

@@ -44,7 +44,7 @@ submit فقط `{requestId,cartVersion,expected:[{listingId,fingerprint}],note?}`
 
 درخواست UUID N32/rowversion، identity برای مرجع `SR-…`، owner/locale/cartVersion/hash و ContainsDemo دارد. UNIQUE `(OwnerId,SubmitRequestId)` و `(CartId,SubmittedCartVersion)` دفاع مصرف تکراری‌اند. `SourcingRequestLines/Images/Attributes/Options` رابطه‌ای با FK داخلی Market و CHECK نوع/مقدارند. event append-only و receipt دارای PK `(ActorId,Operation,RequestId)`، TargetId، hash و ResultJson محدود است. FK میان Sales/Market/Catalog افزوده نشده است.
 
-**در دیتابیس تازه Inventory باید پیش از Catalog migrate شود**؛ view تازه به `inventory.AvailableStockV1` وابسته است. Program، SqlFixture و UiHarness ترتیب Identity→Payments→Credit→Cms→Inventory→Catalog→Sales→Market دارند. این ترتیب فقط bootstrap schema است و ترتیب قفل دامنه را عوض نمی‌کند. شکست نخست targetedSQL از همین وابستگی و پیش از تست دامنه بود؛ لاگ شکست محفوظ و اجرای اصلاح‌شده موفق است. سه model check بدون تغییر جامانده و SQLهای idempotent Catalog/Sales/Market تولید شده‌اند؛ [گزارش EF](../artifacts/checks/sourcing-ef-summary.json) و [راهنمای SQL](../backend/sql/README.md).
+**در دیتابیس تازه Inventory باید پیش از Catalog migrate شود**؛ view تازه به `inventory.AvailableStockV1` وابسته است. Program، SqlFixture و UiHarness ترتیب Identity→Payments→Credit→Cms→Inventory→Catalog→Sales→Market دارند. این ترتیب فقط bootstrap schema است و ترتیب قفل دامنه را عوض نمی‌کند. شکست نخست targetedSQL از همین وابستگی و پیش از تست دامنه بود؛ لاگ شکست محفوظ و اجرای اصلاح‌شده موفق است. سه model check بدون تغییر جامانده و SQLهای idempotent Catalog/Sales/Market تولید شده‌اند؛ [گزارش EF](../artifacts/checks/sourcing-ef-summary.json) و [راهنمای SQL](../database/sqlserver/snapshots/README.md).
 
 ## API بومی و دسترسی
 

@@ -1,4 +1,4 @@
-import { proxyWishlist } from '@/lib/wishlist-proxy';
+import { proxyWishlist } from '@/lib/wishlist/wishlist-proxy';
 const handler = (request: Request) =>
   proxyWishlist(request, {
     SHOP_API_URL: process.env.SHOP_API_URL,

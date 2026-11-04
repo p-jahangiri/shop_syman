@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { getStorefront } from '@/lib/storefront-data';
+import { getStorefront } from '@/lib/data/storefront-data';
 export async function GET(_request: Request, { params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (locale !== 'fa' && locale !== 'en') return new Response(null, { status: 404 });

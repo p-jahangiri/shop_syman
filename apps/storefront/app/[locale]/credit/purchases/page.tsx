@@ -1,5 +1,5 @@
-import { CustomerCreditPurchases } from '@/components/customer-credit-purchases';
-import { serverI18n } from '@/lib/server-locale';
+import { CustomerCreditPurchases } from '@/components/credit/customer-credit-purchases';
+import { serverI18n } from '@/lib/navigation/server-locale';
 export async function generateMetadata() {
   const { locale } = await serverI18n();
   return {

@@ -25,8 +25,8 @@ PREPARED = ROOT / 'tmp/d55-api-prepared.json'
 EVIDENCE = CHECKS / 'd55-cms-appearance-backend-tests.json'
 UNIT = ROOT / 'backend/tests/Shop.Tests/TestResults/d55-unit-full.trx'
 ALLOWED = {
-    'backend/src/Shop.Modules.Cms/Content.cs',
-    'backend/src/Shop.Modules.Cms/SiteAppearanceRules.cs',
+    'backend/src/Shop.Modules.Cms/Persistence/Content.cs',
+    'backend/src/Shop.Modules.Cms/Domain/SiteAppearanceRules.cs',
     'backend/tests/Shop.Tests/CmsAppearanceTests.cs',
     'backend/tests/Shop.SqlTests/CmsAppearanceSqlTests.cs',
 }

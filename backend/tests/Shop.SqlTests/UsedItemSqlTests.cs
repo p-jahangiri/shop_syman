@@ -6,7 +6,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
+using Shop.Modules.Catalog.Application;
+using Shop.Modules.Catalog.Domain;
 using Shop.Modules.Catalog.Infrastructure;
+using Shop.Modules.Cms;
 using Shop.Modules.Inventory;
 using Shop.Modules.Sales;
 using Shop.SharedKernel;
@@ -18,6 +21,121 @@ public sealed class UsedItemSqlTests(OrderFixture fixture):IClassFixture<OrderFi
     private static UsedItemConditionData Facts(int? battery=87)=>new(Id(),"passed",battery is null?"unknown":"measured",battery,"intact","worn","unknown","دادهٔ نمونه؛ یک خط روی بدنه","Sample: one scratch",DateTimeOffset.UtcNow.AddMinutes(-1));
     private async Task<JsonNode> Detail(string variant)=>await OrderFixture.Json(await fixture.Admin.GetAsync("/api/admin/used-items/"+variant));
     private async Task<JsonNode> Save(string variant,UsedItemConditionData facts){var detail=await Detail(variant);return await OrderFixture.Json(await fixture.Admin.PutAsJsonAsync($"/api/admin/used-items/{variant}/commands/{Id()}",new SaveUsedItemInput(detail["variantVersion"]!.GetValue<string>(),facts)));}
+    [Fact]
+    public async Task ConditionScopesMatchingSkuAndPricesBeforePagingWithoutChangingTheModel()
+    {
+        var item = await fixture.Product(price: 299, stock: 1);
+        var used = Facts();
+        await Save(item.Variant, used);
+        var usedOnly = await fixture.Product(stock: 1);
+        await Save(usedOnly.Variant, Facts());
+        await using var scope = fixture.Sql.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+        var original = await db.Variants.AsNoTracking().SingleAsync(v => v.Id == item.Variant);
+        var category = new Category {
+            Slug = "condition-" + Id(), IsActive = true, ImageUrl = "/products/charger.svg",
+            Translations = [new() { Locale = "en", Name = "Condition catalogue" }, new() { Locale = "fa", Name = "دستهٔ وضعیت کالا" }],
+        };
+        db.Categories.Add(category);
+        var model = await db.Products.Include(p => p.Translations).SingleAsync(p => p.Id == original.ProductId);
+        model.CategoryId = category.Id;
+        var fresh = new ProductVariant { ProductId = model.Id, Sku = "FRESH-" + Id(), IsActive = true, PriceRial = 501, LabelEn = "New unit", LabelFa = "نو" };
+        db.Variants.Add(fresh);
+        await db.SaveChangesAsync();
+        var name = model.Translations.Single(t => t.Locale == "en").Name;
+        using var client = fixture.Sql.Factory.CreateClient(new() { HandleCookies = false });
+        async Task<JsonNode> Search(CatalogSearchInput input) => await OrderFixture.Json(await client.PostAsJsonAsync("/api/catalog/en/search", input));
+        var input = new CatalogSearchInput(CategoryId: model.CategoryId, Query: name, PageSize: 1);
+        var secondHand = await Search(input with { Condition = "used" });
+        Assert.Equal(item.Variant, secondHand["matchingVariantIds"]![model.Id]!.GetValue<string>());
+        Assert.Equal(2, secondHand["products"]![0]!["variants"]!.AsArray().Count);
+        Assert.Equal(fresh.Id, (await Search(input with { Condition = "new" }))["matchingVariantIds"]![model.Id]!.GetValue<string>());
+        Assert.Equal(0, (await Search(input with { Condition = "new", MaxPriceRial = "300" }))["total"]!.GetValue<int>());
+        Assert.Equal(0, (await Search(input with { Condition = "used", Query = fresh.Sku }))["total"]!.GetValue<int>());
+        using var invalid = await client.PostAsJsonAsync("/api/catalog/en/search", input with { Condition = "invalid" });
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        var filters = await OrderFixture.Json(await client.GetAsync($"/api/catalog/en/filters?categoryId={model.CategoryId}&condition=used"));
+        Assert.Equal("299", filters["maxPriceRial"]!.GetValue<string>());
+
+        var usedOnlySlug = await db.Products.Where(p => p.Variants.Any(v => v.Id == usedOnly.Variant))
+            .Select(p => p.Slug).SingleAsync();
+        const string contentPath = "/api/admin/content/site/en";
+        async Task<JsonNode> Document() =>
+            (await OrderFixture.Json(await fixture.Admin.GetAsync("/api/admin/content")))["documents"]!.AsArray()
+                .Single(doc => (string?)doc!["key"] == "site" && (string?)doc["locale"] == "en")!;
+        async Task Draft(JsonObject content)
+        {
+            using var response = await fixture.Admin.PutAsJsonAsync(contentPath, new ContentInput(content, (string?)(await Document())["version"]));
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        }
+        async Task Publish()
+        {
+            using var response = await fixture.Admin.PostAsJsonAsync(contentPath + "/publish", new { version = (string?)(await Document())["version"] });
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        }
+        var oldContent = JsonNode.Parse((string)(await Document())["draftJson"]!)!.AsObject();
+        var changed = oldContent.DeepClone().AsObject();
+        var appearance = changed["appearance"] as JsonObject;
+        if (appearance is null) changed["appearance"] = appearance = new JsonObject();
+        appearance["showUsedProducts"] = false;
+        try
+        {
+            await Draft(changed);
+            Assert.Equal(item.Variant, (await Search(input with { Condition = "used" }))["matchingVariantIds"]![model.Id]!.GetValue<string>());
+            await Publish();
+
+            using var hidden = await client.PostAsJsonAsync("/api/catalog/en/search", input with { Condition = "used" });
+            Assert.Equal(HttpStatusCode.NotFound, hidden.StatusCode);
+            using var hiddenFilters = await client.GetAsync($"/api/catalog/en/filters?categoryId={model.CategoryId}&condition=used");
+            Assert.Equal(HttpStatusCode.NotFound, hiddenFilters.StatusCode);
+            var publicResults = await Search(input);
+            Assert.Equal(fresh.Id, publicResults["matchingVariantIds"]![model.Id]!.GetValue<string>());
+            Assert.Equal(fresh.Id, (string?)Assert.Single(publicResults["products"]![0]!["variants"]!.AsArray())!["id"]);
+            Assert.Equal(0, (int?)(await Search(input with { MaxPriceRial = "300" }))["total"]);
+
+            var lookup = new ProductLookupInput(VariantIds: [item.Variant, usedOnly.Variant]);
+            Assert.Empty((await OrderFixture.Json(await client.PostAsJsonAsync("/api/catalog/en/lookup", lookup)))["products"]!.AsArray());
+            Assert.Equal(2, (await OrderFixture.Json(await client.PostAsJsonAsync("/api/catalog/fa/lookup", lookup)))["products"]!.AsArray().Count);
+            var offline = await OrderFixture.Json(await client.GetAsync("/api/catalog/en/offline"));
+            Assert.DoesNotContain(offline["products"]!.AsArray(), product => (string?)product!["slug"] == usedOnlySlug);
+            var sitemap = await OrderFixture.Json(await client.GetAsync("/api/catalog/fa/sitemap/products"));
+            var entry = Assert.Single(sitemap["items"]!.AsArray(), row => (string?)row!["key"] == usedOnlySlug);
+            Assert.False((bool?)entry!["en"]);
+            Assert.Equal(used.InspectionId, (string?)(await Detail(item.Variant))["inspection"]!["inspectionId"]);
+            var checkout = await scope.ServiceProvider.GetRequiredService<ICheckoutCatalogReader>().ReadCheckoutVariantsAsync("en", [item.Variant], default);
+            Assert.Equal(used.InspectionId, Assert.Single(checkout).Value.UsedCondition!.InspectionId);
+        }
+        finally
+        {
+            await Draft(oldContent);
+            await Publish();
+        }
+        Assert.Equal(item.Variant, (await Search(input with { Condition = "used" }))["matchingVariantIds"]![model.Id]!.GetValue<string>());
+    }
+    [Fact]
+    public async Task VariantChoicesSeparateReportedDevicesAndSearchTheProductName()
+    {
+        var item = await fixture.Product(stock: 1);
+        var detail = await Detail(item.Variant);
+        await using var scope = fixture.Sql.Factory.Services.CreateAsyncScope();
+        var catalog = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+        var productId = detail["productId"]!.GetValue<string>();
+        var productName = await catalog.Products.Where(p => p.Id == productId)
+            .SelectMany(p => p.Translations).Where(t => t.Locale == "fa").Select(t => t.Name).SingleAsync();
+
+        async Task<JsonArray> Choices(bool reported)
+        {
+            var path = "/api/admin/used-items/variants?reported=" + reported + "&query=" + Uri.EscapeDataString(productName);
+            return (await OrderFixture.Json(await fixture.Admin.GetAsync(path)))["items"]!.AsArray();
+        }
+        bool SameVariant(JsonNode? row) => row?["variantId"]?.GetValue<string>() == item.Variant;
+
+        Assert.DoesNotContain(await Choices(true), SameVariant);
+        Assert.Equal(productName, Assert.Single(await Choices(false), SameVariant)!["productNameFa"]!.GetValue<string>());
+        await Save(item.Variant, Facts());
+        Assert.DoesNotContain(await Choices(false), SameVariant);
+        Assert.Contains(await Choices(true), SameVariant);
+    }
     [Fact]public async Task DatabaseCheckRejectsMeasuredBatteryWithNullEvenWhenSqlWouldOtherwiseTreatItAsUnknown()
     {
         var item=await fixture.Product(stock:1);await Save(item.Variant,Facts(null));await using var scope=fixture.Sql.Factory.Services.CreateAsyncScope();var db=scope.ServiceProvider.GetRequiredService<CatalogDbContext>();

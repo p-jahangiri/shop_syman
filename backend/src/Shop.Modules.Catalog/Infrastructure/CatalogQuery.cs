@@ -29,17 +29,33 @@ public sealed class TextFacetValue
 }
 public static class CatalogQuery
 {
-    public static IQueryable<TextFacetValue> TextValues(CatalogDbContext db, IQueryable<string> publishedIds, string id, string locale, string[]? tokens = null) =>
-        db.Set<ProductAttributeValue>().Where(a => a.AttributeId == id && publishedIds.Contains(a.ProductId) && db.Variants.Any(v=>v.ProductId==a.ProductId&&v.IsActive&&!db.Set<VariantAttributeValue>().Any(o=>o.VariantId==v.Id&&o.AttributeId==id)) && (tokens == null || tokens.All(term => a.FacetSearch != null && a.FacetSearch.Contains(term)))).Select(a => new { Value = a.ValueTextFa ?? a.ValueTextEn, Label = locale == "en" ? a.ValueTextEn ?? a.ValueTextFa : a.ValueTextFa ?? a.ValueTextEn })
-            .Union(db.Set<VariantAttributeValue>().Where(a => a.AttributeId == id && db.Variants.Any(v => v.Id == a.VariantId && v.IsActive && publishedIds.Contains(v.ProductId)) && (tokens == null || tokens.All(term => a.FacetSearch != null && a.FacetSearch.Contains(term)))).Select(a => new { Value = a.ValueTextFa ?? a.ValueTextEn, Label = locale == "en" ? a.ValueTextEn ?? a.ValueTextFa : a.ValueTextFa ?? a.ValueTextEn }))
+    public static IQueryable<ProductVariant> ActiveVariants(CatalogDbContext db, string? condition)
+    {
+        var variants = db.Variants.Where(v => v.IsActive);
+        return condition switch {
+            "used" => variants.Where(v => v.UsedInspectionId != null),
+            "new" => variants.Where(v => v.UsedInspectionId == null),
+            _ => variants,
+        };
+    }
+    public static IQueryable<TextFacetValue> TextValues(CatalogDbContext db, IQueryable<string> publishedIds, string id, string locale, string[]? tokens = null, string? condition = null)
+    {
+        var variants = ActiveVariants(db, condition);
+        return db.Set<ProductAttributeValue>().Where(a => a.AttributeId == id && publishedIds.Contains(a.ProductId) && variants.Any(v=>v.ProductId==a.ProductId&&!db.Set<VariantAttributeValue>().Any(o=>o.VariantId==v.Id&&o.AttributeId==id)) && (tokens == null || tokens.All(term => a.FacetSearch != null && a.FacetSearch.Contains(term)))).Select(a => new { Value = a.ValueTextFa ?? a.ValueTextEn, Label = locale == "en" ? a.ValueTextEn ?? a.ValueTextFa : a.ValueTextFa ?? a.ValueTextEn })
+            .Union(db.Set<VariantAttributeValue>().Where(a => a.AttributeId == id && variants.Any(v => v.Id == a.VariantId && publishedIds.Contains(v.ProductId)) && (tokens == null || tokens.All(term => a.FacetSearch != null && a.FacetSearch.Contains(term)))).Select(a => new { Value = a.ValueTextFa ?? a.ValueTextEn, Label = locale == "en" ? a.ValueTextEn ?? a.ValueTextFa : a.ValueTextFa ?? a.ValueTextEn }))
             .Where(t => t.Value != null && t.Value != "").GroupBy(t => t.Value).Select(g => new TextFacetValue { Value = g.Key!, Label = g.Min(t => t.Label) });
-    public static IQueryable<decimal?> NumberValues(CatalogDbContext db, IQueryable<string> publishedIds, string id) =>
-        db.Set<ProductAttributeValue>().Where(a => a.AttributeId == id && publishedIds.Contains(a.ProductId) && db.Variants.Any(v=>v.ProductId==a.ProductId&&v.IsActive&&!db.Set<VariantAttributeValue>().Any(o=>o.VariantId==v.Id&&o.AttributeId==id)) && a.ValueNumber != null).Select(a => a.ValueNumber)
-            .Union(db.Set<VariantAttributeValue>().Where(a => a.AttributeId == id && a.ValueNumber != null && db.Variants.Any(v => v.Id == a.VariantId && v.IsActive && publishedIds.Contains(v.ProductId))).Select(a => a.ValueNumber)).Distinct();
+    }
+    public static IQueryable<decimal?> NumberValues(CatalogDbContext db, IQueryable<string> publishedIds, string id, string? condition = null)
+    {
+        var variants = ActiveVariants(db, condition);
+        return db.Set<ProductAttributeValue>().Where(a => a.AttributeId == id && publishedIds.Contains(a.ProductId) && variants.Any(v=>v.ProductId==a.ProductId&&!db.Set<VariantAttributeValue>().Any(o=>o.VariantId==v.Id&&o.AttributeId==id)) && a.ValueNumber != null).Select(a => a.ValueNumber)
+            .Union(db.Set<VariantAttributeValue>().Where(a => a.AttributeId == id && a.ValueNumber != null && variants.Any(v => v.Id == a.VariantId && publishedIds.Contains(v.ProductId))).Select(a => a.ValueNumber)).Distinct();
+    }
     public static IQueryable<CatalogCandidate> Match(CatalogDbContext db, CatalogSearchQuery query, string locale, string[] categoryIds, AttributeDefinition[] definitions, DateTimeOffset now)
     {
+        var variants = ActiveVariants(db, query.Condition);
         var result = from p in db.Products.AsNoTracking()
-                     from v in db.Variants.Where(v => v.ProductId == p.Id && v.IsActive)
+                     from v in variants.Where(v => v.ProductId == p.Id)
                      join brand in db.Brands.AsNoTracking() on p.BrandId equals brand.Id
                      join a in db.AvailableStock on v.Id equals a.VariantId into stock
                      from a in stock.DefaultIfEmpty()
@@ -175,12 +191,12 @@ public sealed partial class CatalogService
         while(pending.TryDequeue(out var parent))foreach(var child in children[parent])if(ids.Add(child.Id))pending.Enqueue(child.Id);
         return new(ids.ToArray(),versions);
     }
-    public Task<CatalogSearchPage> SearchAsync(string locale,CatalogSearchInput input,CancellationToken ct)
+    public Task<CatalogSearchPage> SearchAsync(string locale,CatalogSearchInput input,CancellationToken ct,bool hideUsed=false)
     {
         var query=CatalogSearchQuery.Create(input);
-        return CatalogReadRetry.RunAsync(token=>SearchAttemptAsync(locale,query,token),ct);
+        return CatalogReadRetry.RunAsync(token=>SearchAttemptAsync(locale,query,token,hideUsed),ct);
     }
-    private async Task<CatalogSearchPage> SearchAttemptAsync(string locale,CatalogSearchQuery query,CancellationToken ct)
+    private async Task<CatalogSearchPage> SearchAttemptAsync(string locale,CatalogSearchQuery query,CancellationToken ct,bool hideUsed)
     {
         if(!await SearchFieldsReadyAsync(ct))throw new BusinessException("catalog_reindex_required","Catalog search maintenance is incomplete. Try again after the service is ready.");
         var scope=await QueryCategoryScopeAsync(query.CategoryId,ct);var categoryIds=scope.Ids;
@@ -194,34 +210,35 @@ public sealed partial class CatalogService
         if(winners.Length!=pageIds.Length)throw new BusinessException("version_conflict","Catalogue matches changed while selecting a page.");
         var productVersions=CheckoutCatalogQuery.Versions(winners.Select(w=>new CatalogReadVersion(w.Id,w.ProductVersion)));
         var variantVersions=CheckoutCatalogQuery.Versions(winners.Select(w=>new CatalogReadVersion(w.VariantId,w.VariantVersion)));
-        var snapshot=await ReadCoreAttemptAsync(locale,pageIds,false,ct,productVersions,variantVersions);var products=snapshot.Products.ToDictionary(p=>p.Id);
+        var snapshot=await ReadCoreAttemptAsync(locale,pageIds,false,ct,productVersions,variantVersions,hideUsed);var products=snapshot.Products.ToDictionary(p=>p.Id);
         if(winners.Any(w=>!products.TryGetValue(w.Id,out var product)||!product.Variants.Any(v=>v.Id==w.VariantId)))throw new BusinessException("version_conflict","A catalogue match is no longer visible.");
         await CatalogReadVersions.EnsureSnapshotsAsync<Brand>(db,CheckoutCatalogQuery.Versions(winners.Select(w=>new CatalogReadVersion(w.BrandId,w.BrandVersion))),ct);
         await CatalogReadVersions.EnsureSnapshotsAsync<Category>(db,scope.Versions,ct);await CatalogReadVersions.EnsureAsync(db,definitions,ct);
         return new(1,locale,pageIds.Select(id=>products[id]).ToArray(),winners.ToDictionary(w=>w.Id,w=>w.VariantId),total,query.Page,query.PageSize,total==0?0:1+(total-1)/query.PageSize);
     }
-    public Task<ProductDto[]> LookupAsync(string locale,ProductLookupInput input,CancellationToken ct)
+    public Task<ProductDto[]> LookupAsync(string locale,ProductLookupInput input,CancellationToken ct,bool hideUsed=false)
     {
         CatalogSearchQuery.ValidateLookup(input);var productIds=input.ProductIds??[];var variantIds=input.VariantIds??[];var slugs=input.Slugs??[];
         return CatalogReadRetry.RunAsync(async token=>{
             var now=DateTimeOffset.UtcNow;
-            var selected=await db.Products.AsNoTracking().Where(p=>p.Status=="Published"&&(p.PublishAt==null||p.PublishAt<=now)&&db.Categories.Any(c=>c.Id==p.CategoryId&&c.IsActive)&&db.Brands.Any(b=>b.Id==p.BrandId&&b.IsActive)&&p.Variants.Any(v=>v.IsActive)&&(productIds.Contains(p.Id)||slugs.Contains(p.Slug)||p.Variants.Any(v=>v.IsActive&&variantIds.Contains(v.Id)))).Select(p=>new CatalogReadVersion(p.Id,p.Version)).Take(64).ToArrayAsync(token);
-            var snapshot=await ReadCoreAttemptAsync(locale,selected.Select(p=>p.Id).ToArray(),false,token,selected);
+            var active = CatalogQuery.ActiveVariants(db, hideUsed ? "new" : null);
+            var selected=await db.Products.AsNoTracking().Where(p=>p.Status=="Published"&&(p.PublishAt==null||p.PublishAt<=now)&&db.Categories.Any(c=>c.Id==p.CategoryId&&c.IsActive)&&db.Brands.Any(b=>b.Id==p.BrandId&&b.IsActive)&&active.Any(v=>v.ProductId==p.Id)&&(productIds.Contains(p.Id)||slugs.Contains(p.Slug)||active.Any(v=>v.ProductId==p.Id&&variantIds.Contains(v.Id)))).Select(p=>new CatalogReadVersion(p.Id,p.Version)).Take(64).ToArrayAsync(token);
+            var snapshot=await ReadCoreAttemptAsync(locale,selected.Select(p=>p.Id).ToArray(),false,token,selected,hideUsed:hideUsed);
             return snapshot.Products.Where(p=>productIds.Contains(p.Id,StringComparer.OrdinalIgnoreCase)||slugs.Contains(p.Slug,StringComparer.Ordinal)||p.Variants.Any(v=>variantIds.Contains(v.Id,StringComparer.OrdinalIgnoreCase))).ToArray();
         },ct);
     }
-    public Task<CatalogFiltersDto> FiltersAsync(string locale,string? categoryId,CancellationToken ct)=>CatalogReadRetry.RunAsync(token=>ReadFiltersAttemptAsync(locale,categoryId,token),ct);
-    private async Task<CatalogFiltersDto> ReadFiltersAttemptAsync(string locale,string? categoryId,CancellationToken ct)
+    public Task<CatalogFiltersDto> FiltersAsync(string locale,string? categoryId,CancellationToken ct,string? condition=null)=>CatalogReadRetry.RunAsync(token=>ReadFiltersAttemptAsync(locale,categoryId,CatalogSearchQuery.ValidateCondition(condition),token),ct);
+    private async Task<CatalogFiltersDto> ReadFiltersAttemptAsync(string locale,string? categoryId,string? condition,CancellationToken ct)
     {
-        var scope=await QueryCategoryScopeAsync(categoryId,ct);var ids=scope.Ids;var products=FacetProducts(ids,DateTimeOffset.UtcNow);
+        var scope=await QueryCategoryScopeAsync(categoryId,ct);var ids=scope.Ids;var products=FacetProducts(ids,DateTimeOffset.UtcNow,condition);
         var brands=await db.Brands.AsNoTracking().Where(b=>b.IsActive&&products.Any(p=>p.BrandId==b.Id)).OrderBy(b=>b.Name).ThenBy(b=>b.Id).Select(b=>new BrandFacetDto(b.Id,b.Name)).ToArrayAsync(ct);
-        var maximum=await products.SelectMany(p=>p.Variants.Where(v=>v.IsActive)).Select(v=>(long?)v.PriceRial).MaxAsync(ct);
+        var maximum=await CatalogQuery.ActiveVariants(db,condition).Where(v=>products.Any(p=>p.Id==v.ProductId)).Select(v=>(long?)v.PriceRial).MaxAsync(ct);
         if(categoryId is null){await CatalogReadVersions.EnsureSnapshotsAsync<Category>(db,scope.Versions,ct);return new(brands,[],maximum?.ToString(CultureInfo.InvariantCulture));}
         var definitionIds=db.CategoryAttributes.Where(a=>ids.Contains(a.CategoryId)&&a.IsFilterable).Select(a=>a.AttributeId);
         var definitions=await db.AttributeDefinitions.AsNoTracking().Include(d=>d.Translations).Where(d=>definitionIds.Contains(d.Id)).OrderBy(d=>d.Key).ToArrayAsync(ct);
         var facets=new List<AttributeFacetDto>();
         foreach(var definition in definitions){
-            var page=await ReadFacetPageAsync(locale,FacetValuesQuery.Create(new(categoryId,definition.Key)),definition,products,ct);
+            var page=await ReadFacetPageAsync(locale,FacetValuesQuery.Create(new(categoryId,definition.Key,Condition:condition)),definition,products,ct);
             facets.Add(new(definition.Key,definition.Translations.FirstOrDefault(t=>t.Locale==locale)?.Name??definition.Translations.First().Name,char.ToLowerInvariant(definition.DataType.ToString()[0])+definition.DataType.ToString()[1..],definition.Unit,page.Values,page.Total>page.Values.Length,page.Total));
         }
         await CatalogReadVersions.EnsureAsync(db,definitions,ct);

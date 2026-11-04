@@ -1,12 +1,13 @@
-import { ZodError } from '@/lib/schema-runtime';
+import { ZodError } from '@sayman/web-shared/lib/config/schema-runtime.ts';
 import {
   CatalogServiceError,
   getFacetValues,
   getCatalogFilters,
-  getCatalogPage,
+  getCatalogSearch,
   getCatalogProducts,
-} from '@/lib/catalog-server';
-import { publicOrigin } from '@/lib/seo';
+} from '@/lib/catalog/catalog-server';
+import { publicOrigin } from '@/lib/seo/seo';
+import { catalogConditionSchema } from '@/lib/catalog/catalog-contract';
 const headers = {
   'Cache-Control': 'no-store',
   'X-Content-Type-Options': 'nosniff',
@@ -70,17 +71,23 @@ async function handler(
   try {
     const language = locale as 'fa' | 'en';
     const input = action === 'filters' ? undefined : await body(request);
+    const conditions = url.searchParams.getAll('condition');
+    const condition =
+      action === 'filters' && conditions.length
+        ? catalogConditionSchema.parse(conditions.length === 1 ? conditions[0] : conditions)
+        : undefined;
     const result =
       action === 'facet-values'
         ? await getFacetValues(language, input, request.signal)
         : action === 'filters'
           ? await getCatalogFilters(
               language,
-              new URL(request.url).searchParams.get('categoryId') || undefined,
+              url.searchParams.get('categoryId') || undefined,
               request.signal,
+              condition,
             )
           : action === 'search'
-            ? await getCatalogPage(language, input, request.signal)
+            ? await getCatalogSearch(language, input, request.signal)
             : {
                 version: 1,
                 locale: language,

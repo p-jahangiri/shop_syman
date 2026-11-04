@@ -86,7 +86,7 @@ class Assets(HTMLParser):
 def http_check(name, state):
     port = 3000 if name == 'storefront' else 3173
     base = 'http://127.0.0.1:' + str(port)
-    paths = ['/fa', '/en/market', '/fa/account', '/fa/moments', '/en/blog'] if port == 3000 else ['/']
+    paths = ['/fa', '/en/catalog', '/fa/account', '/fa/moments', '/en/blog'] if port == 3000 else ['/']
     checks = []
     for path in paths:
         with urlopen(base + path, timeout=15) as response:
@@ -107,6 +107,16 @@ def http_check(name, state):
                 assert response.status == 200
                 assert hashlib.sha256(response.read()).hexdigest() == sha(local)
             checks.append({'path': asset, 'status': 200, 'artifactExact': True})
+    retired_paths = (['/fa/market', '/en/sourcing', '/fa/phone-interests', '/api/market/fa/items']
+                     if port == 3000 else ['/api/admin/market', '/api/admin/sourcing/requests'])
+    for path in retired_paths:
+        try:
+            urlopen(base + path, timeout=10)
+        except HTTPError as error:
+            assert error.code == 410 and 'no-store' in error.headers.get('Cache-Control', '')
+            checks.append({'path': path, 'status': 410})
+        else:
+            raise AssertionError('Retired route unexpectedly available: ' + path)
     private_paths = ['/api/auth/me', '/api/admin/orders'] if port == 3173 else ['/api/auth/me']
     for path in private_paths:
         try:
@@ -167,11 +177,13 @@ if sys.argv[1] == 'prepare':
         else:
             shutil.copytree(root / build['adminDirectory'], target)
             shutil.copy2(root / 'apps/admin/server.mjs', target / 'server.mjs')
+            shutil.copy2(root / 'apps/admin/public-video-proxy.mjs', target / 'public-video-proxy.mjs')
             retained = retain(old / 'assets', target / 'assets')
             updates = {'proxyModuleSha256': sha(target / 'server.mjs'), 'adminPid': None}
         candidate = {**previous, **updates, **manifest(target, name),
                      'sourceMigrationCount': api_state['sourceMigrationCount'],
                      'databaseMigrationCount': api_state['databaseMigrationCount'],
+                     'tableCount': api_state['tableCount'],
                      'runtimeDirectory': str(target.relative_to(root)),
                      'previousRuntimeDirectory': previous['runtimeDirectory'],
                      'slice': build.get('slice', 'D47 admin guides and list design'),
@@ -226,9 +238,10 @@ else:
             raise SystemExit('Previous process did not stop gracefully: ' + name)
         candidate = {**service['candidate'], 'promotedAtUtc': datetime.now(timezone.utc).isoformat()}
         write(current, candidate)
-        process = start(name)
+        process = None
         checks = None
         try:
+            process = start(name)
             for attempt in range(40):
                 try:
                     checks = http_check(name, candidate)
@@ -237,7 +250,24 @@ else:
                     if process.poll() is not None or attempt == 39:
                         raise
                     time.sleep(.25)
-        except Exception:
+        except Exception as failure:
+            if prepared['build'].get('apiMinimumMigrationCount', 0) >= 86:
+                # Photo-bearing snapshots are incompatible with the old strict
+                # UI contracts. Retain/restart this candidate, even when its
+                # first health check failed; root must recover forward.
+                from publish_local_used_photos import recover_compatible_frontend
+                report['services'][name] = {'passed': False, 'compatibleCandidateRetained': True,
+                                             'recoveryAttempted': True, 'recoveryHealthy': False,
+                                             'initialFailureType': type(failure).__name__}
+                try:
+                    recovered = recover_compatible_frontend(
+                        name, current, candidate, process, start, http_check, write)
+                    report['services'][name].update(recovered)
+                finally:
+                    write(evidence_path, report)
+                continue
+            if process is None:
+                raise
             if process.poll() is None:
                 process.terminate()
                 process.wait(timeout=15)

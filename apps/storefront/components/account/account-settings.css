@@ -1,0 +1,187 @@
+.customer-account-settings {
+  display: grid;
+  gap: var(--sf-card-gap, 20px);
+}
+.customer-account-setting-card {
+  min-width: 0;
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid var(--border);
+  border-radius: var(--sf-radius, 24px);
+  background: var(--sf-panel, var(--surface));
+  box-shadow: var(--sf-shadow);
+}
+.customer-account-setting-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+.customer-account-setting-icon {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  color: var(--primary);
+  background: var(--sf-tint, var(--surface-soft));
+  border-radius: var(--sf-radius-small, 14px);
+}
+.customer-account-setting-heading h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+}
+.customer-account-setting-heading p,
+.customer-account-setting-note {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 2;
+}
+.customer-account-setting-form {
+  display: grid;
+  gap: 18px;
+}
+.customer-account-setting-form .field {
+  margin: 0;
+}
+.customer-account-setting-form .field label {
+  font-size: 12px;
+}
+.customer-account-setting-form .field input {
+  min-height: 46px;
+  font-size: 14px;
+}
+.customer-account-setting-form h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+}
+.customer-account-setting-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.customer-account-setting-actions .button {
+  min-height: 44px;
+  font-size: 12px;
+}
+.customer-account-setting-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary);
+  font-size: 12px;
+  line-height: 1.9;
+}
+.customer-account-setting-success svg {
+  flex-shrink: 0;
+}
+.customer-account-contact-list {
+  margin: 25px 0 0;
+  border-top: 1px solid var(--border);
+}
+.customer-account-contact-list > div {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.4fr) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 12px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  line-height: 1.9;
+}
+.customer-account-contact-list dt {
+  color: var(--muted);
+}
+.customer-account-contact-list dd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.customer-account-contact-list bdi {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.customer-account-verification {
+  padding: 2px 8px;
+  border-radius: 99px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 11px;
+}
+.customer-account-verification[data-verified='true'] {
+  color: var(--primary);
+  background: var(--sf-tint, var(--surface-soft));
+}
+.customer-account-security-status {
+  margin-top: 0;
+  margin-bottom: 25px;
+}
+.customer-account-password-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 15px;
+}
+.customer-account-password-input {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: var(--sf-radius-small, 14px);
+  overflow: hidden;
+  background: var(--surface);
+}
+.customer-account-password-input:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.customer-account-password-input input {
+  min-width: 0;
+  flex: 1;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.customer-account-password-input input:focus {
+  outline: none;
+  box-shadow: none;
+}
+.customer-account-password-visibility {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  flex: 0 0 46px;
+  color: var(--muted);
+  background: transparent;
+}
+.customer-account-password-visibility:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -4px;
+}
+.customer-account-password-visibility:disabled {
+  opacity: 0.5;
+}
+@media (max-width: 600px) {
+  .customer-account-setting-heading h2 {
+    font-size: 17px;
+  }
+  .customer-account-password-pair {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .customer-account-contact-list > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+  }
+  .customer-account-setting-actions .button {
+    flex: 1 1 auto;
+  }
+}

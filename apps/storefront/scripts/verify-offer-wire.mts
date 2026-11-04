@@ -7,8 +7,8 @@ import {
   offerEventsSchema,
   offerMutationSchema,
   offerPageSchema,
-} from '../lib/offer-contract.ts';
-import { sourcingEventsSchema } from '../lib/sourcing-contract.ts';
+} from '@sayman/web-shared/lib/market/offer-contract.ts';
+import { sourcingEventsSchema } from '@sayman/web-shared/lib/market/sourcing-contract.ts';
 const directory = process.argv[2];
 if (!directory) throw new Error('Pass the actual SQL response capture directory.');
 const cases = [

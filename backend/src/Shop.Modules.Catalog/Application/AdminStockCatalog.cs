@@ -8,6 +8,38 @@ namespace Shop.Modules.Catalog.Application;
 public sealed record StockVariantMetadata(string Id, string ProductId, string Sku, string NameFa, string NameEn, bool IsActive, string ProductStatus,bool IsDigital=false);
 public sealed record StockVariantPage(StockVariantMetadata[] Items, string? NextCursor);
 public sealed record AdminCatalogSummary(string Products, string Categories);
+public sealed record AdminStockWorkspacePage(int Total, int Page, int PageSize, StockVariantMetadata[] Items);
+public sealed record AdminStockWorkspaceQuery
+{
+    public required AdminStockQuery Stock { get; init; }
+    public int? MinAvailable { get; private init; }
+    public int? MaxAvailable { get; private init; }
+    public required string Sort { get; init; }
+    public bool Descending { get; private init; }
+    public int Page { get; private init; }
+    public int PageSize { get; private init; }
+
+    public static AdminStockWorkspaceQuery Create(string? search, string? active, int? min, int? max,
+        string? sort, string? direction, int? page, int? size)
+    {
+        sort ??= "name";
+        direction ??= "asc";
+        page ??= 0;
+        size ??= 25;
+        if (min < 0 || max < 0 || min > max || sort is not ("name" or "sku" or "available") ||
+            direction is not ("asc" or "desc") || page is < 0 or > 1000000 || size is not (25 or 50))
+            throw new BusinessException("invalid_stock_filter", "Invalid inventory workspace filter or page.");
+        return new()
+        {
+            Stock = AdminStockQuery.Create(search, active), MinAvailable = min, MaxAvailable = max,
+            Sort = sort, Descending = direction == "desc", Page = page.Value, PageSize = size.Value
+        };
+    }
+}
+public interface IAdminStockWorkspace
+{
+    Task<AdminStockWorkspacePage> ReadAsync(AdminStockWorkspaceQuery query, CancellationToken ct);
+}
 public interface IAdminStockCatalog
 {
     Task<StockVariantPage> PageAsync(AdminStockQuery query, string? cursor, CancellationToken ct);

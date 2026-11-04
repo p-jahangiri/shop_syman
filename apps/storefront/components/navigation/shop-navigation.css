@@ -1,0 +1,190 @@
+.storefront-design .announcement .container {
+  justify-content: center;
+  text-align: center;
+}
+
+.storefront-design .announcement {
+  padding-block: 5px;
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.storefront-design .header .search-box {
+  gap: 8px;
+  padding-block: 3px;
+  padding-inline-start: 12px;
+}
+
+.storefront-design .header .search-leading-icon {
+  flex: none;
+  color: var(--primary);
+}
+
+.storefront-design .header .search-submit {
+  width: auto;
+  min-width: 60px;
+  min-height: 44px;
+  flex: none;
+  padding-inline: 10px;
+  border-radius: calc(var(--sf-radius-small) - 4px);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.storefront-design .header .search-submit:disabled {
+  background: var(--sf-tint);
+  color: var(--muted);
+}
+
+.storefront-design .header .search-clear {
+  flex: none;
+  width: 36px;
+  height: 44px;
+}
+
+.storefront-design .header .search-results {
+  z-index: 3;
+  inset-inline: 0;
+}
+
+.storefront-design .header .search-results > a {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  overflow-wrap: anywhere;
+}
+
+.storefront-design .header .search-all {
+  border-block-start: 1px solid var(--border);
+}
+
+.storefront-design .header .nav-row .nav-credit {
+  height: auto;
+  min-height: 34px;
+  padding-inline: 11px;
+  border-radius: var(--sf-radius-small);
+  background: var(--sf-tint);
+  font-weight: 700;
+}
+
+.storefront-design .header .nav-row .nav-credit:hover {
+  background: var(--sf-tint-strong);
+}
+
+.storefront-design .header .nav-row .nav-credit::after {
+  content: none;
+}
+
+.storefront-design .header .notifications-header {
+  color: var(--foreground);
+  border-radius: 11px;
+}
+
+.storefront-design .header .notifications-header:hover,
+.storefront-design .header .notifications-header[aria-current='page'] {
+  background: var(--sf-tint-strong);
+  color: var(--primary);
+}
+
+.storefront-design .category-menu .category-menu-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  inline-size: 30px;
+  block-size: 30px;
+  border: 1px solid color-mix(in oklab, var(--primary) 16%, var(--border));
+  border-radius: 9px;
+  background: var(--sf-tint);
+  color: var(--primary);
+}
+
+.storefront-design .category-menu summary .category-menu-icon {
+  inline-size: 25px;
+  block-size: 25px;
+  border: 0;
+  border-radius: 7px;
+}
+
+.storefront-design .category-menu .category-menu-label {
+  min-inline-size: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.storefront-design .category-menu .content-submenu {
+  gap: 4px;
+  padding: 8px;
+}
+
+.storefront-design .nav-row .category-menu .content-submenu {
+  min-inline-size: 245px;
+  inline-size: max-content;
+  max-inline-size: min(320px, 85vw);
+  inset-block-start: calc(100% + 6px);
+}
+
+.storefront-design .category-menu .content-submenu > a {
+  gap: 9px;
+  min-block-size: 44px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+}
+
+.storefront-design .category-menu .content-submenu > a:first-child {
+  background: var(--surface-soft);
+}
+
+.storefront-design .category-menu .content-submenu > a:is(:hover, :focus-visible) {
+  border-color: var(--border);
+  outline-offset: -2px;
+  background: var(--sf-tint-strong);
+}
+
+.storefront-design .mobile-links .category-menu .content-submenu {
+  margin-block: 0 8px;
+  margin-inline-start: 14px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-shop-motion='full'] .storefront-design .header .search-results,
+  :root[data-shop-motion='subtle'] .storefront-design .header .search-results {
+    animation: shop-search-in 160ms var(--sf-ease) both;
+  }
+
+  @keyframes shop-search-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .storefront-design .header .notifications-header {
+    inline-size: 40px;
+    block-size: 40px;
+  }
+
+  .storefront-design .header .search-box input {
+    font-size: 1rem;
+  }
+
+  .storefront-design .header .search-box {
+    gap: 5px;
+    padding-inline-start: 8px;
+  }
+
+  .storefront-design .header .search-submit {
+    min-width: 50px;
+    padding-inline: 7px;
+  }
+
+  .storefront-design .header .search-clear {
+    width: 32px;
+  }
+}
+
+@media (max-width: 400px) {
+  .storefront-design .header .header-actions > .language-switch {
+    display: none;
+  }
+}

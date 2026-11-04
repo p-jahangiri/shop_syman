@@ -32,7 +32,7 @@ public sealed partial class CatalogService:IMarketModelCatalog
         var product=await Graph.AsNoTracking().SingleOrDefaultAsync(p=>p.Id==id,ct)??throw new BusinessException("not_found","Model was not found.");
         if(product.IsDigital)throw new BusinessException("invalid_market_model","Market sourcing accepts physical models only.");
         await CatalogReadVersions.EnsureProductsAsync(db,[product],ct);
-        var input=new CatalogModelInput(product.CategoryId,product.BrandId,product.Slug,product.Translations.Select(t=>new ModelTranslationInput(t.Locale,t.Name,t.Description)).ToArray(),product.Attributes.Select(a=>new ModelAttributeInput(a.AttributeId,a.ValueTextFa,a.ValueTextEn,a.ValueNumber,a.ValueBool,a.ValueOptionId,a.Selections.Count==0?null:a.Selections.Select(s=>s.OptionId).ToArray())).ToArray(),product.Media.OrderBy(m=>m.SortOrder).Select(m=>m.Url).ToArray(),Convert.ToBase64String(product.Version));
+        var input=new CatalogModelInput(product.CategoryId,product.BrandId,product.Slug,product.Translations.Select(t=>new ModelTranslationInput(t.Locale,t.Name,t.Description)).ToArray(),product.Attributes.Select(a=>new ModelAttributeInput(a.AttributeId,a.ValueTextFa,a.ValueTextEn,a.ValueNumber,a.ValueBool,a.ValueOptionId,a.Selections.Count==0?null:a.Selections.Select(s=>s.OptionId).ToArray())).ToArray(),product.Media.Where(m=>m.Type=="image").OrderBy(m=>m.SortOrder).Select(m=>m.Url).ToArray(),Convert.ToBase64String(product.Version));
         return new(input,product.Status,product.Variants.Count>0);
     }
     public async Task<Dictionary<string,string>> ResolveAttributeKeysAsync(string[] keys,CancellationToken ct)
@@ -96,7 +96,7 @@ public sealed partial class CatalogService:IMarketModelCatalog
             return locale=="en"?value.ValueTextEn??value.ValueTextFa??"":value.ValueTextFa??value.ValueTextEn??"";
         }
         return products.Select(p=>{
-            var translation=p.Translations.Single(t=>t.Locale==locale);var images=p.Media.OrderBy(m=>m.SortOrder).ThenBy(m=>m.Id).Select(m=>m.Url).Take(24).ToArray();
+            var translation=p.Translations.Single(t=>t.Locale==locale);var images=p.Media.Where(m=>m.Type=="image").OrderBy(m=>m.SortOrder).ThenBy(m=>m.Id).Select(m=>m.Url).Take(24).ToArray();
             if(!brandMap.TryGetValue(p.BrandId,out var brand))throw new BusinessException("version_conflict","Model brand changed while reading.");
             var model=new CatalogModelDto(p.Id,p.Slug,p.CategoryId,p.BrandId,brand.Name,translation.Name,p.Translations.Single(t=>t.Locale=="en").Name,translation.Description,images.FirstOrDefault()??"",images,p.Attributes.ToDictionary(a=>defs[a.AttributeId].Key,Text));
             return new CatalogModelRead(model,Convert.ToBase64String(p.Version));

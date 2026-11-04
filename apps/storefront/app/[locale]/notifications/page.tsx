@@ -1,5 +1,5 @@
-import { CustomerNotifications } from '@/components/customer-notifications';
-import { getLocale } from '@/lib/server-locale';
+import { CustomerNotifications } from '@/components/notifications/customer-notifications';
+import { getLocale } from '@/lib/navigation/server-locale';
 export async function generateMetadata() {
   const locale = await getLocale();
   return {

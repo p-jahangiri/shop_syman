@@ -82,6 +82,25 @@ public sealed class SecurityBoundaryTests(ApiFactory factory) : IClassFixture<Ap
             Assert.Contains(endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>(), policy => !string.IsNullOrWhiteSpace(policy.Policy));
         }
     }
+    [Fact] public async Task EveryAdminSubtreeHasPrivateHeadersBeforeAnAnonymousRequestIsChallenged()
+    {
+        using var client = factory.CreateClient(new() { HandleCookies = false });
+        foreach (var path in new[] { "/api/admin/used-items/variants", "/api/admin/catalog", "/api/admin/content", "/api/admin/media/capabilities", "/api/admin/purchase-methods" }) {
+            using var response = await client.GetAsync(path);
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.True(response.Headers.CacheControl!.Private);
+            Assert.True(response.Headers.CacheControl.NoStore);
+            Assert.Equal("noindex, nofollow", response.Headers.GetValues("X-Robots-Tag").Single());
+            Assert.Contains("Cookie", response.Headers.Vary);
+            Assert.Contains("Authorization", response.Headers.Vary);
+            Assert.Equal("nosniff", response.Headers.GetValues("X-Content-Type-Options").Single());
+        }
+        // Match a complete path segment, rather than any similarly named URL.
+        using var outside = await client.GetAsync("/api/administrator-privacy-probe");
+        Assert.Equal(HttpStatusCode.NotFound, outside.StatusCode);
+        Assert.False(outside.Headers.CacheControl!.Private);
+        Assert.False(outside.Headers.Contains("X-Robots-Tag"));
+    }
     [Theory] [InlineData("mfa_pending")] [InlineData("staff_password_change")]
     public async Task PartialAuthenticationNeverAuthorizesPrivateCustomerReads(string kind)
     {

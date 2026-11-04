@@ -97,12 +97,22 @@ public sealed partial class StockOrderReservationV2SqlTests(SqlFixture fixture) 
     }
 
     [Fact]
-    public async Task AllocationOneHundredUnitLimitsRemainIndependentAcrossTheWholeOrder()
+    public async Task IndividuallyValidAllocationsCannotExceedOneOrdersTrackedDeliveryCapacity()
     {
-        var setup = await Prepare(first: 100, second: 100, ordinary: 0); var hold = await Hold(setup);
-        Assert.Equal(200, hold.Lines.Sum(l => l.Quantity)); Assert.Equal(200, await Scope(db => db.SerialUnitClaims.CountAsync(c => c.ReservationId == hold.Id && c.State == "OrderHeld" && c.IsActive)));
-        await Scope(db => V2(db).ReleaseAsync(setup.Request.OwnerId, hold.Id, "order-inventory-qa", default));
-        Assert.Equal(200, (await Stock(setup.Variant)).OnHand); Assert.Equal(0, (await Stock(setup.Variant)).Reserved);
+        var setup=await Prepare(first:100,second:100,ordinary:0);var before=await Snapshot(setup.Variant);
+        Assert.Equal("fulfillment_order_capacity_conflict",(await Assert.ThrowsAsync<BusinessException>(()=>Hold(setup))).Code);
+        Assert.Equal(before,await Snapshot(setup.Variant));
+        // Both 100-unit sourcing allocations remain valid and independent;
+        // the caller can explicitly split them into two new orders after review.
+        var held=new List<StockOrderReservationDataV2>();
+        for(var i=0;i<2;i++){
+            var request=setup.Request with{OrderId=Id(),RequestId=Id(),Lines=[setup.Request.Lines[i]],Allocations=[setup.Request.Allocations[i]]};
+            var hold=await Hold(setup with{Request=request});held.Add(hold);
+            Assert.Equal(100,hold.Lines.Sum(l=>l.Quantity));
+        }
+        Assert.Equal(200,(await Stock(setup.Variant)).Reserved);Assert.Equal(0,(await Stock(setup.Variant)).SourcingReserved);
+        foreach(var hold in held)await Scope(db=>V2(db).ReleaseAsync(setup.Request.OwnerId,hold.Id,"order-inventory-qa",default));
+        Assert.Equal(200,(await Stock(setup.Variant)).OnHand);Assert.Equal(0,(await Stock(setup.Variant)).Reserved);
     }
 
     [Fact]

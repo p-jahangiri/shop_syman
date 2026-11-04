@@ -1,4 +1,4 @@
-import { proxyMarket } from '@/lib/market-http';
+import { proxyMarket } from '@/lib/market/market-http';
 async function handler(
   request: Request,
   { params }: { params: Promise<{ locale: string; path: string[] }> },

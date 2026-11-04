@@ -1,7 +1,7 @@
-import { CustomerPhoneInterests } from '@/components/phone-interest';
-import { serverI18n } from '@/lib/server-locale';
-import { pageMetadata } from '@/lib/seo';
-import '@/components/phone-market.css';
+import { CustomerPhoneInterests } from '@/components/market/phone-interest';
+import { serverI18n } from '@/lib/navigation/server-locale';
+import { pageMetadata } from '@/lib/seo/seo';
+import '@/components/market/phone-market.css';
 export const dynamic = 'force-dynamic';
 export async function generateMetadata() {
   const s = await serverI18n();

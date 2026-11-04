@@ -1,0 +1,183 @@
+import type { UsedCondition } from '../catalog/used-condition-contract';
+import type { StoreIdentity } from '../content/store-identity';
+
+export interface SiteAppearance {
+  surface?: 'glass' | 'solid';
+  density?: 'comfortable' | 'compact';
+  corners?: 'soft' | 'rounded';
+  motion?: 'subtle' | 'none';
+  heroLayout?: 'split' | 'compact';
+  stickyHeader?: boolean;
+  showUsedProducts?: boolean;
+}
+export type CategoryKey = string;
+export type MoneyRial = `${bigint}`;
+export interface Variant {
+  usedCondition?: UsedCondition;
+  id: string;
+  sku: string;
+  label: string;
+  color: string;
+  colorName: string;
+  priceRial: MoneyRial;
+  compareAtRial?: MoneyRial;
+  stock: number;
+  warranty: string;
+  attributes?: Record<string, string>;
+  purchaseMethodIds?: string[];
+}
+export interface Product {
+  id: string;
+  slug: string;
+  name: string;
+  englishName: string;
+  category: CategoryKey;
+  brand: string;
+  description: string;
+  image: string;
+  images?: string[];
+  videos?: { url: string; variantId?: string | null }[];
+  badge?: string;
+  isDigital?: boolean;
+  featured?: boolean;
+  attributes: Record<string, string>;
+  variants: Variant[];
+  purchaseMethodIds: string[];
+  chequePlanIds?: string[];
+}
+export interface Category {
+  key: CategoryKey;
+  name: string;
+  description: string;
+  image: string;
+  filters: { key: string; label: string }[];
+  attributeRules?: {
+    key: string;
+    comparable: boolean;
+    showInSpecs: boolean;
+    variantAxis: boolean;
+  }[];
+}
+export interface CartLine {
+  variantId: string;
+  quantity: number;
+}
+export interface ChequePlan {
+  roundingUnitRial?: '1' | '10';
+  id: string;
+  months: number;
+  markupPercent: number;
+  downPaymentPercent: number;
+  intervalMonths: number;
+  enabled?: boolean;
+  name?: string;
+  categoryIds?: string[];
+  minAmountRial?: MoneyRial;
+  maxAmountRial?: MoneyRial;
+}
+export type Locale = 'fa' | 'en';
+export interface PurchaseMethod {
+  id: string;
+  kind: 'online' | 'cheque' | 'installment';
+  name: string;
+  description: string;
+  enabled: boolean;
+  requiresApproval: boolean;
+  categoryIds?: string[];
+  minAmountRial?: MoneyRial;
+  maxAmountRial?: MoneyRial;
+}
+export interface AuthSettings {
+  mobileOtp: boolean;
+  emailPassword: boolean;
+  usernamePassword: boolean;
+  registration: boolean;
+  passwordReset: boolean;
+}
+export interface AttributeDefinition {
+  key: string;
+  name: string;
+  dataType: 'text' | 'number' | 'bool' | 'select' | 'multiSelect';
+  unit?: string;
+  comparable: boolean;
+  filterable: boolean;
+  showInSpecs?: boolean;
+}
+export interface MenuItem {
+  purchaseMethodKind?: PurchaseMethod['kind'];
+  label: string;
+  href: string;
+  children?: MenuItem[];
+}
+export interface PromoContent {
+  purchaseMethodKind?: PurchaseMethod['kind'];
+  eyebrow: string;
+  title: string;
+  action: string;
+  href: string;
+  image: string;
+  watermark?: string;
+}
+export interface HomeBlock {
+  purchaseMethodKind?: PurchaseMethod['kind'];
+  id: string;
+  kind: 'categories' | 'collection' | 'promotions' | 'products' | 'spotlight' | 'brands' | 'cheque';
+  enabled: boolean;
+  eyebrow?: string;
+  title?: string;
+  description?: string;
+  action?: string;
+  href?: string;
+  categoryId?: string;
+  limit?: number;
+  productIds?: string[];
+  items?: PromoContent[];
+  startsAt?: string;
+  endsAt?: string;
+}
+export interface SiteContent {
+  name: string;
+  latinName: string;
+  tagline: string;
+  announcement: string;
+  seo?: { title?: string; description?: string; shareImage?: string; allowIndexing?: boolean };
+  hero: {
+    purchaseMethodKind?: PurchaseMethod['kind'];
+    eyebrow: string;
+    title: string;
+    description: string;
+    action: string;
+    secondary: string;
+    image?: string;
+    actionHref?: string;
+    secondaryHref?: string;
+    visualTitle?: string;
+    floatingTitle?: string;
+    floatingDescription?: string;
+    footnote?: string;
+  };
+  nav: MenuItem[];
+  homeBlocks?: HomeBlock[];
+  chequeDisclaimer: string;
+  about: string;
+  logoUrl?: string;
+  font?: 'vazirmatn' | 'system';
+  appearance?: SiteAppearance;
+  palette?: { primaryLight?: string; primaryDark?: string; heroLight?: string; heroDark?: string };
+  contact?: { phone?: string; email?: string; address?: string; hours?: string };
+  storeIdentity?: StoreIdentity;
+}
+export interface StorefrontSnapshot {
+  version: number;
+  isPreview: boolean;
+  dataSource?: 'api' | 'fixture';
+  locale?: Locale;
+  site: SiteContent;
+  products: Product[];
+  categories: Category[];
+  chequePlans: ChequePlan[];
+  purchaseMethods: PurchaseMethod[];
+  authSettings: AuthSettings;
+  attributeDefinitions: AttributeDefinition[];
+  attributeLabels: Record<string, string>;
+}

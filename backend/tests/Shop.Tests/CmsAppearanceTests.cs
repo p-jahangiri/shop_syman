@@ -18,6 +18,7 @@ public sealed class CmsAppearanceTests
     [InlineData("{\"surface\":\"glass\",\"density\":\"comfortable\",\"corners\":\"rounded\",\"motion\":\"subtle\",\"heroLayout\":\"split\",\"stickyHeader\":true}")]
     [InlineData("{\"surface\":\"solid\",\"density\":\"compact\",\"corners\":\"soft\",\"motion\":\"none\",\"heroLayout\":\"compact\",\"stickyHeader\":false}")]
     [InlineData("{\"motion\":\"none\"}")]
+    [InlineData("{\"showUsedProducts\":false}")]
     public void BothLanguagesAcceptFiniteAppearanceOptionsAndPartialOverrides(string json)
     {
         foreach (var locale in new[] { "fa", "en" })
@@ -48,6 +49,7 @@ public sealed class CmsAppearanceTests
     [InlineData("{\"stickyHeader\":\"false\"}")]
     [InlineData("{\"stickyHeader\":0}")]
     [InlineData("{\"stickyHeader\":null}")]
+    [InlineData("{\"showUsedProducts\":\"false\"}")]
     [InlineData("{\"css\":\"body{display:none}\"}")]
     [InlineData("{\"script\":\"alert(1)\"}")]
     [InlineData("{\"surface\":\"glass\",\"unknown\":false}")]

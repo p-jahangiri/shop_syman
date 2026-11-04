@@ -25,6 +25,27 @@ public sealed class CmsBlogPostSqlTests:IAsyncLifetime
     private static async Task<JsonNode> Send(HttpClient c,string path,CmsBlogPostWrite body){if(body.Action!="Create")await Read(await c.GetAsync(path[..path.LastIndexOf("/commands/",StringComparison.Ordinal)]));var raw=JsonSerializer.Serialize(body,CmsBlogPostRules.Json);var request=new HttpRequestMessage(HttpMethod.Post,path){Content=new StringContent(raw,System.Text.Encoding.UTF8,"application/json")};request.Options.Set(new HttpRequestOptionsKey<string>("SyntheticBlogBody"),raw);return await Read(await c.SendAsync(request));}
     private static Task<JsonNode> Create(HttpClient c,bool demo=true,string? slug=null,CmsBlogContent? content=null)=>Send(c,"/api/admin/blog-posts/commands/"+Id(),new("Create",Slug:slug??"qa-"+Id(),IsDemo:demo,Content:content??Content()));
     private static Task<JsonNode> Write(HttpClient c,JsonNode p,string action,CmsBlogContent? content=null,string? restore=null,string? command=null)=>Send(c,Path(p)+"/commands/"+(command??Id()),new(action,S(p,"version"),Content:content,RestoreRevisionId:restore,Confirmed:action!="Save"));
+    [Fact]
+    public async Task DraftEditorCannotPublishOrUnpublishArticlesThroughCommands()
+    {
+        using var writer = await Staff("ContentEditor");
+        using var publisher = await Staff();
+        var post = await Create(writer);
+        post = await Write(writer, post, "Save", Content("SYNTHETIC EDITOR DRAFT"));
+        var path = Path(post) + "/commands/";
+        using (var denied = await writer.PostAsJsonAsync(path + Id(),
+            new CmsBlogPostWrite("Publish", S(post, "version"), Confirmed: true)))
+            Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+        post = await Write(publisher, post, "Publish");
+        foreach (var action in new[] { "Restore", "Unpublish" })
+        {
+            using var denied = await writer.PostAsJsonAsync(path + Id(),
+                new CmsBlogPostWrite(action, S(post, "version"), RestoreRevisionId: action == "Restore" ? S(post, "revisionId") : null, Confirmed: true));
+            Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+        }
+        using var anonymous = sql.Factory.CreateClient(new() { HandleCookies = false });
+        Assert.Equal("SYNTHETIC EDITOR DRAFT", S(await Read(await anonymous.GetAsync("/api/content/blog/fa/" + S(post, "slug"))), "title"));
+    }
     [Fact]public async Task DraftPublishSaveRestoreAndUnpublishKeepPublicMetadataAndFirstPublicationSeparate()
     {
         using var staff=await Staff();using var anon=sql.Factory.CreateClient(new(){HandleCookies=false});var draft=Content();var p=await Create(staff,content:draft);var route="/api/content/blog/fa/"+S(p,"slug");using(var hidden=await anon.GetAsync(route))Assert.Equal(HttpStatusCode.NotFound,hidden.StatusCode);p=await Write(staff,p,"Publish");var original=S(p,"revisionId");var published=await Read(await anon.GetAsync(route));Assert.True(published["isDemo"]!.GetValue<bool>());Assert.Equal(draft.Body.Fa.Title,S(published,"title"));Assert.Equal("Organization",S(published,"authorKind"));Assert.Equal(draft.BylineFa,S(published,"byline"));Assert.Equal(3,published["tags"]!.AsArray().Count);Assert.DoesNotContain("draftHash",published.ToJsonString());Assert.DoesNotContain("createdBy",published.ToJsonString());var first=S(published,"firstPublishedAt");var next=draft with{BylineFa="نام عمومی جدید",BylineEn="New public byline",Body=draft.Body with{Fa=draft.Body.Fa with{Title="پیش‌نویس جدید"}}};p=await Write(staff,p,"Save",next);Assert.Equal(draft.BylineFa,S(await Read(await anon.GetAsync(route)),"byline"));p=await Write(staff,p,"Publish");Assert.Equal(next.BylineFa,S(await Read(await anon.GetAsync(route)),"byline"));p=await Write(staff,p,"Unpublish");using(var hidden=await anon.GetAsync(route))Assert.Equal(HttpStatusCode.NotFound,hidden.StatusCode);p=await Write(staff,p,"Restore",restore:original);var restored=await Read(await anon.GetAsync(route));Assert.Equal(first,S(restored,"firstPublishedAt"));Assert.Equal(draft.BylineFa,S(restored,"byline"));Assert.NotEqual(original,S(restored,"revisionId"));var detail=await Read(await staff.GetAsync(Path(p)));Assert.Equal(next.BylineFa,S(detail["draft"]!,"bylineFa"));Assert.Equal(draft.BylineFa,S(detail["published"]!,"bylineFa"));Assert.Equal(4,(await Read(await staff.GetAsync(Path(p)+"/history")))["items"]!.AsArray().Count);var english=await Read(await anon.GetAsync(route.Replace("/fa/","/en/")));Assert.Equal(draft.BylineEn,S(english,"byline"));
@@ -48,7 +69,7 @@ public sealed class CmsBlogPostSqlTests:IAsyncLifetime
     }
     [Fact]public async Task SamplesAreExplicitAndUnavailableToProductionReadersWithoutChangingStaticCmsPages()
     {
-        using var staff=await Staff();var demo=await Write(staff,await Create(staff,true),"Publish");var real=await Write(staff,await Create(staff,false),"Publish");await using var scope=sql.Factory.Services.CreateAsyncScope();var sp=scope.ServiceProvider;var db=sp.GetRequiredService<CmsDbContext>();var production=new CmsBlogPostService(db,false,sp.GetRequiredService<TimeProvider>(),sp.GetRequiredService<ICmsBlogCursorProtection>());Assert.Equal("not_found",(await Assert.ThrowsAsync<BusinessException>(()=>production.PublicAsync(S(demo,"slug"),"fa",CancellationToken.None))).Code);Assert.Equal(S(real,"slug"),(await production.PublicAsync(S(real,"slug"),"en",CancellationToken.None)).Slug);Assert.Single((await production.PublicListAsync("fa",null,null,CancellationToken.None)).Items);Assert.Equal(0,await db.Pages.CountAsync());Assert.Equal(0,await db.PageRevisions.CountAsync());Assert.Equal(0,await db.PageCommands.CountAsync());
+        using var staff=await Staff();var demo=await Write(staff,await Create(staff,true),"Publish");var real=await Write(staff,await Create(staff,false),"Publish");await using var scope=sql.Factory.Services.CreateAsyncScope();var sp=scope.ServiceProvider;var db=sp.GetRequiredService<CmsDbContext>();var production=new CmsBlogPostService(db,false,sp.GetRequiredService<TimeProvider>(),sp.GetRequiredService<ICmsBlogCursorProtection>(),sp.GetRequiredService<IPublicImageReferences>());Assert.Equal("not_found",(await Assert.ThrowsAsync<BusinessException>(()=>production.PublicAsync(S(demo,"slug"),"fa",CancellationToken.None))).Code);Assert.Equal(S(real,"slug"),(await production.PublicAsync(S(real,"slug"),"en",CancellationToken.None)).Slug);Assert.Single((await production.PublicListAsync("fa",null,null,CancellationToken.None)).Items);Assert.Equal(0,await db.Pages.CountAsync());Assert.Equal(0,await db.PageRevisions.CountAsync());Assert.Equal(0,await db.PageCommands.CountAsync());
     }
     [Fact]public async Task NoopSaveAtTheSameClockStillRotatesVersionWithoutRewritingFirstPublication()
     {

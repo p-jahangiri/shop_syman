@@ -1,9 +1,9 @@
-import Link from '@/components/localized-link';
-import { PhoneBrowse } from '@/components/phone-market';
-import { getPhonePage } from '@/lib/phone-discovery-server';
-import { phoneQueryFromParams } from '@/lib/phone-discovery-contract';
-import { serverI18n } from '@/lib/server-locale';
-import { pageMetadata, type SearchQuery } from '@/lib/seo';
+import Link from '@/components/navigation/localized-link';
+import { PhoneBrowse } from '@/components/market/phone-market';
+import { getPhonePage } from '@/lib/market/phone-discovery-server';
+import { phoneQueryFromParams } from '@sayman/web-shared/lib/market/phone-discovery-contract.ts';
+import { serverI18n } from '@/lib/navigation/server-locale';
+import { pageMetadata, type SearchQuery } from '@/lib/seo/seo';
 export const dynamic = 'force-dynamic';
 export async function generateMetadata() {
   const s = await serverI18n();

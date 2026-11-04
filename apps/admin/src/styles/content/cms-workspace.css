@@ -1,0 +1,53 @@
+.cms-workspace {
+  display: grid;
+  gap: 1rem;
+  min-inline-size: 0;
+}
+.cms-workspace [hidden] {
+  display: none;
+}
+.cms-workspace-nav .row-buttons,
+.cms-form-sections {
+  flex-wrap: wrap;
+}
+.cms-workspace-nav .row-buttons button {
+  min-block-size: 2.75rem;
+}
+.cms-form-sections {
+  margin-block-end: 1rem;
+}
+.cms-form-sections a {
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  padding-inline: 0.75rem;
+}
+form [id^='cms-site-'] {
+  scroll-margin-block-start: 1rem;
+}
+.cms-contact-status,
+.cms-contact-review li {
+  display: grid;
+  gap: 0.25rem;
+}
+.cms-contact-status small,
+.cms-contact-review del {
+  color: var(--muted);
+}
+.cms-contact-review {
+  display: grid;
+  gap: 0.75rem;
+  padding-inline: 0;
+  list-style: none;
+}
+.cms-contact-review li {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.cms-contact-review :is(del, bdi) {
+  text-align: start;
+}

@@ -1,17 +1,19 @@
-import ContentImage from '@/components/content-image';
+import ContentImage from '@/components/media/content-image';
 import { cache } from 'react';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import NextLink from 'next/link';
-import { serverI18n } from '@/lib/server-locale';
-import { fetchBlogPost } from '@/lib/cms-blog-fetch';
-import { pageMetadata, jsonLd } from '@/lib/seo';
-import { blogPostStructuredData } from '@/lib/blog-seo';
-import { localeHref } from '@/lib/i18n';
-import { CmsPageView } from '@/components/cms-page-view';
-import type { Locale } from '@/lib/types';
-import '@/components/cms-page.css';
-import '@/components/blog.css';
+import { serverI18n } from '@/lib/navigation/server-locale';
+import { fetchBlogPost } from '@/lib/content/cms-blog-fetch';
+import { pageMetadata, jsonLd } from '@/lib/seo/seo';
+import { blogPostStructuredData } from '@/lib/content/blog-seo';
+import { localeHref } from '@/lib/navigation/i18n';
+import { CmsPageView } from '@sayman/web-shared/components/content/cms-page-view';
+import { isPurchaseHrefEnabled } from '@/lib/catalog/purchasing';
+import { isUsedCatalogHref } from '@sayman/web-shared/lib/content/appearance.ts';
+import type { Locale } from '@sayman/web-shared/lib/shared/types.ts';
+import '@sayman/web-shared/components/content/cms-page.css';
+import '@sayman/web-shared/components/content/blog.css';
 export const dynamic = 'force-dynamic';
 const load = cache((slug: string, locale: Locale) =>
   fetchBlogPost(slug, locale, {
@@ -63,6 +65,10 @@ export default async function Article({ params }: { params: Promise<{ slug: stri
         locale={locale}
         isDemo={p.isDemo}
         link={(href, label) => <NextLink href={localeHref(href, locale)}>{label}</NextLink>}
+        canLink={(href) =>
+          isPurchaseHrefEnabled(href, snapshot.purchaseMethods) &&
+          (snapshot.site.appearance?.showUsedProducts !== false || !isUsedCatalogHref(href))
+        }
         afterHeader={
           <div className="blog-article-meta">
             <p>

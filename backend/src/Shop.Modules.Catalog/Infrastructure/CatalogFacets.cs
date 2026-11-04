@@ -8,7 +8,11 @@ namespace Shop.Modules.Catalog.Infrastructure;
 
 public sealed partial class CatalogService
 {
-    private IQueryable<Product> FacetProducts(string[] categoryIds,DateTimeOffset now) => db.Products.AsNoTracking().Where(p=>p.Status=="Published"&&(p.PublishAt==null||p.PublishAt<=now)&&categoryIds.Contains(p.CategoryId)&&db.Brands.Any(b=>b.Id==p.BrandId&&b.IsActive)&&p.Variants.Any(v=>v.IsActive));
+    private IQueryable<Product> FacetProducts(string[] categoryIds,DateTimeOffset now,string? condition)
+    {
+        var variants = CatalogQuery.ActiveVariants(db, condition);
+        return db.Products.AsNoTracking().Where(p=>p.Status=="Published"&&(p.PublishAt==null||p.PublishAt<=now)&&categoryIds.Contains(p.CategoryId)&&db.Brands.Any(b=>b.Id==p.BrandId&&b.IsActive)&&variants.Any(v=>v.ProductId==p.Id));
+    }
     public Task<FacetValuesPage> FacetValuesAsync(string locale,FacetValuesInput input,CancellationToken ct)
     {
         var query=FacetValuesQuery.Create(input);
@@ -20,7 +24,7 @@ public sealed partial class CatalogService
         var definition=await db.AttributeDefinitions.AsNoTracking().SingleOrDefaultAsync(d=>d.Key==query.Key&&db.CategoryAttributes.Any(a=>categories.Contains(a.CategoryId)&&a.AttributeId==d.Id&&a.IsFilterable),ct);
         if(definition is null){await CatalogReadVersions.EnsureSnapshotsAsync<Category>(db,scope.Versions,ct);throw new BusinessException("unknown_catalog_filter","The selected category does not expose this attribute as a filter.");}
         if(!await FacetFieldsReadyAsync(ct))throw new BusinessException("catalog_reindex_required","Catalog search maintenance is incomplete.");
-        var page=await ReadFacetPageAsync(locale,query,definition,FacetProducts(categories,DateTimeOffset.UtcNow),ct);
+        var page=await ReadFacetPageAsync(locale,query,definition,FacetProducts(categories,DateTimeOffset.UtcNow,query.Condition),ct);
         await CatalogReadVersions.EnsureAsync(db,new[]{definition},ct);
         await CatalogReadVersions.EnsureSnapshotsAsync<Category>(db,scope.Versions,ct);
         return page;
@@ -42,12 +46,12 @@ public sealed partial class CatalogService
             var matches=all.Where(v=>query.Tokens.All(term=>PersianText.Normalize($"{v.Value} {v.Label} {(v.Value=="true"?"Yes بله":"No خیر")}").Contains(term,StringComparison.Ordinal))).ToArray();
             total=matches.Length;values=matches.Skip(offset).Take(query.PageSize).ToArray();selectedValues=all.Where(v=>selected.Contains(v.Value)).ToArray();
         }else if(definition.DataType==AttributeDataType.Number){
-            var all=CatalogQuery.NumberValues(db,eligibleIds,id);var matches=CatalogFacetQuery.Numbers(all,query.Tokens);
+            var all=CatalogQuery.NumberValues(db,eligibleIds,id,query.Condition);var matches=CatalogFacetQuery.Numbers(all,query.Tokens);
             var selectedNumbers=selected.Select(CatalogQuery.Number).ToArray();
             total=await matches.CountAsync(ct);values=(await matches.OrderBy(v=>v).Skip(offset).Take(query.PageSize).ToArrayAsync(ct)).Select(v=>NumberValue(v!.Value,definition.Unit)).ToArray();
             selectedValues=selected.Length==0?[]:(await all.Where(v=>selectedNumbers.Contains(v!.Value)).OrderBy(v=>v).Take(20).ToArrayAsync(ct)).Select(v=>NumberValue(v!.Value,definition.Unit)).ToArray();
         }else{
-            var matches=CatalogQuery.TextValues(db,eligibleIds,id,locale,query.Tokens);var all=CatalogQuery.TextValues(db,eligibleIds,id,locale);
+            var matches=CatalogQuery.TextValues(db,eligibleIds,id,locale,query.Tokens,query.Condition);var all=CatalogQuery.TextValues(db,eligibleIds,id,locale,condition:query.Condition);
             total=await matches.CountAsync(ct);
             values=(await matches.OrderBy(v=>v.Value).Skip(offset).Take(query.PageSize).ToArrayAsync(ct)).Select(v=>new FacetValueDto(v.Value,v.Label??v.Value)).ToArray();
             selectedValues=selected.Length==0?[]:(await all.Where(v=>selected.Contains(v.Value)).OrderBy(v=>v.Value).Take(20).ToArrayAsync(ct)).Select(v=>new FacetValueDto(v.Value,v.Label??v.Value)).ToArray();

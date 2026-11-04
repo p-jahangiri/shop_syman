@@ -88,7 +88,11 @@ public sealed class CreditOrderSqlTests(SqlFixture fixture):CreditRequirementsSq
         var salesHistory=(await sales.Database.GetAppliedMigrationsAsync()).ToArray();var ownSales=Assert.Single(salesHistory,x=>x.EndsWith("_CreditOrderLinks",StringComparison.Ordinal));
         // Test this published migration at its own schema; later empty features
         // may be rolled down only inside this disposable class fixture.
-        try{await sales.GetService<IMigrator>().MigrateAsync(ownSales);var pinned=(await sales.Database.GetAppliedMigrationsAsync()).ToArray();Assert.EndsWith("_CreditOrderLinks",pinned[^1]);var salesDown=await Assert.ThrowsAsync<SqlException>(()=>sales.GetService<IMigrator>().MigrateAsync(pinned[^2]));Assert.Equal(51000,salesDown.Number);Assert.Equal(pinned,await sales.Database.GetAppliedMigrationsAsync());}finally{await sales.Database.MigrateAsync();}Assert.Equal(salesHistory,await sales.Database.GetAppliedMigrationsAsync());
+        var assembly=sales.GetService<IMigrationsAssembly>();
+        var migration=assembly.CreateMigration(assembly.Migrations[ownSales],sales.Database.ProviderName!);
+        var guard=Assert.IsType<Microsoft.EntityFrameworkCore.Migrations.Operations.SqlOperation>(migration.DownOperations[0]);
+        var salesDown=await Assert.ThrowsAsync<SqlException>(()=>sales.Database.ExecuteSqlRawAsync(guard.Sql));
+        Assert.Equal(51000,salesDown.Number);Assert.Equal(salesHistory,await sales.Database.GetAppliedMigrationsAsync());
         var creditHistory=(await credit.Database.GetAppliedMigrationsAsync()).ToArray();var own=Assert.Single(creditHistory,x=>x.EndsWith("_PurchaseScopeUses",StringComparison.Ordinal));await credit.GetService<IMigrator>().MigrateAsync(own);var prior=(await credit.Database.GetAppliedMigrationsAsync()).Reverse().Skip(1).First();var creditDown=await Assert.ThrowsAsync<SqlException>(()=>credit.GetService<IMigrator>().MigrateAsync(prior));Assert.Equal(51000,creditDown.Number);await credit.Database.MigrateAsync();Assert.Equal(creditHistory,await credit.Database.GetAppliedMigrationsAsync());Assert.True(await sales.CreditOrderLinks.AnyAsync(x=>x.OrderId==id));Assert.True(await credit.PurchaseScopeUses.AnyAsync(x=>x.ScopeId==scopeId));
     }
     [Fact]public async Task ChequeEnablementIsIndependentDefaultsOffAndLegacySettingsCannotSilentlyChangeIt()

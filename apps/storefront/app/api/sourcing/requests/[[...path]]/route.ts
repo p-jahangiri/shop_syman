@@ -1,4 +1,4 @@
-import { proxySourcingRequests } from '@/lib/sourcing-proxy';
+import { proxySourcingRequests } from '@/lib/market/sourcing-proxy';
 async function handler(request: Request, { params }: { params: Promise<{ path?: string[] }> }) {
   return proxySourcingRequests(request, (await params).path ?? [], {
     SHOP_API_URL: process.env.SHOP_API_URL,

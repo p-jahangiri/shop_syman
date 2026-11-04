@@ -69,11 +69,16 @@ public sealed partial class OrderShipmentSqlTests:IDisposable
     {
         var s=await Create(quantity:2);using var customer=s.Customer;var before=await Stock(s.Variant);var ids=new List<string>();for(var i=0;i<21;i++){var p=await ParcelSeedRead(service=>service.ReadAdminAsync(s.Owner,s.OrderId,null,default));var packed=await ParcelSeedWrite(s,ParcelInput(p,"pack",null,new PartialDispatchSelection(p.Lines[0].LineKey,1,[])));ids.Add(packed.Detail.Parcel.Id);var current=await ParcelSeedRead(service=>service.ReadAdminAsync(s.Owner,s.OrderId,null,default));await ParcelSeedWrite(s,ParcelInput(current,"void",packed.Detail.Parcel));}Assert.Equal(before,await Stock(s.Variant));var page=await Parcels(s);Assert.Equal(20,page.Parcels.Length);Assert.Equal("20",page.NextAfter);var next=await Get<ParcelPage>(ParcelStaff,ParcelBase(s)+"?after="+page.NextAfter);Assert.Single(next.Parcels);Assert.Null(next.NextAfter);Assert.Equal(ids[^1],next.Parcels[0].Id);
         await Scope(async sp=>{var db=sp.GetRequiredService<SalesDbContext>();Assert.False(db.Database.HasPendingModelChanges());var line=await db.ParcelLines.FirstAsync(x=>ids.Contains(x.ParcelId));line.Quantity=2;await Assert.ThrowsAsync<InvalidOperationException>(()=>db.SaveChangesAsync());return true;});
-        await Scope(async sp=>{var db=sp.GetRequiredService<SalesDbContext>();var migrations=(await db.Database.GetAppliedMigrationsAsync()).ToArray();var parcelMigration=Array.FindIndex(migrations,x=>x.EndsWith("_OrderParcels",StringComparison.Ordinal));Assert.True(parcelMigration>0);var migrator=db.GetService<IMigrator>();
-            // EF commits each later empty migration independently. Exercise this
-            // guard at its own boundary and restore the full shared fixture.
-            try{await migrator.MigrateAsync(migrations[parcelMigration]);var ownBoundary=(await db.Database.GetAppliedMigrationsAsync()).ToArray();var error=await Assert.ThrowsAsync<Microsoft.Data.SqlClient.SqlException>(()=>migrator.MigrateAsync(migrations[parcelMigration-1]));Assert.Equal(51000,error.Number);Assert.Equal(ownBoundary,await db.Database.GetAppliedMigrationsAsync());Assert.Equal(21,await db.Parcels.CountAsync(x=>x.OrderId==s.OrderId));}
-            finally{await db.Database.MigrateAsync();}
+        await Scope(async sp=>{var db=sp.GetRequiredService<SalesDbContext>();var migrations=(await db.Database.GetAppliedMigrationsAsync()).ToArray();var parcelMigration=Array.FindIndex(migrations,x=>x.EndsWith("_OrderParcels",StringComparison.Ordinal));Assert.True(parcelMigration>0);
+            // Execute this migration's actual retained-data guard directly.
+            // A newer nonempty SMS signal migration must not be downgraded to
+            // reach it; preserving that history is a separate required guard.
+            var assembly=db.GetService<IMigrationsAssembly>();
+            var migration=assembly.CreateMigration(assembly.Migrations[migrations[parcelMigration]],db.Database.ProviderName!);
+            var guard=Assert.IsType<Microsoft.EntityFrameworkCore.Migrations.Operations.SqlOperation>(migration.DownOperations[0]);
+            Assert.Contains("Parcel",guard.Sql);
+            var error=await Assert.ThrowsAsync<Microsoft.Data.SqlClient.SqlException>(()=>db.Database.ExecuteSqlRawAsync(guard.Sql));
+            Assert.Equal(51000,error.Number);Assert.Equal(21,await db.Parcels.CountAsync(x=>x.OrderId==s.OrderId));
             Assert.Equal(migrations,await db.Database.GetAppliedMigrationsAsync());return true;});
     }
 }

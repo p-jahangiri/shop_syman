@@ -29,10 +29,11 @@ public sealed partial class CatalogService(CatalogDbContext db, IInventoryReader
     }
     private IQueryable<Product> Graph => CatalogProductGraph.Read(db);
 
-    public Task<CatalogSnapshot> ReadAsync(string locale, CancellationToken ct) => ReadCoreAsync(locale, null, false, ct);
+    public Task<CatalogSnapshot> ReadAsync(string locale, CancellationToken ct, bool hideUsed = false) =>
+        ReadCoreAsync(locale, null, false, ct, hideUsed);
     public Task<CatalogSnapshot> ReadMetadataAsync(string locale, CancellationToken ct) => ReadCoreAsync(locale, [], true, ct);
-    private Task<CatalogSnapshot> ReadCoreAsync(string locale,string[]? productIds,bool metadataOnly,CancellationToken ct)=>CatalogReadRetry.RunAsync(token=>ReadCoreAttemptAsync(locale,productIds,metadataOnly,token),ct);
-    private async Task<CatalogSnapshot> ReadCoreAttemptAsync(string locale, string[]? productIds, bool metadataOnly, CancellationToken ct,CatalogReadVersion[]? expectedProducts=null,CatalogReadVersion[]? expectedVariants=null)
+    private Task<CatalogSnapshot> ReadCoreAsync(string locale,string[]? productIds,bool metadataOnly,CancellationToken ct,bool hideUsed=false)=>CatalogReadRetry.RunAsync(token=>ReadCoreAttemptAsync(locale,productIds,metadataOnly,token,hideUsed:hideUsed),ct);
+    private async Task<CatalogSnapshot> ReadCoreAttemptAsync(string locale, string[]? productIds, bool metadataOnly, CancellationToken ct,CatalogReadVersion[]? expectedProducts=null,CatalogReadVersion[]? expectedVariants=null,bool hideUsed=false)
     {
         var categories = await db.Categories.AsNoTracking().Include(x => x.Translations).Include(x => x.Attributes).Where(x => x.IsActive).OrderBy(x => x.SortOrder).ToListAsync(ct);
         var definitions = await db.AttributeDefinitions.AsNoTracking().Include(x => x.Translations).ToListAsync(ct);
@@ -42,7 +43,9 @@ public sealed partial class CatalogService(CatalogDbContext db, IInventoryReader
         var brandIds = brands.Keys.ToArray();
         var now = DateTimeOffset.UtcNow;
         var products = metadataOnly ? [] : await Graph.AsNoTracking().Where(x => x.Status == "Published" && categoryIds.Contains(x.CategoryId) && brandIds.Contains(x.BrandId) && (x.PublishAt == null || x.PublishAt <= now) && (productIds == null || productIds.Contains(x.Id))).ToListAsync(ct);
-        var usedConditions=await UsedItemConditions.CurrentAsync(db,products.SelectMany(p=>p.Variants).Select(v=>(v.Id,v.UsedInspectionId)),ct);
+        var usedConditions = hideUsed
+            ? new Dictionary<string, UsedItemConditionData>()
+            : await UsedItemConditions.CurrentAsync(db, products.SelectMany(p => p.Variants).Select(v => (v.Id, v.UsedInspectionId)), ct);
         var optionIds=products.SelectMany(p=>p.Attributes.SelectMany(v=>v.Selections.Select(x=>x.OptionId).Concat(v.ValueOptionId is null?[]:new[]{v.ValueOptionId})).Concat(p.Variants.SelectMany(v=>v.Attributes.Where(a=>a.ValueOptionId!=null).Select(a=>a.ValueOptionId!)))).Distinct().ToArray();
         if(optionIds.Length>0){var used=await db.AttributeOptions.AsNoTracking().Where(o=>optionIds.Contains(o.Id)).ToArrayAsync(ct);foreach(var group in used.GroupBy(o=>o.AttributeId))if(definitionMap.TryGetValue(group.Key,out var definition))definition.Options=group.ToList();}
         if(expectedProducts is not null)CatalogReadVersions.EnsureUnchanged(expectedProducts,CatalogReadVersions.Capture(products));
@@ -70,13 +73,17 @@ public sealed partial class CatalogService(CatalogDbContext db, IInventoryReader
         }).ToArray();
         var productDtos = products.Select(p => {
             var tr = p.Translations.FirstOrDefault(x => x.Locale == locale) ?? p.Translations.First(x => x.Locale == "fa");
+            var variants = p.Variants.Where(v => v.IsActive && (!hideUsed || v.UsedInspectionId == null));
+            var videos = p.Media.Where(m => m.Type == "video" &&
+                (!hideUsed || m.VariantId is null || variants.Any(v => v.Id == m.VariantId)))
+                .OrderBy(m => m.SortOrder).Select(m => new ProductVideoDto(m.Url, m.VariantId)).ToArray();
             return new ProductDto(p.Id, p.Slug, tr.Name, p.Translations.FirstOrDefault(x => x.Locale == "en")?.Name ?? tr.Name, p.CategoryId, brands[p.BrandId].Name, tr.Description,
-                p.Media.OrderBy(x => x.SortOrder).FirstOrDefault()?.Url ?? "", tr.Badge, p.IsDigital, p.Featured,
+                p.Media.Where(m=>m.Type=="image").OrderBy(x => x.SortOrder).FirstOrDefault()?.Url ?? "", tr.Badge, p.IsDigital, p.Featured,
                 p.Attributes.ToDictionary(x => definitionMap[x.AttributeId].Key, x => Text(definitionMap[x.AttributeId], x.ValueTextFa, x.ValueTextEn, x.ValueNumber, x.ValueBool, x.ValueOptionId, x.Selections.Select(s => s.OptionId))),
-                p.Variants.Where(v => v.IsActive).Select(v => new VariantDto(v.Id, v.Sku, locale == "en" ? v.LabelEn : v.LabelFa, v.Color, locale == "en" ? v.ColorNameEn : v.ColorNameFa,
+                variants.Select(v => new VariantDto(v.Id, v.Sku, locale == "en" ? v.LabelEn : v.LabelFa, v.Color, locale == "en" ? v.ColorNameEn : v.ColorNameFa,
                     v.PriceRial.ToString(CultureInfo.InvariantCulture), v.CompareAtPriceRial?.ToString(CultureInfo.InvariantCulture), availability.GetValueOrDefault(v.Id), locale == "en" ? v.WarrantyEn : v.WarrantyFa,
                     v.Attributes.ToDictionary(x => definitionMap[x.AttributeId].Key, x => Text(definitionMap[x.AttributeId], x.ValueTextFa, x.ValueTextEn, x.ValueNumber, x.ValueBool, x.ValueOptionId)), v.PurchaseMethods.Count == 0 ? null : v.PurchaseMethods.Select(m => m.MethodId).ToArray(),usedConditions.GetValueOrDefault(v.Id))).ToArray(),
-                p.PurchaseMethods.Select(m => m.MethodId).ToArray(), p.CreditPlans.Select(m => m.PlanId).ToArray(),p.Media.OrderBy(m=>m.SortOrder).Select(m=>m.Url).Take(24).ToArray());
+                p.PurchaseMethods.Select(m => m.MethodId).ToArray(), p.CreditPlans.Select(m => m.PlanId).ToArray(),p.Media.Where(m=>m.Type=="image").OrderBy(m=>m.SortOrder).Select(m=>m.Url).Take(24).ToArray(),videos.Length > 0 ? videos : null);
         }).Where(p => p.Variants.Length > 0).ToArray();
         return new(categoryDtos, productDtos, definitions.Select(d => new DefinitionDto(d.Key, Name(d), char.ToLowerInvariant(d.DataType.ToString()[0]) + d.DataType.ToString()[1..], d.Unit,
             categories.Any(c => c.Attributes.Any(a => a.AttributeId == d.Id && a.IsComparable)), categories.Any(c => c.Attributes.Any(a => a.AttributeId == d.Id && a.IsFilterable)), categories.Any(c => c.Attributes.Any(a => a.AttributeId == d.Id && a.ShowInSpecs)))).ToArray(), definitions.ToDictionary(d => d.Key, Name));
@@ -110,6 +117,8 @@ public sealed partial class CatalogService(CatalogDbContext db, IInventoryReader
         if (input.Attributes.Select(a => a.AttributeId).Distinct().Count() != input.Attributes.Length) throw new BusinessException("duplicate_attribute", "Category attributes must be unique.");
         var known = await db.AttributeDefinitions.Select(x => x.Id).ToListAsync(ct);
         if (input.Attributes.Any(a => !known.Contains(a.AttributeId))) throw new BusinessException("unknown_attribute", "An attribute is not defined.");
+        var axes=input.Attributes.Where(a=>a.IsVariantAxis).Select(a=>a.AttributeId).ToArray();
+        if(await db.AttributeDefinitions.AnyAsync(d=>axes.Contains(d.Id)&&d.DataType==AttributeDataType.MultiSelect,ct))throw new BusinessException("invalid_variant_axis","A multi-select specification cannot be a single SKU axis.");
         await ValidateUploadedImagesAsync([input.ImageUrl],ct);
         entity.Slug = input.Slug; entity.ParentId = input.ParentId; entity.ImageUrl = SafeImage(input.ImageUrl); entity.SortOrder = input.SortOrder; entity.IsActive = input.IsActive; Touch(entity, id is null);
         foreach (var tr in input.Translations) { var target = entity.Translations.FirstOrDefault(x => x.Locale == tr.Locale); if (target is null) { target = new() { Locale = tr.Locale }; entity.Translations.Add(target); } target.Name = tr.Name.Trim(); target.Description = tr.Description; }
@@ -128,6 +137,8 @@ public sealed partial class CatalogService(CatalogDbContext db, IInventoryReader
         entity.Key = input.Key; entity.DataType = input.DataType; entity.Unit = input.Unit; Touch(entity, id is null);
         if (input.Options.Any(o => !string.IsNullOrEmpty(o.Id) && entity.Options.All(existing => existing.Id != o.Id))) throw new BusinessException("invalid_options", "An option id does not belong to this attribute.");
         foreach (var tr in input.Translations) { var target = entity.Translations.FirstOrDefault(x => x.Locale == tr.Locale); if (target is null) { target = new() { Locale = tr.Locale }; entity.Translations.Add(target); } target.Name = tr.Name.Trim(); target.Unit = input.Unit; }
+        var removedOptions=entity.Options.Where(o=>input.Options.All(i=>i.Id!=o.Id)).Select(o=>o.Id).ToArray();
+        if(removedOptions.Length>0&&(await db.Set<ProductAttributeValue>().AnyAsync(v=>v.ValueOptionId!=null&&removedOptions.Contains(v.ValueOptionId),ct)||await db.Set<VariantAttributeValue>().AnyAsync(v=>v.ValueOptionId!=null&&removedOptions.Contains(v.ValueOptionId),ct)||await db.Set<ProductAttributeSelection>().AnyAsync(v=>removedOptions.Contains(v.OptionId),ct)))throw new BusinessException("attribute_option_in_use","An option used by products cannot be deleted; retain it or migrate its values first.");
         foreach (var old in entity.Options.Where(o => input.Options.All(i => i.Id != o.Id)).ToList()) { db.Remove(old); entity.Options.Remove(old); }
         foreach (var option in input.Options) { var target = entity.Options.FirstOrDefault(x => x.Id == option.Id); if (target is null) { target = new(); entity.Options.Add(target); } target.Value = option.Value; target.LabelFa = option.LabelFa; target.LabelEn = option.LabelEn; target.SortOrder = option.SortOrder; }
         if (id is null) db.AttributeDefinitions.Add(entity);
@@ -146,6 +157,7 @@ public sealed partial class CatalogService(CatalogDbContext db, IInventoryReader
         }
         if(input.ImageUrls.Length>24||input.ImageUrls.Distinct().Count()!=input.ImageUrls.Length)throw new BusinessException("invalid_product_images","Use up to 24 distinct product images.");
         await ValidateUploadedImagesAsync(input.ImageUrls,ct);
+        await ValidateVideosAsync(input.Videos,input.Variants,ct);
         if (input.Status is not ("Draft" or "Published" or "Hidden") || input.Status == "Published" && input.Variants.Length == 0 || input.Variants.Select(v => v.Sku.Trim().ToUpperInvariant()).Distinct().Count() != input.Variants.Length || input.Variants.Where(v => v.Id is not null).Select(v => v.Id).Distinct().Count() != input.Variants.Count(v => v.Id is not null) || input.Variants.Any(v => string.IsNullOrWhiteSpace(v.Sku) || v.Sku.Length > 80)) throw new BusinessException("invalid_product", "Use a valid status and unique variants. Storefront publication requires a sellable variant.");
         var category = await db.Categories.AsNoTracking().Include(x => x.Attributes).SingleOrDefaultAsync(x => x.Id == input.CategoryId, ct) ?? throw new BusinessException("unknown_category", "Category is not defined.");
         if (!await db.Brands.AnyAsync(x => x.Id == input.BrandId, ct)) throw new BusinessException("unknown_brand", "Brand is not defined.");
@@ -163,6 +175,7 @@ public sealed partial class CatalogService(CatalogDbContext db, IInventoryReader
         await ValidateProductInputAsync(id,input,ct);
         var entity = id is null ? new Product() : await Graph.SingleOrDefaultAsync(x => x.Id == id, ct) ?? throw new BusinessException("not_found", "Product was not found.");
         if (id is not null) CatalogRules.Version(entity.Version, input.Version);
+        if(entity.ArchivedAt is not null)throw new BusinessException("product_archived","Restore the product before editing it.");
         if(input.IsDigital&&entity.Variants.Any(v=>v.UsedInspectionId!=null))throw new BusinessException("used_item_digital_conflict","A used physical SKU cannot become a digital product.");
         entity.CategoryId = input.CategoryId; entity.BrandId = input.BrandId; entity.Slug = input.Slug; entity.Status = input.Status; entity.IsDigital = input.IsDigital; entity.Featured = input.Featured; Touch(entity, id is null);
         foreach (var tr in input.Translations) { var target = entity.Translations.FirstOrDefault(x => x.Locale == tr.Locale); if (target is null) { target = new() { Locale = tr.Locale }; entity.Translations.Add(target); } target.Name = tr.Name.Trim(); target.Description = tr.Description; target.Badge = tr.Badge; }
@@ -187,13 +200,17 @@ public sealed partial class CatalogService(CatalogDbContext db, IInventoryReader
             foreach (var old in target.PurchaseMethods.Where(m => !v.PurchaseMethodIds.Contains(m.MethodId)).ToList()) { db.Remove(old); target.PurchaseMethods.Remove(old); }
             foreach (var methodId in v.PurchaseMethodIds.Distinct()) if (!target.PurchaseMethods.Any(m => m.MethodId == methodId)) target.PurchaseMethods.Add(new() { MethodId = methodId });
         }
-        foreach (var old in entity.Media.Where(m => !input.ImageUrls.Contains(m.Url)).ToList()) { db.Remove(old); entity.Media.Remove(old); }
+        foreach (var old in entity.Media.Where(m => m.Type=="image"&&!input.ImageUrls.Contains(m.Url)).ToList()) { db.Remove(old); entity.Media.Remove(old); }
         for (var i = 0; i < input.ImageUrls.Length; i++) {
-            var url=SafeImage(input.ImageUrls[i]);var media=entity.Media.FirstOrDefault(m=>m.Url==url);var creating=media is null;
+            var url=SafeImage(input.ImageUrls[i]);var media=entity.Media.FirstOrDefault(m=>m.Type=="image"&&m.Url==url);var creating=media is null;
             if(media is null){media=new(){Url=url};entity.Media.Add(media);}
             var assetId=PublicImagePaths.TryParse(url,out var asset,out _)?asset:null;
             if(creating||media.SortOrder!=i||media.AssetId!=assetId)Touch(media,creating);
             media.SortOrder=i;media.AssetId=assetId;
+        }
+        if(input.Videos is not null){
+            foreach(var old in entity.Media.Where(m=>m.Type=="video"&&!input.Videos.Any(v=>v.Url==m.Url&&v.VariantId==m.VariantId)).ToArray()){db.Remove(old);entity.Media.Remove(old);}
+            for(var i=0;i<input.Videos.Length;i++){var video=input.Videos[i];var media=entity.Media.SingleOrDefault(m=>m.Type=="video"&&m.Url==video.Url&&m.VariantId==video.VariantId);var creating=media is null;if(media is null){media=new(){Type="video",Url=video.Url,VariantId=video.VariantId};entity.Media.Add(media);}media.SortOrder=i;media.VideoAssetId=PublicVideoPaths.TryParse(video.Url,out var asset,out _)?asset:null;Touch(media,creating);}
         }
         foreach (var old in entity.PurchaseMethods.Where(m => !input.PurchaseMethodIds.Contains(m.MethodId)).ToList()) { db.Remove(old); entity.PurchaseMethods.Remove(old); }
         foreach (var methodId in input.PurchaseMethodIds.Distinct()) if (!entity.PurchaseMethods.Any(m => m.MethodId == methodId)) entity.PurchaseMethods.Add(new() { MethodId = methodId });
@@ -203,6 +220,11 @@ public sealed partial class CatalogService(CatalogDbContext db, IInventoryReader
         await db.SaveChangesAsync(ct); return entity.Id;
     }
 
+    private async Task ValidateVideosAsync(ProductVideoInput[]? videos,VariantInput[] variants,CancellationToken ct){
+        if(videos is null)return;
+        if(videos.Length>8||videos.Select(v=>(v.Url,v.VariantId)).Distinct().Count()!=videos.Length)throw new BusinessException("invalid_product_videos","Use up to eight distinct product videos.");
+        foreach(var video in videos){if(!PublicVideoPaths.ValidUrl(video.Url)||video.VariantId is not null&&!variants.Any(v=>v.Id==video.VariantId))throw new BusinessException("invalid_product_videos","Use safe direct video links and variants of this product.");if(PublicVideoPaths.TryParse(video.Url,out var asset,out var extension)&&!await db.Set<PublicVideoAsset>().AnyAsync(a=>a.Id==asset&&a.Extension==extension&&a.Status=="Ready",ct))throw new BusinessException("video_not_ready","Choose a ready processed video.");}
+    }
     private void Touch(CatalogEntity entity, bool creating)
     {
         var now = time.GetUtcNow();
@@ -211,10 +233,8 @@ public sealed partial class CatalogService(CatalogDbContext db, IInventoryReader
         else db.Entry(entity).Property(x => x.UpdatedAt).IsModified = true;
     }
 
-    private async Task ValidateUploadedImagesAsync(IEnumerable<string> urls,CancellationToken ct){
-        var ids=new List<string>();foreach(var url in urls){SafeImage(url);if(url.StartsWith("/media/",StringComparison.Ordinal)){if(!PublicImagePaths.TryParse(url,out var id,out _))throw new BusinessException("invalid_image_url","Use an issued public catalogue image.");ids.Add(id);}}
-        var unique=ids.Distinct().ToArray();if(unique.Length>0&&await db.PublicImages.CountAsync(a=>unique.Contains(a.Id)&&a.Status=="Ready",ct)!=unique.Length)throw new BusinessException("image_not_ready","An uploaded image has not completed scanning and storage.");
-    }
+    private Task ValidateUploadedImagesAsync(IEnumerable<string> urls,CancellationToken ct) =>
+        new CatalogPublicImageReferences(db).RequireReadyAsync(urls.ToArray(),ct);
     private static string SafeImage(string url)
     {
         if (!PublicImageUrlRules.IsValid(url)) throw new BusinessException("invalid_image_url", "Use an issued public image path, a bundled product image or an HTTPS image URL without credentials or a fragment.");

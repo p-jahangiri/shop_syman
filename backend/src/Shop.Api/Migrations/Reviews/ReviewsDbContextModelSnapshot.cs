@@ -164,6 +164,24 @@ namespace Shop.Api.Migrations.Reviews
                     b.ToTable("Events", "reviews");
                 });
 
+            modelBuilder.Entity("Shop.Modules.Reviews.ReviewPhoto", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<byte[]>("Webp")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Photos", "reviews", t =>
+                        {
+                            t.HasCheckConstraint("CK_Review_PhotoBytes", "DATALENGTH([Webp]) BETWEEN 12 AND 2097152");
+                        });
+                });
+
             modelBuilder.Entity("Shop.Modules.Reviews.ReviewReport", b =>
                 {
                     b.Property<string>("ReviewId")
@@ -218,6 +236,10 @@ namespace Shop.Api.Migrations.Reviews
                         .HasMaxLength(2)
                         .HasColumnType("nvarchar(2)");
 
+                    b.Property<string>("PhotoId")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
                     b.Property<int>("Rating")
                         .HasColumnType("int");
 
@@ -232,6 +254,8 @@ namespace Shop.Api.Migrations.Reviews
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PhotoId");
 
                     b.HasIndex("ReviewId", "Id")
                         .IsUnique();
@@ -270,6 +294,11 @@ namespace Shop.Api.Migrations.Reviews
                         .HasForeignKey("ReviewId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Shop.Modules.Reviews.ReviewPhoto", null)
+                        .WithMany()
+                        .HasForeignKey("PhotoId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 #pragma warning restore 612, 618
         }

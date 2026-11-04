@@ -1,0 +1,284 @@
+.payment-workspace {
+  min-inline-size: 0;
+}
+.payment-heading {
+  flex-wrap: wrap;
+  padding-block-end: 1rem;
+  border-block-end: 1px solid var(--border);
+}
+.payment-heading > div {
+  flex: 1 1 19rem;
+  min-inline-size: 0;
+}
+.payment-heading h2 {
+  margin-block: 0.3rem;
+}
+.payment-eyebrow,
+.payment-button,
+.payment-list-meta > span {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+.payment-eyebrow,
+.payment-muted,
+.payment-row-time,
+.payment-list-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.payment-button,
+.payment-filters button,
+.payment-queues > button,
+.payment-row > button {
+  min-block-size: 2.75rem;
+}
+.payment-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-block: 0.8rem 1rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-soft);
+}
+.payment-info svg {
+  flex: none;
+}
+.payment-info p {
+  margin: 0;
+}
+.payment-queues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-block: 1rem 0.85rem;
+}
+.payment-queues button[aria-pressed='true'] {
+  border-color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 16%, var(--surface));
+  color: var(--foreground);
+  font-weight: 700;
+}
+.payment-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.55rem 0.65rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-soft);
+}
+.page .payment-filters > .field {
+  margin-block: 0;
+}
+.payment-filters .field:first-child {
+  flex: 2 1 min(100%, 15rem);
+}
+.payment-filters .field:nth-child(2) {
+  flex: 1 1 min(100%, 10rem);
+}
+.payment-filters > .field :is(input, select),
+.payment-filter-actions button {
+  min-block-size: 46px;
+}
+.payment-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-inline-size: 0;
+}
+.payment-filter-help {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+.payment-filter-help[role='alert'] {
+  color: var(--danger);
+}
+.payment-active-filter {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.payment-list-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-block: 1.1rem 0.65rem;
+}
+.payment-list-meta p {
+  margin: 0;
+}
+.payment-records {
+  container-type: inline-size;
+  --payment-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 0.95fr) minmax(0, 1fr) auto;
+}
+.payment-workspace .payment-empty {
+  padding-block: 1.1rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-soft);
+  text-align: center;
+}
+.payment-columns,
+.payment-row {
+  display: grid;
+  align-items: center;
+  grid-template-columns: var(--payment-columns);
+  gap: 0.7rem;
+  padding: 0.75rem;
+}
+.payment-columns {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.payment-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.payment-row {
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface);
+}
+.payment-row > div {
+  min-inline-size: 0;
+}
+.payment-row-time,
+.payment-delta {
+  display: block;
+  margin-block-start: 0.2rem;
+}
+.payment-row code,
+.payment-detail code {
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
+.payment-tags {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.payment-state,
+.payment-demo {
+  display: inline-flex;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--foreground);
+  font-size: 0.79rem;
+}
+.payment-state[data-state='review'] {
+  border-color: color-mix(in oklch, oklch(62% 0.17 68) 60%, var(--border));
+  background: color-mix(in oklch, oklch(70% 0.15 68) 18%, var(--surface));
+}
+.payment-state[data-state='verified'] {
+  border-color: color-mix(in oklch, var(--primary) 48%, var(--border));
+  background: color-mix(in oklch, var(--primary) 18%, var(--surface));
+}
+.payment-state[data-state='failed'] {
+  background: color-mix(in oklch, oklch(63% 0.15 27) 16%, var(--surface));
+}
+.payment-demo,
+.payment-delta {
+  color: var(--muted);
+}
+.payment-rial {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.payment-rial small {
+  font-weight: 400;
+}
+.payment-cell-title {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+.payment-more {
+  margin-block-start: 0.8rem;
+}
+.payment-detail {
+  display: grid;
+  gap: 0.85rem;
+}
+.payment-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: 0.65rem;
+}
+.payment-detail-grid > section,
+.payment-detail-note {
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-soft);
+}
+.payment-detail h3 {
+  margin-block: 0 0.6rem;
+  font-size: 1rem;
+}
+.payment-detail p {
+  margin-block: 0.3rem 0;
+}
+.payment-detail dl {
+  margin: 0;
+}
+.payment-detail dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-block-start: 0.4rem;
+}
+.payment-detail dd {
+  margin: 0;
+}
+.payment-identifiers {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.2rem 0.65rem;
+}
+@container (max-width: 40rem) {
+  .payment-columns {
+    display: none;
+  }
+  .payment-cell-title {
+    position: static;
+    display: block;
+    inline-size: auto;
+    block-size: auto;
+    clip-path: none;
+    color: var(--muted);
+    font-size: 0.79rem;
+  }
+  .payment-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0.65rem;
+  }
+  .payment-row > :first-child {
+    grid-column: 1 / -1;
+  }
+  .payment-row > button {
+    justify-self: end;
+  }
+}
+@container (max-width: 17rem) {
+  .payment-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

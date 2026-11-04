@@ -122,13 +122,13 @@ try:
         (directory/'main.tsx').write_text("""import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
-import {InventoryHistory} from '../../apps/admin/src/inventory-history';
-import '../../apps/admin/src/style.css';
+import {InventoryHistory} from '../../apps/admin/src/pages/inventory/inventory-history';
+import '../../apps/admin/src/styles/style.css';
 const client=new QueryClient();
 createRoot(document.getElementById('root')!).render(<QueryClientProvider client={client}><main style={{padding:16,maxWidth:1200,margin:'auto'}}><p role="note">پیش‌نمایش مستقل تاریخچهٔ انبار · دادهٔ نمونه، بدون ورود و SQL</p><InventoryHistory/></main></QueryClientProvider>);
 """)
         if stock_surface:
-            entry = (directory/'main.tsx').read_text().replace("import {InventoryHistory} from '../../apps/admin/src/inventory-history';", "import {InventoryPage} from '../../apps/admin/src/inventory';").replace('<InventoryHistory/>','<InventoryPage writable={false}/>')
+            entry = (directory/'main.tsx').read_text().replace("import {InventoryHistory} from '../../apps/admin/src/pages/inventory/inventory-history';", "import {InventoryPage} from '../../apps/admin/src/pages/inventory/inventory';").replace('<InventoryHistory/>','<InventoryPage writable={false}/>')
             (directory/'main.tsx').write_text(entry)
         config = "import {defineConfig} from 'vite';import react from '@vitejs/plugin-react';export default defineConfig({root:" + json.dumps(str(directory)) + ",plugins:[react()],publicDir:false,server:{host:'127.0.0.1',port:3175,strictPort:true,fs:{allow:[" + json.dumps(str(root)) + "]},proxy:{'/api':{target:'http://127.0.0.1:5181',changeOrigin:true}}}});"
         (directory/'vite.config.mts').write_text(config)

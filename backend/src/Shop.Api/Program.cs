@@ -13,8 +13,10 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using Shop.Api.Composition;
 using Shop.Modules.Catalog.Application;
 using Shop.Modules.Catalog.Infrastructure;
+using Shop.Modules.Catalog.Media;
 using Shop.Modules.Cms;
 using Shop.Modules.Market;
 using Shop.Modules.Reviews;
@@ -29,6 +31,10 @@ using Shop.Modules.Payments;
 using Shop.SharedKernel;
 using System.Security.Cryptography.X509Certificates;
 using IdentityDbContext = Shop.Modules.Identity.IdentityDbContext;
+
+var seedCmsExamples = args.Contains("--seed-cms-examples");
+if (seedCmsExamples && args.Length != 1)
+    throw new InvalidOperationException("CMS examples require a standalone command.");
 
 if (args.Contains("--health-probe")) {
     using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(4) };
@@ -46,21 +52,10 @@ AuthConfiguration AuthConfigurationValue()
     return new(key, builder.Configuration["Auth:Issuer"] ?? "sayman-api", builder.Configuration["Auth:Audience"] ?? "sayman-clients");
 }
 builder.Services.AddSingleton(_ => AuthConfigurationValue());
-void SqlOptions(DbContextOptionsBuilder options, string schema) => options.UseSqlServer(builder.Configuration.GetConnectionString("Shop") ?? throw new InvalidOperationException("ConnectionStrings__Shop is required."), sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName).MigrationsHistoryTable("__EFMigrationsHistory", schema));
-builder.Services.AddDbContext<CatalogDbContext>(o => SqlOptions(o, "catalog"));
-builder.Services.AddDbContext<InventoryDbContext>(o => SqlOptions(o, "inventory"));
-builder.Services.AddDbContext<SalesDbContext>(o => SqlOptions(o, "sales"));
-builder.Services.AddDbContext<PaymentsDbContext>(o => SqlOptions(o, "payments"));
-builder.Services.AddDbContext<CreditDbContext>(o => SqlOptions(o, "credit"));
-builder.Services.AddDbContext<CmsDbContext>(o => SqlOptions(o, "cms"));
-builder.Services.AddDbContext<IdentityDbContext>(o => SqlOptions(o, "identity"));
-builder.Services.AddDbContext<MarketDbContext>(o => SqlOptions(o, "market"));
-builder.Services.AddDbContext<ReviewsDbContext>(o => SqlOptions(o, "reviews"));
+builder.Services.AddCommerceDatabaseContexts(builder.Configuration);
 builder.Services.AddSignalR(options=>{options.EnableDetailedErrors=false;options.MaximumReceiveMessageSize=4096;options.MaximumParallelInvocationsPerClient=1;options.SupportedProtocols=["json"];options.DisableImplicitFromServicesParameters=true;});
 builder.Services.AddSingleton<PrivateRealtimeCodec>();builder.Services.AddScoped<PrivateRealtimeQueue>();builder.Services.AddScoped<IPrivateRealtimeEvents>(s=>s.GetRequiredService<PrivateRealtimeQueue>());builder.Services.AddSingleton<IPrivateRealtimeDispatcher,SignalRPrivateRealtimeDispatcher>();
-builder.Services.AddDbContext<SupportDbContext>(o => SqlOptions(o, "support"));
-builder.Services.AddDbContext<NotificationsDbContext>(o=>SqlOptions(o,"notifications"));
-builder.Services.AddDbContext<FilesDbContext>(o=>SqlOptions(o,"files"));
+builder.Services.AddCommunicationDatabaseContexts(builder.Configuration);
 builder.AddPrivateFiles();
 builder.Services.AddScoped<TicketAttachmentCoordinator>();builder.Services.AddSingleton<PrivateFileReadSlots>();builder.Services.AddSingleton<PrivateFileDownloadSlots>();
 builder.Services.AddScoped<IPrivateNotificationWriter,PrivateNotificationWriter>();
@@ -70,6 +65,8 @@ builder.Services.AddSingleton(new TicketOptions(builder.Configuration.GetValue<i
 builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<IReviewProductReader,ReviewProductReader>();
 builder.Services.AddScoped<IReviewPurchaseReader,ReviewPurchaseReader>();
+builder.Services.AddSingleton(new ReviewOptions(builder.Environment.IsDevelopment()));
+builder.Services.AddSingleton<IReviewPhotoProcessor,ReviewPhotoProcessor>();
 builder.Services.AddScoped<ReviewService>();
 builder.Services.AddScoped<UsedItemConditions>();
 builder.Services.AddScoped<IUsedItemStockPolicy,UsedItemStockPolicy>();
@@ -89,9 +86,38 @@ if (certificatePath is not null) dataProtection.ProtectKeysWithCertificate(X509C
 if (builder.Environment.IsProduction() && (certificatePath is null || builder.Configuration["DataProtection:KeyDirectory"] is null)) throw new InvalidOperationException("Production identity requires a persistent key directory and a key encryption certificate.");
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IMfaRecovery, MfaRecoveryService>();
+builder.Services.AddScoped<IStaffPassword, StaffPasswordService>();
 builder.Services.AddScoped<IStaffAdministration, StaffAdministration>();
 builder.Services.AddScoped<IStaffProvisioning, StaffProvisioningService>();
 builder.Services.AddScoped<ICustomerDirectory, CustomerDirectory>();
+builder.Services.AddSingleton<ICustomerOtpSmsGateway, Shop.Api.SmsIrVerifyGateway>();
+builder.Services.AddSingleton<ITransactionalSmsGateway, Shop.Api.TransactionalSmsGateway>();
+builder.Services.AddScoped<ISmsWorkspaceProtection, DataProtectionSmsWorkspaceProtection>();
+builder.Services.AddScoped<ISmsOtpChallengeInvalidator, SmsOtpChallengeInvalidator>();
+builder.Services.AddScoped<ISmsAdministratorAuthorization, SmsAdministratorAuthorization>();
+builder.Services.AddScoped<ISmsVerifiedRecipientReader, SmsVerifiedRecipientReader>();
+builder.Services.AddScoped<SmsDeliveryPlanner>(sp => new(sp.GetRequiredService<NotificationsDbContext>(),
+    sp.GetRequiredService<ISmsWorkspaceProtection>(), sp.GetRequiredService<ICustomerOtpProtection>(),
+    sp.GetRequiredService<ITransactionalSmsGateway>(), builder.Environment.IsDevelopment()));
+builder.Services.AddScoped<ISmsOtpConfigurationSource, SmsOtpConfigurationSource>();
+builder.Services.AddScoped<ISmsWorkspace>(sp => new SmsWorkspaceService(sp.GetRequiredService<NotificationsDbContext>(),
+    sp.GetRequiredService<ISmsWorkspaceProtection>(), sp.GetRequiredService<ISmsOtpChallengeInvalidator>(),
+    sp.GetRequiredService<TimeProvider>(), builder.Environment.IsDevelopment()));
+builder.Services.AddScoped<SmsWorkspaceCoordinator>();
+builder.Services.AddScoped<SmsMessageService>();
+builder.Services.AddScoped<ISmsBusinessQueue>(sp => sp.GetRequiredService<SmsMessageService>());
+builder.Services.AddScoped<ISalesSmsSignals, SalesSmsSignals>();
+builder.Services.AddScoped<ISmsOrderFactsReader, SmsOrderFactsReader>();
+builder.Services.AddSingleton<SmsDeliveryRunner>();
+builder.Services.AddHostedService<SmsDeliveryWorker>();
+builder.Services.AddScoped<ICustomerOtpProtection, DataProtectionCustomerOtpProtection>();
+builder.Services.AddScoped<ICustomerOtpPolicy, CustomerOtpPolicyReader>();
+builder.Services.AddScoped<ICustomerSmsSettings>(sp => new CustomerSmsSettingsService(
+    sp.GetRequiredService<UserManager<ShopUser>>(), sp.GetRequiredService<IdentityDbContext>(),
+    sp.GetRequiredService<ICustomerOtpProtection>(), sp.GetRequiredService<ICustomerOtpPolicy>(),
+    sp.GetRequiredService<ICustomerLoginContinuity>(), sp.GetRequiredService<TimeProvider>(), builder.Environment.IsDevelopment(),
+    sp.GetRequiredService<ISmsOtpConfigurationSource>()));
+builder.Services.AddScoped<ICustomerOtpService, CustomerOtpService>();
 builder.Services.AddScoped<ICustomerOrderOverview>(sp => new CustomerOrderOverviewReader(sp.GetRequiredService<SalesDbContext>(), sp.GetRequiredService<TimeProvider>(), builder.Environment.IsDevelopment()));
 builder.Services.AddScoped<ICustomerSupportOverview, CustomerSupportOverviewReader>();
 builder.Services.AddScoped<IStaffProvisioningProtection, StaffProvisioningProtection>();
@@ -103,8 +129,12 @@ builder.Services.AddScoped<InventoryService>(); builder.Services.AddScoped<IInve
 builder.Services.AddScoped<IStockMovementHistory, StockMovementHistory>();
 builder.Services.AddScoped<IAdminStockReader, AdminStockReader>();
 builder.Services.AddScoped<IAdminStockCatalog, Shop.Modules.Catalog.Infrastructure.AdminStockCatalog>();
+builder.Services.AddScoped<IAdminStockWorkspace, Shop.Modules.Catalog.Infrastructure.AdminStockCatalog>();
 builder.Services.AddScoped<AdminStockService>();
 builder.Services.AddScoped<IAdminProducts, Shop.Modules.Catalog.Infrastructure.AdminProducts>();
+builder.Services.AddScoped<IProductWorkspaceReader, ProductWorkspaceReader>();
+builder.Services.AddScoped<ProductWorkspaceCommands>();
+builder.Services.AddScoped<ProductFormFields>();
 builder.Services.AddScoped(s=>new StockReservationService(s.GetRequiredService<InventoryDbContext>(),s.GetRequiredService<TimeProvider>(),builder.Environment.IsDevelopment())); builder.Services.AddScoped<IStockReservations>(s => s.GetRequiredService<StockReservationService>());
 builder.Services.AddScoped<IStockBoundedReservations>(sp=>sp.GetRequiredService<StockReservationService>());
 builder.Services.AddScoped<IStockOrderReservationsV2>(s=>s.GetRequiredService<StockReservationService>());
@@ -126,6 +156,9 @@ builder.Services.AddScoped<IOrderParcelProtection,DataProtectionOrderParcelProte
 builder.Services.AddScoped<IDigitalDeliveryProtection,DataProtectionDigitalDeliveryProtection>();
 builder.Services.AddScoped(s=>new OrderParcelService(s.GetRequiredService<SalesDbContext>(),s.GetRequiredService<IPartialOrderFulfillmentInventory>(),s.GetRequiredService<IOrderParcelProtection>(),s.GetRequiredService<TimeProvider>(),builder.Environment.IsDevelopment(),s.GetRequiredService<ICreditFulfillmentAuthorization>(),s.GetRequiredService<OrderShipmentService>(),s.GetRequiredService<IDigitalDeliveryProtection>()));
 builder.Services.AddScoped<OrderParcelCoordinator>();
+builder.Services.AddScoped<IRmaProtection,DataProtectionRmaProtection>();
+builder.Services.AddScoped(s=>new RmaService(s.GetRequiredService<SalesDbContext>(),s.GetRequiredService<IRmaProtection>(),s.GetRequiredService<TimeProvider>(),builder.Environment.IsDevelopment()));
+builder.Services.AddScoped<RmaCoordinator>();
 builder.Services.AddScoped<SerialInventoryService>();builder.Services.AddScoped<IInventorySerialGuard>(s=>s.GetRequiredService<SerialInventoryService>());builder.Services.AddScoped<IStockSerialAssignments>(s=>s.GetRequiredService<SerialInventoryService>());
 builder.Services.AddScoped<IStockSerialAssignmentsV2>(s=>s.GetRequiredService<SerialInventoryService>());
 builder.Services.AddScoped<IAdminSerialReader>(s=>s.GetRequiredService<SerialInventoryService>());
@@ -158,15 +191,18 @@ builder.Services.AddScoped<IChequeLedgerProtection,DataProtectionChequeLedgerPro
 builder.Services.AddScoped<ICreditOrderProtection,DataProtectionCreditOrderProtection>();builder.Services.AddScoped<CreditOrderService>(sp=>new(sp.GetRequiredService<SalesDbContext>(),sp.GetRequiredService<CartService>(),sp.GetRequiredService<CreditCheckoutQuoteService>(),sp.GetRequiredService<CheckoutOrderSettingsService>(),sp.GetRequiredService<SourcingPriceAgreementService>(),sp.GetRequiredService<IStockBoundedReservations>(),sp.GetRequiredService<IStockOrderReservationsV2>(),sp.GetRequiredService<ICreditPurchaseScopeClaims>(),sp.GetRequiredService<ICreditOrderProtection>(),sp.GetRequiredService<OrderV2Service>(),sp.GetRequiredService<TimeProvider>(),sp.GetRequiredService<ChequeReviewHoldService>(),builder.Environment.IsDevelopment()));builder.Services.AddScoped<CreditOrderCoordinator>();
 builder.Services.AddScoped<ICreditCheckoutQuoteProtection,DataProtectionCreditCheckoutQuoteProtection>();builder.Services.AddScoped<CreditCheckoutQuoteService>();builder.Services.AddScoped<CreditCheckoutQuoteCoordinator>();
 builder.Services.AddScoped<CreditPurchaseScopeService>();builder.Services.AddScoped<ICreditPurchaseScopeReader>(sp=>sp.GetRequiredService<CreditPurchaseScopeService>());builder.Services.AddScoped<ICreditPurchaseScopeClaims>(sp=>sp.GetRequiredService<CreditPurchaseScopeService>());builder.Services.AddScoped<CreditPurchaseScopeCoordinator>();
-builder.Services.AddScoped(s => new CmsPageService(s.GetRequiredService<CmsDbContext>(), builder.Environment.IsDevelopment()));
-builder.Services.AddScoped<ICmsBlogCursorProtection,DataProtectionCmsBlogCursorProtection>();builder.Services.AddScoped(s=>new CmsBlogPostService(s.GetRequiredService<CmsDbContext>(),builder.Environment.IsDevelopment(),s.GetRequiredService<TimeProvider>(),s.GetRequiredService<ICmsBlogCursorProtection>()));builder.Services.AddScoped<CmsBlogPostCoordinator>();builder.Services.AddScoped<CmsBlogSitemapService>();
+builder.Services.AddScoped(s => new CmsPageService(s.GetRequiredService<CmsDbContext>(), builder.Environment.IsDevelopment(), s.GetRequiredService<IPublicImageReferences>()));
+builder.Services.AddScoped<ICmsBlogCursorProtection,DataProtectionCmsBlogCursorProtection>();builder.Services.AddScoped(s=>new CmsBlogPostService(s.GetRequiredService<CmsDbContext>(),builder.Environment.IsDevelopment(),s.GetRequiredService<TimeProvider>(),s.GetRequiredService<ICmsBlogCursorProtection>(),s.GetRequiredService<IPublicImageReferences>()));builder.Services.AddScoped<CmsBlogPostCoordinator>();builder.Services.AddScoped<CmsBlogSitemapService>();
 builder.Services.AddScoped<CmsPageCoordinator>();
 builder.Services.AddScoped(s => new CmsRedirectService(s.GetRequiredService<CmsDbContext>(), builder.Environment.IsDevelopment()));
 builder.Services.AddScoped<CmsRedirectCoordinator>();
 builder.Services.AddScoped<CmsPageSitemapService>();
 builder.Services.AddScoped(s => new SupportContentReader(s.GetRequiredService<CmsDbContext>(), builder.Environment.IsDevelopment()));
-builder.Services.AddScoped<ContentService>(); builder.Services.AddScoped<ISiteContentReader>(s => s.GetRequiredService<ContentService>());
+builder.Services.AddScoped<IPublicImageReferences,CatalogPublicImageReferences>();
+builder.Services.AddScoped<ICustomerLoginContinuity,CustomerLoginContinuity>();
+builder.Services.AddScoped<ContentService>(s => new(s.GetRequiredService<CmsDbContext>(), s.GetRequiredService<IPublicImageReferences>(), s.GetRequiredService<ICustomerLoginContinuity>(), builder.Environment.IsDevelopment())); builder.Services.AddScoped<ISiteContentReader>(s => s.GetRequiredService<ContentService>());
 builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<IAdminPriceHistory, AdminPriceHistory>();
 builder.Services.AddScoped<IAccountingCatalogLinks>(s=>(IAccountingCatalogLinks)s.GetRequiredService<ICatalogService>());
 builder.Services.AddScoped<IAccountingImports>(s=>new AccountingImportService(s.GetRequiredService<CatalogDbContext>(),s.GetRequiredService<TimeProvider>(),builder.Environment.IsDevelopment()));
 builder.Services.AddScoped<IAccountingInventory,AccountingInventoryService>();
@@ -207,6 +243,7 @@ builder.Services.AddScoped<CheckoutChargePolicyService>();
 builder.Services.AddScoped<ChequeReviewHoldService>();builder.Services.AddScoped<ChequeReviewHoldCoordinator>();builder.Services.AddScoped<CheckoutOrderSettingsService>(); builder.Services.AddScoped<OrderService>(); builder.Services.AddScoped<SalesTransactionCoordinator>();
 builder.Services.AddSingleton<OrderExpiryRunner>(); builder.Services.AddHostedService<OrderExpiryWorker>();
 builder.AddPublicMedia();
+builder.AddPublicVideos();
 builder.Services.ConfigureHttpJsonOptions(o => { o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()); o.SerializerOptions.Converters.Add(new Int64StringConverter()); o.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull; o.SerializerOptions.MaxDepth = 32; });
 builder.Services.AddProblemDetails(); builder.Services.AddOpenApi();
 var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? (builder.Environment.IsDevelopment() ? ["http://127.0.0.1:3173", "http://127.0.0.1:3000"] : []);
@@ -229,6 +266,9 @@ builder.Services.AddAuthorization(o => {
     o.AddPolicy("staff_password_change", p => p.RequireAuthenticatedUser().RequireClaim("token_kind", "staff_password_change"));
     o.AddPolicy("staff_mfa", p => p.RequireAuthenticatedUser().RequireClaim("token_kind", "access").RequireRole(ShopPermissions.Roles.Keys.ToArray()));
     o.AddPolicy("public_media.write", p => p.RequireAuthenticatedUser().RequireClaim("token_kind", "access").RequireClaim("permission", "catalog.write", "cms.write"));
+    o.AddPolicy("public_images.write", p => p.RequireAuthenticatedUser().RequireClaim("token_kind", "access").RequireClaim("permission", "catalog.write", "cms.write", "cms.editor"));
+    o.AddPolicy("cms.editorial.read", p => p.RequireAuthenticatedUser().RequireClaim("token_kind", "access").RequireClaim("permission", "cms.read", "cms.editor"));
+    o.AddPolicy("cms.editorial.write", p => p.RequireAuthenticatedUser().RequireClaim("token_kind", "access").RequireClaim("permission", "cms.write", "cms.editor"));
     foreach (var permission in ShopPermissions.All) o.AddPolicy(permission, p => { p.RequireAuthenticatedUser().RequireClaim("token_kind", "access").RequireClaim("permission", permission); if (permission.StartsWith("staff.", StringComparison.Ordinal)) p.RequireRole("Administrator"); });
 });
 builder.Services.AddRateLimiter(o => {
@@ -265,6 +305,12 @@ if (args.Contains("--market-navigation-dev")) {
     Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
     return;
 }
+if (args.Contains("--store-identity-dev")) {
+    await using var scope = app.Services.CreateAsyncScope();
+    var result = await DevelopmentStoreIdentitySeed.RunAsync(scope.ServiceProvider, app.Environment, args.Contains("--apply"), CancellationToken.None);
+    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
+    return;
+}
 if (args.Contains("--seed-market-dev")) {
     await using var scope = app.Services.CreateAsyncScope();
     var result = await DevelopmentMarketSeed.RunAsync(scope.ServiceProvider, app.Environment, CancellationToken.None);
@@ -281,6 +327,96 @@ if (args.Contains("--seed-moments-dev")) {
     await using var scope = app.Services.CreateAsyncScope();
     var result = await DevelopmentSeed.AddMomentsAsync(scope.ServiceProvider, app.Environment, app.Environment.ContentRootPath, CancellationToken.None);
     Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
+    return;
+}
+if (args.Contains("--seed-review-examples"))
+{
+    if (!app.Environment.IsDevelopment() || args.Length != 1)
+        throw new InvalidOperationException("Explicit review examples require Development and no other command.");
+    await using var scope = app.Services.CreateAsyncScope();
+    var result = await DevelopmentReviewExamples.RunAsync(scope.ServiceProvider, app.Environment, CancellationToken.None);
+    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
+    return;
+}
+if (seedCmsExamples)
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var result = await DevelopmentCmsExamples.RunAsync(scope.ServiceProvider, app.Environment, CancellationToken.None);
+    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
+    return;
+}
+if(args.Contains("--seed-product-examples") || args.Contains("--seed-used-examples")){
+    if(args.Length!=1||!app.Environment.IsDevelopment())throw new InvalidOperationException("Explicit product examples require Development and no other command.");
+    await using var scope=app.Services.CreateAsyncScope();var result=await DevelopmentProductExamples.RunAsync(scope.ServiceProvider,app.Environment,app.Environment.ContentRootPath,CancellationToken.None,args.Contains("--seed-used-examples"));Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));return;
+}
+if(args.Contains("--migrate-product-workspace")){
+    if(!app.Environment.IsDevelopment()||args.Length!=1)throw new InvalidOperationException("The scoped local Catalog migration requires Development and no other command.");
+    await using var scope=app.Services.CreateAsyncScope();var database=scope.ServiceProvider.GetRequiredService<CatalogDbContext>().Database;
+    const string target="20261101224803_ProductWorkspace";var expected=database.GetMigrations().ToArray();var applied=(await database.GetAppliedMigrationsAsync()).ToArray();
+    if(expected.LastOrDefault()!=target||!(applied.SequenceEqual(expected,StringComparer.Ordinal)||applied.SequenceEqual(expected.SkipLast(1),StringComparer.Ordinal)))throw new InvalidOperationException("The product workspace migration requires the supported Catalog history.");
+    await database.MigrateAsync();if(!(await database.GetAppliedMigrationsAsync()).SequenceEqual(expected,StringComparer.Ordinal))throw new InvalidOperationException("Catalog history verification failed.");
+    Console.WriteLine("Product workspace migration verified. No sample, account, SMS or inventory changes performed.");return;
+}
+if (args.Contains("--migrate-sms-workspace")) {
+    if (!app.Environment.IsDevelopment() || args.Length != 1)
+        throw new InvalidOperationException("The scoped local SMS migration requires Development and no other command.");
+    await using var scope = app.Services.CreateAsyncScope();
+    (Type Type, string Migration)[] targets = [
+        (typeof(IdentityDbContext), "20261031205216_SmsOtpPolicySnapshots"),
+        (typeof(NotificationsDbContext), "20261031205200_SmsWorkspace"),
+        (typeof(SalesDbContext), "20261031205223_SalesSmsSignals")];
+    // Check every participant before applying anything; a partial earlier run
+    // can only move forward through these exact three reviewed migrations.
+    foreach (var target in targets) {
+        var database = ((DbContext)scope.ServiceProvider.GetRequiredService(target.Type)).Database;
+        var expected = database.GetMigrations().ToArray();
+        var applied = (await database.GetAppliedMigrationsAsync()).ToArray();
+        if (expected.LastOrDefault() != target.Migration || !(applied.SequenceEqual(expected, StringComparer.Ordinal)
+            || applied.SequenceEqual(expected.SkipLast(1), StringComparer.Ordinal)))
+            throw new InvalidOperationException("The SMS migration requires the exact supported module histories.");
+    }
+    foreach (var target in targets) {
+        var database = ((DbContext)scope.ServiceProvider.GetRequiredService(target.Type)).Database;
+        await database.MigrateAsync();
+        if (!(await database.GetAppliedMigrationsAsync()).SequenceEqual(database.GetMigrations(), StringComparer.Ordinal))
+            throw new InvalidOperationException("The SMS migration history could not be verified.");
+    }
+    Console.WriteLine("SMS workspace migrations verified. No seed, backfill sends or catalog repair was performed.");
+    return;
+}
+if (args.Contains("--migrate-customer-otp")) {
+    if (!app.Environment.IsDevelopment() || args.Length != 1)
+        throw new InvalidOperationException("The scoped local customer OTP migration requires Development and no other command.");
+    await using var scope = app.Services.CreateAsyncScope();
+    var database = scope.ServiceProvider.GetRequiredService<IdentityDbContext>().Database;
+    string[] baseline = ["20261022094718_IdentityInitial", "20261022100122_IdentityAuthenticatorReplay",
+        "20261023005118_IdentityMfaRecovery", "20261028222547_AdministratorProvisionedStaff"];
+    const string migration = "20261031172618_CustomerSmsOtp";
+    var expected = baseline.Append(migration).ToArray();
+    var applied = (await database.GetAppliedMigrationsAsync()).ToArray();
+    if (!database.GetMigrations().SequenceEqual(expected, StringComparer.Ordinal)
+        || !(applied.SequenceEqual(baseline, StringComparer.Ordinal) || applied.SequenceEqual(expected, StringComparer.Ordinal)))
+        throw new InvalidOperationException("The customer OTP migration requires the exact supported local Identity history.");
+    await database.MigrateAsync();
+    if (!(await database.GetAppliedMigrationsAsync()).SequenceEqual(expected, StringComparer.Ordinal))
+        throw new InvalidOperationException("The customer OTP migration history could not be verified.");
+    Console.WriteLine("Customer OTP Identity migration verified. No seed or catalog repair was performed.");
+    return;
+}
+if (args.Contains("--migrate-review-photos")) {
+    if (!app.Environment.IsDevelopment() || args.Length != 1)
+        throw new InvalidOperationException("The scoped local review photos migration requires Development and no other command.");
+    await using var scope = app.Services.CreateAsyncScope();
+    var database = scope.ServiceProvider.GetRequiredService<ReviewsDbContext>().Database;
+    string[] expected = ["20261024214419_ProductReviews", "20261103173000_ReviewPhotos"];
+    var applied = (await database.GetAppliedMigrationsAsync()).ToArray();
+    if (!database.GetMigrations().SequenceEqual(expected, StringComparer.Ordinal)
+        || !(applied.SequenceEqual(expected.Take(1), StringComparer.Ordinal) || applied.SequenceEqual(expected, StringComparer.Ordinal)))
+        throw new InvalidOperationException("The review photos migration requires the exact supported local Reviews history.");
+    await database.MigrateAsync();
+    if (!(await database.GetAppliedMigrationsAsync()).SequenceEqual(expected, StringComparer.Ordinal))
+        throw new InvalidOperationException("The Reviews migration history could not be verified.");
+    Console.WriteLine("Review photos migration verified. No seed or catalog repair was performed.");
     return;
 }
 if (args.Contains("--migrate") || args.Contains("--seed-dev")) {
@@ -316,10 +452,24 @@ app.Use(async (context, next) => {
     context.Response.Headers["Referrer-Policy"] = "no-referrer";
     context.Response.Headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'";
     context.Response.Headers.CacheControl = "no-store";
-    if (context.Request.Path.StartsWithSegments("/api/orders") || context.Request.Path.StartsWithSegments("/api/admin/orders") || context.Request.Path.StartsWithSegments("/api/admin/customers") || context.Request.Path.StartsWithSegments("/api/admin/staff") || context.Request.Path.StartsWithSegments("/api/admin/staff-candidate") || context.Request.Path.StartsWithSegments("/api/admin/staff-role-catalog") || context.Request.Path.StartsWithSegments("/api/admin/redirects") || context.Request.Path.StartsWithSegments("/api/admin/pages") || context.Request.Path.StartsWithSegments("/api/admin/blog-posts") || CreditOrderEndpoints.IsScope(context.Request.Path.Value??"") || CreditCheckoutQuoteEndpoints.IsScope(context.Request.Path.Value??"") || CreditApplicationEndpoints.IsScope(context.Request.Path) || PrivateRealtimeTransport.IsScope(context.Request.Path.Value??"") || context.Request.Path.StartsWithSegments("/api/phones/interests") || context.Request.Path.StartsWithSegments("/api/admin/market") || context.Request.Path.StartsWithSegments("/api/wishlist") || context.Request.Path.StartsWithSegments("/api/notifications") || context.Request.Path.StartsWithSegments("/api/support") || context.Request.Path.StartsWithSegments("/api/admin/support")) { context.Response.Headers.CacheControl = "private, no-store"; context.Response.Headers.Vary = "Cookie, Authorization"; context.Response.Headers["X-Robots-Tag"] = "noindex, nofollow"; }
-    try { await SourcingEndpoints.LimitBodyAsync(context,next); }
+    if (context.Request.Path.StartsWithSegments("/api/reviews")) {
+        context.Response.Headers.CacheControl = "private, no-store";
+        context.Response.Headers.Vary = "Origin, Authorization";
+        context.Response.Headers["X-Robots-Tag"] = "noindex, nofollow";
+    }
+    if (context.Request.Path.StartsWithSegments("/api/auth") || context.Request.Path.StartsWithSegments("/api/admin") || context.Request.Path.StartsWithSegments("/api/account") || context.Request.Path.StartsWithSegments("/api/orders") || CreditOrderEndpoints.IsScope(context.Request.Path.Value??"") || CreditCheckoutQuoteEndpoints.IsScope(context.Request.Path.Value??"") || CreditApplicationEndpoints.IsScope(context.Request.Path) || PrivateRealtimeTransport.IsScope(context.Request.Path.Value??"") || context.Request.Path.StartsWithSegments("/api/phones/interests") || context.Request.Path.StartsWithSegments("/api/wishlist") || context.Request.Path.StartsWithSegments("/api/notifications") || context.Request.Path.StartsWithSegments("/api/support") || RmaEndpoints.IsPrivateScope(context.Request)) { context.Response.Headers.CacheControl = "private, no-store"; context.Response.Headers.Vary = "Cookie, Authorization"; context.Response.Headers["X-Robots-Tag"] = "noindex, nofollow"; }
+    if (context.Request.Path.StartsWithSegments("/api/auth")) context.Response.Headers.Vary = "Origin, Cookie, Authorization";
+    RmaEndpoints.Headers(context);
+    try { await RmaEndpoints.LimitBodyAsync(context,http=>SourcingEndpoints.LimitBodyAsync(http,next)); }
     catch (BadHttpRequestException e) { await Problem(context, "invalid_input", "The request body or content type is invalid.", e.StatusCode is 413 or 415 ? e.StatusCode : 400); }
-    catch (BusinessException e) { await Problem(context, e.Code, e.Message, e.Code is "staff_creation_unavailable" or "phone_discovery_unavailable" or "parcel_unavailable" or "partial_fulfillment_unavailable" or "partial_fulfillment_capacity_unavailable" or "wishlist_unavailable" or "wishlist_busy" or "credit_reminder_policy_unavailable" or "credit_reminder_policy_busy" or "credit_reminder_unavailable" or "credit_reminder_busy" or "cheque_report_unavailable" or "credit_clearance_unavailable" or "credit_clearance_busy" or "cheque_review_hold_unavailable" or "cheque_review_hold_busy" or "cheque_approval_unavailable" or "cheque_approval_busy" or "credit_upfront_unavailable" or "credit_upfront_busy" or "cms_redirect_unavailable" or "cms_redirect_busy" or "cms_redirect_capacity_unavailable" or "cms_blog_unavailable" or "cms_blog_busy" or "cms_page_unavailable" or "cms_page_busy" or "cheque_ledger_unavailable" or "cheque_ledger_busy" or "credit_schedule_unavailable" or "credit_schedule_busy" or "credit_order_unavailable" or "credit_quote_unavailable" or "credit_application_unavailable" or "credit_application_busy" or "private_file_unavailable" or "private_file_busy" or "notification_unavailable" or "support_content_unavailable" or "ticket_unavailable" or "ticket_busy" or "order_condition_unavailable" or "reviews_unavailable" or "cart_offer_capacity_unavailable" or "cart_v2_capacity_unavailable" or "sourcing_conversion_capacity_unavailable" or "sourcing_allocation_capacity_unavailable" or "sourcing_agreement_capacity_unavailable" or "receiving_capacity_unavailable" or "sourcing_supply_capacity_unavailable" or "sourcing_supply_note_unavailable" or "sourcing_offer_capacity_unavailable" or "sourcing_unavailable" or "sourcing_capacity_unavailable" or "sourcing_note_unavailable" or "market_unavailable" or "accounting_import_unavailable" or "shipment_unavailable" or "payment_order_unavailable" or "payment_attempt_unavailable" or "payment_verification_unavailable" or "payment_authority_unavailable" or "gateway_response_unavailable" or "gateway_unconfigured" or "catalog_unavailable" or "catalog_reindex_required" or "media_unavailable" or "sitemap_capacity_unavailable" or "address_unavailable" or "purchase_detail_capacity_unavailable" ? 503 : e.Code is "image_too_large" or "private_file_too_large" ? 413 : e.Code is "invalid_credentials" ? 401 : e.Code == "not_found" ? 404 : e.Code is "shipment_contract_upgrade_required" or "cart_contract_upgrade_required" or "order_contract_upgrade_required" or "reservation_contract_upgrade_required" or "serial_contract_upgrade_required" or "inventory_contract_upgrade_required" or "sourcing_supply_contract_upgrade_required" || e.Code.Contains("conflict", StringComparison.Ordinal) ? 409 : 400); }
+    catch (BusinessException e) when (CustomerOtpHttpErrors.Status(e.Code) is not null) {
+        await Problem(context, e.Code, CustomerOtpHttpErrors.Message(e.Code), CustomerOtpHttpErrors.Status(e.Code)!.Value);
+    }
+    catch (SqlException e) when (e.Number == 51001 && (context.Request.Path.StartsWithSegments("/api/auth/otp")
+        || context.Request.Path.StartsWithSegments("/api/admin/sms") || context.Request.Path.StartsWithSegments("/api/admin/content/auth"))) {
+        await Problem(context, "otp_unavailable", CustomerOtpHttpErrors.Message("otp_unavailable"), 503);
+    }
+    catch (BusinessException e) { await Problem(context, e.Code, e.Message, e.Code is "rma_unavailable" or "order_shipping_unavailable" or "order_tax_unavailable" or "staff_creation_unavailable" or "phone_discovery_unavailable" or "digital_delivery_unavailable" or "parcel_unavailable" or "partial_fulfillment_unavailable" or "partial_fulfillment_capacity_unavailable" or "wishlist_unavailable" or "wishlist_busy" or "credit_reminder_policy_unavailable" or "credit_reminder_policy_busy" or "credit_reminder_unavailable" or "credit_reminder_busy" or "cheque_report_unavailable" or "credit_clearance_unavailable" or "credit_clearance_busy" or "cheque_review_hold_unavailable" or "cheque_review_hold_busy" or "cheque_approval_unavailable" or "cheque_approval_busy" or "credit_upfront_unavailable" or "credit_upfront_busy" or "cms_redirect_unavailable" or "cms_redirect_busy" or "cms_redirect_capacity_unavailable" or "cms_blog_unavailable" or "cms_blog_busy" or "cms_page_unavailable" or "cms_page_busy" or "cheque_ledger_unavailable" or "cheque_ledger_busy" or "credit_schedule_unavailable" or "credit_schedule_busy" or "credit_order_unavailable" or "credit_quote_unavailable" or "credit_application_unavailable" or "credit_application_busy" or "private_file_unavailable" or "private_file_busy" or "notification_unavailable" or "support_content_unavailable" or "ticket_unavailable" or "ticket_busy" or "order_condition_unavailable" or "reviews_unavailable" or "cart_offer_capacity_unavailable" or "cart_v2_capacity_unavailable" or "sourcing_conversion_capacity_unavailable" or "sourcing_allocation_capacity_unavailable" or "sourcing_agreement_capacity_unavailable" or "receiving_capacity_unavailable" or "sourcing_supply_capacity_unavailable" or "sourcing_supply_note_unavailable" or "sourcing_offer_capacity_unavailable" or "sourcing_unavailable" or "sourcing_capacity_unavailable" or "sourcing_note_unavailable" or "market_unavailable" or "accounting_import_unavailable" or "shipment_unavailable" or "payment_order_unavailable" or "payment_attempt_unavailable" or "payment_verification_unavailable" or "payment_authority_unavailable" or "gateway_response_unavailable" or "gateway_unconfigured" or "catalog_unavailable" or "catalog_reindex_required" or "media_unavailable" or "sitemap_capacity_unavailable" or "address_unavailable" or "purchase_detail_capacity_unavailable" ? 503 : e.Code is "image_too_large" or "private_file_too_large" ? 413 : e.Code is "invalid_credentials" ? 401 : e.Code is "not_found" or "rma_not_found" ? 404 : e.Code is "shipment_contract_upgrade_required" or "cart_contract_upgrade_required" or "order_contract_upgrade_required" or "reservation_contract_upgrade_required" or "serial_contract_upgrade_required" or "inventory_contract_upgrade_required" or "sourcing_supply_contract_upgrade_required" || e.Code.Contains("conflict", StringComparison.Ordinal) ? 409 : 400); }
     catch (DbUpdateConcurrencyException) { await Problem(context, "version_conflict", "The record changed. Reload and try again.", 409); }
     catch (DbUpdateException e) when (e.InnerException is SqlException { Number: 1205 }) { await Problem(context, "transaction_conflict", "A concurrent operation occurred. Reload and retry with the same request id.", 409); }
     catch (DbUpdateException e) when (e.InnerException is SqlException { Number: 2601 or 2627 or 547 }) { await Problem(context, "data_constraint", "A unique value is already used or a referenced record is still in use.", 409); }
@@ -332,6 +482,7 @@ app.Use(PrivateRealtimeDispatch.Invoke);
 app.Use((HttpContext http,RequestDelegate next)=>PrivateRealtimeTransport.Guard(http,next,origins,adminOrigins));
 if (app.Environment.IsDevelopment()) app.MapOpenApi();
 app.MapPublicMedia(adminOrigins);
+app.MapPublicVideos(adminOrigins);
 app.MapCart(origins);
 app.MapSourcing(origins);
 app.MapSourcingOffers(origins);
@@ -343,6 +494,9 @@ app.MapPhoneDiscovery(origins);
 app.MapPhoneInbox(origins);
 app.MapOrders(origins);
 app.MapOrderParcels(origins,adminOrigins);
+app.MapDigitalDeliveries(origins,adminOrigins);
+app.MapReturns(origins,adminOrigins);
+app.MapCustomerAccount(origins,app.Environment.IsDevelopment());
 app.MapAddressBook(origins);
 app.MapWishlist(origins);
 app.MapReviews(origins);
@@ -352,46 +506,8 @@ app.MapCmsBlogPosts(adminOrigins);
 app.MapCmsBlogSitemap();
 app.MapCmsRedirects(adminOrigins);
 app.MapCmsPageSitemap();
-app.MapGet("/health/live", (HttpContext context) => {
-    context.Response.Headers.CacheControl = "no-store";
-    context.Response.Headers["X-Robots-Tag"] = "noindex, nofollow";
-    return Results.Ok(new { Status = "alive" });
-}).AllowAnonymous();
-app.MapGet("/health/ready", async (HttpContext context, IServiceProvider services, CancellationToken ct) => {
-    context.Response.Headers.CacheControl = "no-store";
-    context.Response.Headers["X-Robots-Tag"] = "noindex, nofollow";
-    try {
-        var db = services.GetRequiredService<CatalogDbContext>();
-        if (!await db.Database.CanConnectAsync(ct)) return Results.StatusCode(503);
-        foreach (var type in new[] { typeof(IdentityDbContext), typeof(PaymentsDbContext), typeof(CreditDbContext), typeof(CmsDbContext), typeof(InventoryDbContext), typeof(CatalogDbContext), typeof(SalesDbContext), typeof(MarketDbContext), typeof(Shop.Modules.Reviews.ReviewsDbContext), typeof(SupportDbContext),typeof(NotificationsDbContext),typeof(FilesDbContext) }) {
-            var database = ((DbContext)services.GetRequiredService(type)).Database;
-            // Pending-only checks accept a database newer than this executable.
-            // Require the exact per-module history before advertising readiness.
-            if (!database.GetMigrations().SequenceEqual(await database.GetAppliedMigrationsAsync(ct), StringComparer.Ordinal)) return Results.StatusCode(503);
-        }
-        if (!await services.GetRequiredService<ICatalogService>().SearchFieldsReadyAsync(ct)) return Results.StatusCode(503);
-        return Results.Ok(new { Status = "ready" });
-    } catch (System.Data.Common.DbException) {
-        return Results.StatusCode(503);
-    }
-}).AllowAnonymous();
-app.MapGet("/api/storefront/{locale}", async (string locale, bool? metadataOnly, ICatalogService catalog, IPurchaseConfiguration purchasing, ContentService cms, CancellationToken ct) => {
-    CheckLocale(locale); var data = metadataOnly == true ? await catalog.ReadMetadataAsync(locale, ct) : await catalog.ReadAsync(locale, ct); var site = await cms.ReadAsync("site", locale, ct);
-    if (site.Count == 0) throw new BusinessException("content_unpublished", "Storefront content has not been published.");
-    var auth = await cms.ReadAsync("auth", "fa", ct); EffectiveAuth(auth);
-    var methods = await purchasing.MethodsAsync(locale, ct); var plans = await purchasing.PlansAsync(locale, ct);
-    return Results.Ok(new { Version = 1, IsPreview = true, DataSource = "api", Locale = locale, Site = site, data.Products, data.Categories, data.AttributeDefinitions, data.AttributeLabels,
-        PurchaseMethods = methods.Select(m => new { m.Id, m.Kind, m.Name, m.Description, m.Enabled, m.RequiresApproval, m.CategoryIds, MinAmountRial = m.MinAmountRial?.ToString(CultureInfo.InvariantCulture), MaxAmountRial = m.MaxAmountRial?.ToString(CultureInfo.InvariantCulture) }),
-        ChequePlans = plans.Select(p => new { p.Id, p.Name, p.Months, MarkupPercent = p.MarkupBasisPoints / 100m, DownPaymentPercent = p.DownPaymentBasisPoints / 100m, RoundingUnitRial = p.RoundingUnitRial.ToString(CultureInfo.InvariantCulture), p.IntervalMonths, p.Enabled, p.CategoryIds, MinAmountRial = p.MinAmountRial?.ToString(CultureInfo.InvariantCulture), MaxAmountRial = p.MaxAmountRial?.ToString(CultureInfo.InvariantCulture) }), AuthSettings = auth });
-}).AllowAnonymous();
-var publicCatalog = app.MapGroup("/api/catalog/{locale}").AllowAnonymous();
-publicCatalog.AddEndpointFilter(async (context, next) => { context.HttpContext.Response.Headers.CacheControl = "no-store"; return await InputValidation.Filter(context, next); });
-publicCatalog.MapOfflineCatalog();
-publicCatalog.MapCatalogSitemap();
-publicCatalog.MapPost("/search", async (string locale, CatalogSearchInput input, ICatalogService catalog, CancellationToken ct) => { CheckLocale(locale); return Results.Ok(await catalog.SearchAsync(locale, input, ct)); });
-publicCatalog.MapPost("/lookup", async (string locale, ProductLookupInput input, ICatalogService catalog, CancellationToken ct) => { CheckLocale(locale); return Results.Ok(new { Version = 1, Locale = locale, Products = await catalog.LookupAsync(locale, input, ct) }); });
-publicCatalog.MapPost("/facet-values", async (string locale, FacetValuesInput input, ICatalogService catalog, CancellationToken ct) => { CheckLocale(locale); FacetValuesQuery.Create(input); return Results.Ok(await catalog.FacetValuesAsync(locale,input,ct)); });
-publicCatalog.MapGet("/filters", async (string locale, string? categoryId, ICatalogService catalog, CancellationToken ct) => { CheckLocale(locale); var query = CatalogSearchQuery.Create(new(CategoryId: categoryId)); return Results.Ok(await catalog.FiltersAsync(locale, query.CategoryId, ct)); });
+app.MapShopHealth();
+app.MapPublicStorefront();
 var authRoutes = app.MapGroup("/api/auth").RequireRateLimiting("auth");
 authRoutes.AddEndpointFilter(InputValidation.Filter);
 authRoutes.AddEndpointFilter(async (context, next) => {
@@ -418,20 +534,32 @@ authRoutes.MapPost("/staff/password", async (ChangeInitialStaffPasswordInput inp
 authRoutes.MapPost("/mfa/setup", async (ClaimsPrincipal user, AuthService service, HttpContext context, CancellationToken ct) => { CheckOrigin(context, adminOrigins); return Results.Ok(await service.SetupMfaAsync(UserId(user), user.FindFirstValue("sst") ?? "", user.HasClaim("mfa_recovery", "verified"), RecoveryDeadline(user), ct)); }).RequireAuthorization("mfa_pending");
 authRoutes.MapPost("/mfa/verify", async (MfaVerification input, ClaimsPrincipal user, AuthService service, HttpContext context, CancellationToken ct) => { if (IsAdminClient(context)) CheckOrigin(context, adminOrigins); return AuthResponse(await service.VerifyMfaAsync(UserId(user), user.FindFirstValue("sst") ?? "", user.HasClaim("mfa_recovery", "verified"), input.Code, context.TraceIdentifier, ct), context, app.Environment.IsDevelopment()); }).RequireAuthorization("mfa_pending");
 authRoutes.MapMfaRecovery(adminOrigins, app.Environment.IsDevelopment());
+authRoutes.MapStaffPassword(adminOrigins, app.Environment.IsDevelopment());
 authRoutes.MapPost("/refresh", async (AuthService service, HttpContext context, CancellationToken ct) => { CheckOrigin(context, IsAdminClient(context) ? adminOrigins : origins); return AuthResponse(await service.RefreshAsync(AuthHttpSecurity.ReadCookie(context, app.Environment.IsDevelopment()) ?? "", ct, IsAdminClient(context)), context, app.Environment.IsDevelopment()); }).AllowAnonymous();
 authRoutes.MapPost("/logout", async (AuthService service, HttpContext context, CancellationToken ct) => { CheckOrigin(context, IsAdminClient(context) ? adminOrigins : origins); await service.LogoutAsync(AuthHttpSecurity.ReadCookie(context, app.Environment.IsDevelopment()), ct); AuthHttpSecurity.Clear(context, app.Environment.IsDevelopment()); return Results.NoContent(); }).AllowAnonymous();
 authRoutes.MapGet("/me", (ClaimsPrincipal user) => Results.Ok(new { Id = UserId(user), Name = user.FindFirstValue("name"), DisplayName = user.FindFirstValue("display_name"), Permissions = user.FindAll("permission").Select(c => c.Value).ToArray(), Roles = user.FindAll("role").Select(c => c.Value).ToArray() })).RequireAuthorization("customer");
-authRoutes.MapPost("/otp", () => Results.Problem(statusCode: 503, title: "otp_unconfigured", detail: "SMS provider is not configured.")).AllowAnonymous();
+authRoutes.MapPost("/otp", async (CustomerOtpStartInput input, ICustomerOtpService service, HttpContext http, CancellationToken ct) => {
+    if (IsAdminClient(http) || http.Request.Headers["X-Sayman-Admin"] == "1" || http.Request.Query.Count != 0) return Results.BadRequest();
+    return Results.Ok(await service.StartAsync(input, http.TraceIdentifier, ct));
+}).AllowAnonymous();
+authRoutes.MapPost("/otp/verify", async (CustomerOtpVerifyInput input, ICustomerOtpService service, HttpContext http, CancellationToken ct) => {
+    if (IsAdminClient(http) || http.Request.Headers["X-Sayman-Admin"] == "1" || http.Request.Query.Count != 0) return Results.BadRequest();
+    return AuthResponse(await service.VerifyAsync(input, http.TraceIdentifier, ct), http, app.Environment.IsDevelopment());
+}).AllowAnonymous();
 authRoutes.MapPost("/register", () => Results.Problem(statusCode: 503, title: "verification_unconfigured", detail: "Account verification provider is not configured.")).AllowAnonymous();
 authRoutes.MapPost("/password-reset", () => Results.Problem(statusCode: 503, title: "verification_unconfigured", detail: "Verified recovery provider is not configured.")).AllowAnonymous();
 var admin = app.MapGroup("/api/admin");
 admin.AddEndpointFilter(InputValidation.Filter);
 admin.AddEndpointFilter(StaffEndpoints.ValidateInputs);
 admin.MapStaff();
+admin.MapCustomerSmsSettings(adminOrigins);
+admin.MapSmsWorkspace(adminOrigins);
 admin.MapCustomerDirectory(adminOrigins);
 admin.MapAdminStock();
 admin.MapAdminSerials();
 admin.MapAdminProducts();
+admin.MapProductWorkspace(adminOrigins);
+admin.MapAdminPriceHistory();
 admin.MapAdminMarket();
 admin.MapAdminSourcing();
 admin.MapAdminSourcingOffers();
@@ -502,12 +630,12 @@ admin.MapGet("/orders/{ownerId}/{id}", async (string ownerId, string id, OrderSe
 admin.MapPost("/orders/{id}/cancel", async (string id, AdminCancelOrderInput input, ClaimsPrincipal user, OrderService service, CancellationToken ct) => Results.Ok(await service.CancelAsync(input.OwnerId, id, input.Version, UserId(user), ct))).RequireAuthorization("sales.write");
 admin.MapGet("/content", async (ContentService service, CancellationToken ct) => Results.Ok(await service.AdminAsync(ct))).RequireAuthorization("cms.read");
 admin.MapPut("/content/{key}/{locale}", async (string key, string locale, ContentInput input, ClaimsPrincipal user, ContentService service, CancellationToken ct) => { await service.SaveAsync(key, locale, input, UserId(user), ct); return Results.NoContent(); }).RequireAuthorization("cms.write");
-admin.MapPost("/content/{key}/{locale}/publish", async (string key, string locale, PublishInput input, ClaimsPrincipal user, ContentService service, CancellationToken ct) => { await service.PublishAsync(key, locale, input.Version, UserId(user), input.RestoreRevisionId, ct); return Results.NoContent(); }).RequireAuthorization("cms.write");
+admin.MapPost("/content/{key}/{locale}/publish", async (string key, string locale, PublishInput input, ClaimsPrincipal user, ContentService service, CancellationToken ct) => { await service.PublishAsync(key, locale, input.Version, UserId(user), input.RestoreRevisionId, ct, input.Section); return Results.NoContent(); }).RequireAuthorization("cms.write");
 admin.MapGet("/audit", async (IdentityDbContext db, CancellationToken ct) => Results.Ok(await db.Audit.AsNoTracking().OrderByDescending(x => x.Id).Take(200).ToListAsync(ct))).RequireAuthorization("audit.read");
+admin.MapAdminAudit();
 admin.AddEndpointFilter<AdminAuditFilter>();
 await app.RunAsync();
 
-static void EffectiveAuth(JsonObject auth) { auth["mobileOtp"] = false; auth["registration"] = false; auth["passwordReset"] = false; }
 static string UserId(ClaimsPrincipal user) => user.FindFirstValue("sub") ?? throw new BusinessException("invalid_credentials", "User identity is missing.");
 static DateTimeOffset? RecoveryDeadline(ClaimsPrincipal user)
 {
@@ -516,7 +644,6 @@ static DateTimeOffset? RecoveryDeadline(ClaimsPrincipal user)
     try { return DateTimeOffset.FromUnixTimeSeconds(seconds); }
     catch (ArgumentOutOfRangeException) { throw new BusinessException("invalid_credentials", "The enrollment grant is invalid."); }
 }
-static void CheckLocale(string locale) { if (locale is not ("fa" or "en")) throw new BusinessException("invalid_locale", "Use fa or en."); }
 static async Task CheckCategories(ICatalogService catalog, string[] ids, CancellationToken ct) { if (!await catalog.CategoriesExistAsync(ids, ct)) throw new BusinessException("unknown_category", "Category rules reference an unknown category."); }
 static bool IsAdminClient(HttpContext context) => context.Request.Headers["X-Sayman-Client"] == "admin";
 static IResult AuthResponse(AuthResult result, HttpContext context, bool development) {
@@ -532,7 +659,7 @@ static IResult AuthResponse(AuthResult result, HttpContext context, bool develop
 }
 static void CheckOrigin(HttpContext context, string[] origins) { var origin = context.Request.Headers.Origin.ToString(); if (!origins.Contains(origin, StringComparer.Ordinal)) throw new BusinessException("invalid_origin", "This browser origin is not allowed."); }
 static async Task Problem(HttpContext context, string code, string detail, int status) => await Results.Problem(statusCode: status, title: code, detail: detail, extensions: new Dictionary<string, object?> { ["traceId"] = context.TraceIdentifier }).ExecuteAsync(context);
-public record PublishInput(string Version, long? RestoreRevisionId);
+public record PublishInput(string Version, long? RestoreRevisionId, string? Section = null);
 public sealed class PurchaseConfiguration(PurchaseMethodService methods, CreditPlanService plans) : IPurchaseConfiguration
 {
     public Task<IReadOnlyList<PurchaseMethodData>> MethodsAsync(string locale, CancellationToken ct) => methods.PublicAsync(locale, ct);

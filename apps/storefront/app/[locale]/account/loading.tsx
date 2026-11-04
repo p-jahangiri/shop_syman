@@ -1,5 +1,5 @@
 'use client';
-import { useI18n } from '@/components/locale-provider';
+import { useI18n } from '@/components/navigation/locale-provider';
 export default function Loading() {
   const { t } = useI18n();
   return (

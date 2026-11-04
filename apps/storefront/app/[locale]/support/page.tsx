@@ -1,6 +1,6 @@
-import { getLocale, serverI18n } from '@/lib/server-locale';
-import { Support } from '@/components/support';
-import { fetchSupportContent } from '@/lib/support-content-fetch';
+import { getLocale, serverI18n } from '@/lib/navigation/server-locale';
+import { Support } from '@/components/support/support';
+import { fetchSupportContent } from '@/lib/content/support-content-fetch';
 export async function generateMetadata() {
   const { t } = await serverI18n();
   return { title: t('راهنما و پشتیبانی') };

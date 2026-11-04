@@ -1,0 +1,196 @@
+/* Shared operations forms: readable controls, quiet grouping, explicit state. */
+:is(.page, dialog, .MuiDialog-paper) .field {
+  gap: 7px;
+  margin-block-end: 18px;
+}
+:is(.page, dialog, .MuiDialog-paper) .field > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--foreground);
+  line-height: 1.7;
+}
+:is(.page, dialog, .MuiDialog-paper) :is(.field-required, .field-error) {
+  color: var(--danger);
+}
+:is(.page, dialog, .MuiDialog-paper) .field > small {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+:is(.page, dialog, .MuiDialog-paper) .field > .field-error {
+  color: var(--danger);
+}
+:is(.page, dialog, .MuiDialog-paper)
+  form
+  :is(
+    input:not([type='checkbox']):not([type='radio']):not([type='file']):not([class*='Mui']),
+    select:not([class*='Mui']),
+    textarea:not([class*='Mui'])
+  ) {
+  min-height: 46px;
+  border-radius: 11px;
+  border: 1px solid var(--admin-field-border);
+  background: var(--admin-field-surface);
+  font-size: 14px;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+:is(.page, dialog, .MuiDialog-paper)
+  form
+  :is(
+    input:not([type='checkbox']):not([type='radio']):not([class*='Mui']),
+    select:not([class*='Mui']),
+    textarea:not([class*='Mui'])
+  ):hover:not(:disabled):not(:focus) {
+  border-color: var(--primary);
+}
+:is(.page, dialog, .MuiDialog-paper)
+  form
+  :is(
+    input:not([class*='Mui']),
+    select:not([class*='Mui']),
+    textarea:not([class*='Mui'])
+  ):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--admin-focus-halo);
+}
+:is(.page, dialog, .MuiDialog-paper)
+  form
+  :is(
+    input:not([class*='Mui']),
+    select:not([class*='Mui']),
+    textarea:not([class*='Mui'])
+  ):disabled {
+  background: var(--surface-soft);
+  color: var(--admin-control-disabled);
+  -webkit-text-fill-color: currentColor;
+  opacity: 1;
+  cursor: not-allowed;
+}
+:is(.page, dialog, .MuiDialog-paper) form :is(input, textarea):not([class*='Mui'])[readonly] {
+  background: var(--surface-soft);
+}
+:is(.page, dialog, .MuiDialog-paper)
+  .field-invalid
+  :is(input:not([class*='Mui']), select:not([class*='Mui']), textarea:not([class*='Mui'])),
+:is(.page, dialog, .MuiDialog-paper) form [aria-invalid='true']:not(.MuiInputBase-input) {
+  border-color: var(--danger);
+}
+.page .form-grid {
+  column-gap: 22px;
+  min-width: 0;
+}
+.page textarea {
+  resize: vertical;
+  line-height: 1.85;
+}
+.page form .check {
+  min-height: 42px;
+  gap: 9px;
+  align-items: center;
+  font-size: 13px;
+}
+.page form :is(input[type='checkbox'], input[type='radio']) {
+  accent-color: var(--primary);
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  cursor: pointer;
+}
+.form-section {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  min-width: 0;
+  overflow: clip;
+}
+.form-section-heading {
+  padding: 20px 22px;
+  border-block-end: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.form-section-heading > div {
+  flex: 1;
+  min-width: 0;
+}
+.form-section-heading h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+.form-section-heading p,
+.form-note {
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--muted);
+}
+.form-section-body {
+  padding: 22px;
+  min-width: 0;
+}
+.form-section-body > :last-child {
+  margin-block-end: 0;
+}
+.form-toolbar,
+.form-save-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.form-save-bar {
+  position: sticky;
+  bottom: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 8px 28px oklch(0.2 0.02 130 / 0.09);
+  z-index: 5;
+}
+.form-save-bar strong {
+  display: block;
+  font-size: 13px;
+  margin-block-end: 3px;
+}
+.form-save-bar small {
+  color: var(--muted);
+  font-size: 11px;
+}
+@media (max-width: 640px) {
+  :is(.page, dialog, .MuiDialog-paper)
+    form
+    :is(
+      input:not([type='checkbox']):not([type='radio']):not([type='file']):not([class*='Mui']),
+      select:not([class*='Mui']),
+      textarea:not([class*='Mui'])
+    ) {
+    font-size: 16px;
+  }
+  .form-section-heading,
+  .form-section-body {
+    padding: 16px;
+  }
+  .form-save-bar {
+    bottom: 8px;
+    padding: 14px;
+  }
+  .form-save-bar > button {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.page, dialog, .MuiDialog-paper)
+    form
+    :is(input:not([class*='Mui']), select:not([class*='Mui']), textarea:not([class*='Mui'])) {
+    transition: none;
+  }
+}

@@ -1,5 +1,6 @@
 using System.Data;
 using System.Globalization;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Shop.SharedKernel;
@@ -63,11 +64,32 @@ public sealed class AccountingImportService(CatalogDbContext db,TimeProvider tim
         var entity=new AccountingImportBatch{Id=id,CompanyKey=input.CompanyKey,ExternalWarehouseKey=input.ExternalWarehouseKey,QuantityMeaning=input.QuantityMeaning,PriceCurrency=input.PriceCurrency,ObservedAt=input.ObservedAt,CreatedAt=now,CreatedBy=actorId,IsDemo=input.IsDemo,RowCount=input.Rows.Length,PayloadHash=hash,Rows=input.Rows.Select((x,i)=>new AccountingImportRow{BatchId=id,RowNumber=i+1,ExternalItemId=x.ExternalItemId,ExternalCode=x.ExternalCode,ExternalName=x.ExternalName,ExternalUnitKey=x.ExternalUnitKey,QuantityRaw=x.QuantityRaw,PriceRaw=x.PriceRaw}).ToList()};
         db.AccountingImports.Add(entity);await db.SaveChangesAsync(ct);return new(1,id,hash,false,false);
     }
-    public async Task<AccountingImportPage> PageAsync(string? companyKey,string? cursor,CancellationToken ct)
+    public async Task<AccountingImportPage> PageAsync(string? companyKey,string? cursor,CancellationToken ct,string? externalWarehouseKey=null)
     {
-        if(companyKey is not null)AccountingLinkRules.Key(companyKey,64);var filter=PurchaseAdminFilter.Create(null);var scope="accounting-import:holoo:"+companyKey;var after=PurchaseAdminPaging.Decode(cursor,filter,scope);
-        var query=db.AccountingImports.AsNoTracking();if(!demoAllowed)query=query.Where(x=>!x.IsDemo);if(companyKey is not null)query=query.Where(x=>x.CompanyKey==companyKey);if(after is not null)query=query.Where(x=>string.Compare(x.Id,after)>0);
-        var rows=await query.OrderBy(x=>x.Id).Take(21).ToArrayAsync(ct);var page=rows.Take(20).Select(Summary).ToArray();return new(1,20,page,rows.Length>20?PurchaseAdminPaging.Encode(page[^1].Id,filter,scope):null);
+        if (companyKey is not null) AccountingLinkRules.Key(companyKey, 64);
+        if (externalWarehouseKey is not null)
+        {
+            AccountingLinkRules.Key(companyKey, 64);
+            AccountingLinkRules.Key(externalWarehouseKey, 64);
+        }
+
+        var filter = PurchaseAdminFilter.Create();
+        // Keep previously issued company-only cursors valid. The two exact keys
+        // are serialized together for a warehouse cursor because either can contain separators.
+        var scope = externalWarehouseKey is null
+            ? "accounting-import:holoo:" + companyKey
+            : "accounting-import:holoo-source:" + JsonSerializer.Serialize(new { companyKey, externalWarehouseKey });
+        var after = PurchaseAdminPaging.Decode(cursor, filter, scope);
+
+        var query = db.AccountingImports.AsNoTracking();
+        if (!demoAllowed) query = query.Where(x => !x.IsDemo);
+        if (companyKey is not null) query = query.Where(x => x.CompanyKey == companyKey);
+        if (externalWarehouseKey is not null) query = query.Where(x => x.ExternalWarehouseKey == externalWarehouseKey);
+        if (after is not null) query = query.Where(x => string.Compare(x.Id, after) > 0);
+
+        var rows = await query.OrderBy(x => x.Id).Take(21).ToArrayAsync(ct);
+        var page = rows.Take(20).Select(Summary).ToArray();
+        return new(1, 20, page, rows.Length > 20 ? PurchaseAdminPaging.Encode(page[^1].Id, filter, scope) : null);
     }
     public async Task<AccountingImportDetail> ReadAsync(string id,CancellationToken ct)
     {

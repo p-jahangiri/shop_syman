@@ -1,9 +1,12 @@
 import type { NextRequest } from 'next/server';
-import { cartInputSchema, cartSnapshotSchema } from '@/lib/cart-contract';
-import { quoteInputSchema, quoteSnapshotSchema } from '@/lib/quote-contract';
-import { publicOrigin } from '@/lib/seo';
-import { proxySourcingCart } from '@/lib/sourcing-proxy';
-import { proxyCartV2 } from '@/lib/cart-v2-proxy';
+import { cartInputSchema, cartSnapshotSchema } from '@/lib/checkout/cart-contract';
+import {
+  quoteInputSchema,
+  quoteSnapshotSchema,
+} from '@sayman/web-shared/lib/checkout/quote-contract.ts';
+import { publicOrigin } from '@/lib/seo/seo';
+import { proxySourcingCart } from '@/lib/market/sourcing-proxy';
+import { proxyCartV2 } from '@/lib/checkout/cart-v2-proxy';
 const headers = {
   'Cache-Control': 'private, no-store',
   Vary: 'Cookie, Authorization',

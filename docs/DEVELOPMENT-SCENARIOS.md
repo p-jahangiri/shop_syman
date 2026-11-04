@@ -2,7 +2,7 @@
 
 این داده‌ها تألیفی و با نام «نمونه توسعه» هستند؛ شخص، تأیید تماس، خرید یا وصول خارجی واقعی را بازنمایی نمی‌کنند. دادهٔ پایدار در SQL با fixture دورریختنی آزمون متفاوت است.
 
-ابزار `tools/admin-business-scenarios` به ۱۴ DLL پذیرفته‌شده ارجاع می‌دهد و backend را rebuild نمی‌کند. host را Start/Run نمی‌کند؛ listener، نسخهٔ بازبینی و worker تکراری نمی‌سازد. نوشتن فقط در Development و اتصال دقیق `127.0.0.1,11433/Sayman` با پرچم صریح مجاز است؛ ابزار روی اصلی migration اجرا نمی‌کند. ورود اصلی تا انتشار پذیرفته‌شدهٔ۸۵ متوقف می‌ماند.
+ابزار `tools/legacy/schema-85/admin-business-scenarios` به ۱۴ DLL پذیرفته‌شده ارجاع می‌دهد و backend را rebuild نمی‌کند. host را Start/Run نمی‌کند؛ listener، نسخهٔ بازبینی و worker تکراری نمی‌سازد. نوشتن فقط در Development و اتصال دقیق `127.0.0.1,11433/Sayman` با پرچم صریح مجاز است؛ ابزار روی اصلی migration اجرا نمی‌کند. ورود اصلی تا انتشار پذیرفته‌شدهٔ۸۵ متوقف می‌ماند.
 
 | سناریو | حساب | تیکت | قابلیت قابل بررسی |
 |---|---|---|---|
@@ -17,10 +17,10 @@ UserManager حساب را می‌سازد و ایجاد حساب با audit سی
 فرمان‌ها:
 
 ```sh
-python3 scripts/admin-business-scenarios.py plan
-python3 scripts/admin-business-scenarios.py self-test
+python3 tools/legacy/schema-85/admin-business-scenarios/run.py plan
+python3 tools/legacy/schema-85/admin-business-scenarios/run.py self-test
 # فقط پس از انتشار پذیرفته‌شدهٔ محلی و در دامنهٔ دادهٔ توسعهٔ D47:
-python3 scripts/admin-business-scenarios.py apply-main-development
+python3 tools/legacy/schema-85/admin-business-scenarios/run.py apply-main-development
 ```
 
 self-test دیتابیس GUID تازه را پیش از ایجاد از نظر عدم وجود بررسی می‌کند، فقط schemaهای Identity/Support لازم را در همان fixture ایجاد می‌کند، دو بار سناریو را اجرا و ۳ حساب/۲تیکت/۳پیام/۴فرمان و نبود رمز/نقش/تماس تأییدشده را بررسی می‌کند؛ سپس فقط همان DB و کلیدهای خصوصی خودش را پاک می‌کند. `admin-business85-scenarios-self-test.json` SQL/replay و رد Production پیش از اتصال را تأیید کرده؛ cleanupصفر است. build۰warning/۰error دارد. هیچ داده‌ای از این آزمون به اصلی انتقال نیافته است.

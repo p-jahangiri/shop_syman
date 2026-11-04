@@ -61,6 +61,27 @@ public sealed class AccountingImportSqlTests(MarketFixture fixture):IClassFixtur
         var company="page-"+Id();await using(var s=fixture.Sql.Factory.Services.CreateAsyncScope()){var db=s.ServiceProvider.GetRequiredService<CatalogDbContext>();for(var i=0;i<21;i++)db.AccountingImports.Add(new(){Id=Id(),CompanyKey=company,ExternalWarehouseKey="WH",QuantityMeaning="unknown",PriceCurrency="unknown",ObservedAt=DateTimeOffset.UtcNow.AddMinutes(-1),CreatedAt=DateTimeOffset.UtcNow,CreatedBy="qa",IsDemo=true,RowCount=1,PayloadHash=new string('A',64),Rows=[new(){RowNumber=1,ExternalItemId="item",ExternalUnitKey="unit"}]});await db.SaveChangesAsync();}
         var first=await Read(Base+"?companyKey="+company);Assert.Equal(20,first["items"]!.AsArray().Count);var cursor=Uri.EscapeDataString(first["nextCursor"]!.GetValue<string>());var last=await Read(Base+"?companyKey="+company+"&cursor="+cursor);Assert.Single(last["items"]!.AsArray());Assert.Null(last["nextCursor"]);Assert.Equal(HttpStatusCode.BadRequest,(await fixture.Writer.GetAsync(Base+"?companyKey=another&cursor="+cursor)).StatusCode);
     }
+    [Fact]
+    public async Task WarehousePagingSeparatesExactSourceKeysAndCannotReuseAnotherSourceCursor()
+    {
+        var company = "source-" + Id();
+        var source = Input(company) with { ExternalWarehouseKey = "WH-001" };
+        for (var i = 0; i < 21; i++) await Save(Id(), source);
+        var otherId = Id();
+        await Save(otherId, source with { ExternalWarehouseKey = "wh-001" });
+
+        var scope = Base + "?companyKey=" + company + "&externalWarehouseKey=";
+        var first = await Read(scope + "WH-001");
+        Assert.Equal(20, first["items"]!.AsArray().Count);
+        Assert.All(first["items"]!.AsArray(), row => Assert.Equal("WH-001", row!["externalWarehouseKey"]!.GetValue<string>()));
+        var cursor = Uri.EscapeDataString(first["nextCursor"]!.GetValue<string>());
+        var last = await Read(scope + "WH-001&cursor=" + cursor);
+        Assert.Equal("WH-001", Assert.Single(last["items"]!.AsArray())!["externalWarehouseKey"]!.GetValue<string>());
+        Assert.Null(last["nextCursor"]);
+        Assert.Equal(otherId, Assert.Single((await Read(scope + "wh-001"))["items"]!.AsArray())!["id"]!.GetValue<string>());
+        Assert.Equal(HttpStatusCode.BadRequest, (await fixture.Writer.GetAsync(scope + "wh-001&cursor=" + cursor)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await fixture.Writer.GetAsync(Base + "?externalWarehouseKey=WH-001")).StatusCode);
+    }
     [Fact] public async Task ProductionServiceHidesDemoAndRejectsDemoReplay()
     {
         var id=Id();var input=Input();await Save(id,input);await using var s=fixture.Sql.Factory.Services.CreateAsyncScope();var service=new AccountingImportService(s.ServiceProvider.GetRequiredService<CatalogDbContext>(),TimeProvider.System,false);Assert.Equal("not_found",(await Assert.ThrowsAsync<BusinessException>(()=>service.ReadAsync(id,CancellationToken.None))).Code);Assert.Equal("invalid_accounting_import",(await Assert.ThrowsAsync<BusinessException>(()=>service.StageAsync(id,input,"qa",CancellationToken.None))).Code);Assert.Empty((await service.PageAsync(input.CompanyKey,null,CancellationToken.None)).Items);

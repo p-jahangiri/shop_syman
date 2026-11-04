@@ -1,0 +1,238 @@
+.holoo-finance {
+  display: grid;
+  gap: 1rem;
+  min-inline-size: 0;
+}
+
+.holoo-finance > section {
+  min-inline-size: 0;
+  margin-block-end: 0;
+  scroll-margin-block-start: 5rem;
+}
+
+.holoo-finance > .panel > .section-heading {
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+}
+
+.holoo-finance > .panel > .section-heading > div:first-child {
+  flex: 1 1 19rem;
+  min-inline-size: 0;
+}
+
+.holoo-finance .row-buttons {
+  flex-wrap: wrap;
+}
+
+.holoo-finance > .panel > .section-heading button,
+.holoo-receipt-fields button {
+  min-block-size: 46px;
+}
+
+.holoo-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.holoo-heading h2 {
+  margin-block: 0.3rem;
+}
+
+.holoo-workspace .holoo-methods article {
+  min-inline-size: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface-soft);
+}
+
+.holoo-methods h3 {
+  margin-block: 0.6rem 0.15rem;
+  font-size: 1rem;
+}
+
+.holoo-methods a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+}
+
+.holoo-indicator {
+  display: inline-flex;
+  align-items: center;
+  min-inline-size: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: var(--surface);
+  padding: 0.25rem 0.55rem;
+  color: var(--foreground);
+  font-size: 0.76rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.holoo-indicator[data-tone='ready'] {
+  border-color: color-mix(in oklch, var(--primary) 40%, var(--border));
+  background: color-mix(in oklch, var(--primary) 12%, var(--surface));
+}
+
+.holoo-indicator[data-tone='waiting'] {
+  border-color: color-mix(in oklch, oklch(0.72 0.13 75) 46%, var(--border));
+  background: color-mix(in oklch, oklch(0.72 0.13 75) 14%, var(--surface));
+}
+
+.holoo-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.4rem;
+  max-inline-size: 46rem;
+  margin-block: 1rem;
+}
+
+.page .holoo-picker > .field,
+.holoo-picker > p {
+  margin-block: 0;
+}
+
+.holoo-picker > .field select {
+  min-block-size: 46px;
+}
+
+.holoo-picker > button {
+  justify-self: start;
+  min-block-size: 44px;
+}
+
+.holoo-workflow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr));
+  gap: 0.45rem;
+}
+
+.holoo-workflow a {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  min-block-size: 44px;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  background: var(--surface);
+  color: var(--foreground);
+  text-decoration: none;
+  font-weight: 650;
+}
+
+.holoo-workflow a:hover {
+  border-color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 10%, var(--surface));
+}
+
+.holoo-workflow a svg:first-child {
+  flex: none;
+  color: var(--primary);
+}
+
+.holoo-workflow a svg:last-child {
+  flex: none;
+  margin-inline-start: auto;
+}
+
+.holoo-scope-bar,
+.holoo-reconciliation-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  min-inline-size: 0;
+  margin-block: 0.6rem 1rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  color: var(--foreground);
+}
+
+.holoo-scope-bar button {
+  margin-inline-start: auto;
+  min-block-size: 44px;
+}
+
+.holoo-scope-bar bdi {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.holoo-table :is(td, th) {
+  overflow-wrap: anywhere;
+}
+
+.holoo-empty {
+  margin-block: 0.7rem 0;
+  padding: 0.95rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+
+.holoo-receipt-fields {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-block: 0.65rem;
+}
+
+.page .holoo-receipt-fields > .field {
+  flex: 1 1 min(100%, 15rem);
+  margin-block: 0;
+}
+
+.holoo-receipt-fields input {
+  min-block-size: 46px;
+}
+
+.holoo-reconciliation-stats span {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.holoo-apply {
+  margin-block: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  min-inline-size: 0;
+}
+
+.holoo-apply h4 {
+  margin-block-start: 0;
+}
+
+.holoo-blocked summary {
+  padding-block: 0.55rem;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.holoo-blocked ul {
+  display: grid;
+  gap: 0.45rem;
+  padding-inline-start: 1.25rem;
+}
+
+.holoo-blocked li span,
+.holoo-blocked li small {
+  display: block;
+}
+
+.holoo-file-name,
+.holoo-blocked bdi,
+.holoo-finance td small {
+  overflow-wrap: anywhere;
+}

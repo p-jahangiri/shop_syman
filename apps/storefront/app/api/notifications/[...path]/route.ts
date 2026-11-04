@@ -1,4 +1,4 @@
-import { proxyNotifications } from '@/lib/notification-proxy';
+import { proxyNotifications } from '@/lib/notifications/notification-proxy';
 async function handle(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
   return proxyNotifications(request, (await params).path, {
     SHOP_API_URL: process.env.SHOP_API_URL,

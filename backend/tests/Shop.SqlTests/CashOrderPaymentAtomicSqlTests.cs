@@ -43,12 +43,22 @@ public sealed partial class CashOrderPaymentSqlTests
     [Fact]public async Task ProductionCannotReadOrReplayADevelopmentPaymentLinkAndItsHistoryBlocksDowngrade()
     {
         var s=await Create();using var customer=s.Client;await Scope(async sp=>{await sp.GetRequiredService<SalesDbContext>().Database.ExecuteSqlInterpolatedAsync($"UPDATE sales.Orders SET ContainsDemo=1 WHERE Id={s.Order}");return true;});var proof=Proof(s);Assert.Equal("applied",(await Confirm(proof)).Disposition);Assert.Equal("not_found",(await Assert.ThrowsAsync<BusinessException>(()=>Confirm(proof,allowDemo:false))).Code);
-        await Scope(async sp=>{var db=sp.GetRequiredService<SalesDbContext>();var source=(await db.Database.GetAppliedMigrationsAsync()).ToArray();
-            // Exercise the cash-link guard at its own migration. Later empty
-            // additive tables may lawfully roll back in earlier transactions.
-            await db.GetService<IMigrator>().MigrateAsync("20261025231229_CashOrderPaymentLinks");
-            var applied=(await db.Database.GetAppliedMigrationsAsync()).ToArray();var error=await Assert.ThrowsAsync<SqlException>(()=>db.GetService<IMigrator>().MigrateAsync("20261025223205_OrderShipments"));Assert.Equal(51000,error.Number);Assert.Equal(applied,await db.Database.GetAppliedMigrationsAsync());Assert.Equal(1,await db.OrderCashPayments.CountAsync(p=>p.OrderId==s.Order));
-            await db.Database.MigrateAsync();Assert.Equal(source,await db.Database.GetAppliedMigrationsAsync());Assert.False(db.Database.HasPendingModelChanges());Assert.Equal(1,await db.OrderCashPayments.CountAsync(p=>p.OrderId==s.Order));return true;});
+        await Scope(async services =>
+        {
+            var db = services.GetRequiredService<SalesDbContext>();
+            var applied = (await db.Database.GetAppliedMigrationsAsync()).ToArray();
+            // Newer migrations also protect retained order signals. Execute the
+            // cash-link migration's own guard against the populated SQL fixture.
+            var migrations = db.GetService<IMigrationsAssembly>();
+            var migration = migrations.CreateMigration(migrations.Migrations["20261025231229_CashOrderPaymentLinks"], db.Database.ProviderName!);
+            var guard = Assert.IsType<Microsoft.EntityFrameworkCore.Migrations.Operations.SqlOperation>(migration.DownOperations[0]);
+            var error = await Assert.ThrowsAsync<SqlException>(() => db.Database.ExecuteSqlRawAsync(guard.Sql));
+            Assert.Equal(51000, error.Number);
+            Assert.Equal(applied, await db.Database.GetAppliedMigrationsAsync());
+            Assert.False(db.Database.HasPendingModelChanges());
+            Assert.Equal(1, await db.OrderCashPayments.CountAsync(p => p.OrderId == s.Order));
+            return true;
+        });
     }
 }
 public sealed class CashPaymentEmptyMigrationSqlTests(SqlFixture fixture):IClassFixture<SqlFixture>

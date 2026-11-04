@@ -25,7 +25,7 @@ def verify():
 verify()
 with urllib.request.urlopen('http://127.0.0.1:5080/health/ready', timeout=10) as response:
     if response.status != 200: raise SystemExit('Main API is not ready.')
-project = root/'tools/phone-data-extension/PhoneDataExtension.csproj'
+project = root/'tools/development/phone-data-extension/PhoneDataExtension.csproj'
 output = root/'tmp/phone-data-extension-build'
 feed = root/'tmp/empty-nuget'; feed.mkdir(exist_ok=True)
 build = subprocess.run(['dotnet','build',str(project),'-p:FrozenRuntime='+str(runtime),'--source',str(feed),'--nologo','-o',str(output)],capture_output=True,text=True)

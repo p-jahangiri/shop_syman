@@ -50,6 +50,18 @@ if media_file.exists():
         raise SystemExit('Invalid local public image configuration.')
     environment.update(Media__Storage='Filesystem', Media__Directory=str(root / 'tmp/public-media-objects'),
                        Media__ClamAvHost=media['scannerHost'], Media__ClamAvPort=str(media['scannerPort']))
+    # Attachments are encrypted by the private vault. Never share the public object directory.
+    private_files = root / 'tmp/private-file-objects'
+    private_files.mkdir(mode=0o700, exist_ok=True)
+    if private_files.is_symlink() or not private_files.is_dir() or private_files.stat().st_mode & 0o077:
+        raise SystemExit('Private attachment storage must be a real directory restricted to its owner.')
+    environment.update(Files__Storage='Filesystem', Files__Directory=str(private_files),
+                       Files__ClamAvHost=media['scannerHost'], Files__ClamAvPort=str(media['scannerPort']))
+# Video processing uses trusted installed tools; absence keeps upload unavailable.
+ffmpeg = Path('/opt/homebrew/bin/ffmpeg' if os.uname().sysname == 'Darwin' else '/usr/bin/ffmpeg')
+ffprobe = ffmpeg.with_name('ffprobe')
+if ffmpeg.is_file() and ffprobe.is_file():
+    environment.update(Media__Video__FfmpegPath=str(ffmpeg), Media__Video__FfprobePath=str(ffprobe))
 state['apiPid'] = os.getpid()
 temporary = descriptor.with_suffix('.next.json')
 temporary.write_text(json.dumps(state, ensure_ascii=False, indent=2) + '\n')

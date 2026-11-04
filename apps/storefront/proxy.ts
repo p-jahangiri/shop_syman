@@ -1,10 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { fetchCmsRedirect } from './lib/cms-redirect-fetch';
-import { publicOrigin } from './lib/seo';
-import { fetchCmsPage } from './lib/cms-page-fetch';
-import { fetchProductPresence } from './lib/product-presence';
-import { fetchBlogList, fetchBlogPost } from './lib/cms-blog-fetch';
-import { storefrontSecurityPolicy, browserPermissionsPolicy } from './lib/security-policy';
+import { fetchCmsRedirect } from './lib/content/cms-redirect-fetch';
+import { publicOrigin } from './lib/seo/seo';
+import { fetchCmsPage } from './lib/content/cms-page-fetch';
+import { fetchProductPresence } from './lib/catalog/product-presence';
+import { fetchBlogList, fetchBlogPost } from './lib/content/cms-blog-fetch';
+import { storefrontSecurityPolicy, browserPermissionsPolicy } from './lib/config/security-policy';
+import {
+  isRetiredSourcingHref,
+  isRetiredSourcingPath,
+} from '@sayman/web-shared/lib/market/retired-sourcing.ts';
 export async function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const https = publicOrigin()?.startsWith('https:') === true;
@@ -24,6 +28,11 @@ export async function proxy(request: NextRequest) {
 }
 async function route(request: NextRequest, headers: Headers) {
   const match = request.nextUrl.pathname.match(/^\/(en|fa)(?=\/|$)/);
+  if (isRetiredSourcingPath(request.nextUrl.pathname))
+    return new NextResponse(null, {
+      status: 410,
+      headers: { 'X-Robots-Tag': 'noindex, nofollow' },
+    });
   if (!match) {
     const url = request.nextUrl.clone();
     url.pathname = '/fa' + (url.pathname === '/' ? '' : url.pathname);
@@ -54,6 +63,11 @@ async function route(request: NextRequest, headers: Headers) {
     const origin = publicOrigin();
     if (!origin || redirect.rule.targetPath === null || redirect.rule.status === null)
       return unavailable();
+    if (isRetiredSourcingHref(redirect.rule.targetPath))
+      return new NextResponse(null, {
+        status: 410,
+        headers: { 'X-Robots-Tag': 'noindex, nofollow' },
+      });
     const response = NextResponse.redirect(
       new URL(redirect.rule.targetPath, origin),
       redirect.rule.status,
@@ -216,6 +230,11 @@ async function route(request: NextRequest, headers: Headers) {
 }
 export const config = {
   matcher: [
-    '/((?!api|_next|products|pwa|sw.js|sitemap.xml|sitemap-|sitemaps/|icon.svg|favicon.ico|robots.txt|.*\\.(?:png|jpg|jpeg|webp|svg|woff2)$).*)',
+    '/api/market/:path*',
+    '/api/sourcing/:path*',
+    '/api/phones/:path*',
+    '/api/notifications/phones/:path*',
+    '/api/cart/:locale/sourcing/:path*',
+    '/((?!api|_next|media/videos/|products|pwa|sw.js|sitemap.xml|sitemap-|sitemaps/|icon.svg|favicon.ico|robots.txt|.*\\.(?:png|jpg|jpeg|webp|svg|woff2)$).*)',
   ],
 };

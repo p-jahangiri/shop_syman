@@ -83,6 +83,7 @@ public sealed class Product : CatalogEntity
     public bool IsDigital { get; set; }
     public bool Featured { get; set; }
     public DateTimeOffset? PublishAt { get; set; }
+    public DateTimeOffset? ArchivedAt { get; set; }
     public List<ProductTranslation> Translations { get; set; } = [];
     public List<ProductVariant> Variants { get; set; } = [];
     public List<ProductAttributeValue> Attributes { get; set; } = [];
@@ -154,6 +155,7 @@ public sealed class VariantAttributeValue
 public sealed class ProductMedia : CatalogEntity
 {
     public string? AssetId { get; set; }
+    public string? VideoAssetId { get; set; }
     public string ProductId { get; set; } = "";
     public string? VariantId { get; set; }
     public string Url { get; set; } = "";

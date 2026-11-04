@@ -13,6 +13,60 @@ import {
   safeAdminRefreshCookie,
 } from './server.mjs';
 
+test('admin review photos are exact, authenticated WebP reads with no cache or cookie reuse', async () => {
+  const webp = Buffer.from('RIFF0000WEBPexample');
+  const endpoint = `/api/admin/reviews/${'a'.repeat(32)}/photos/${'b'.repeat(32)}`;
+  const token = 'Bearer ' + 'test-token-'.repeat(4);
+  const seen = [];
+  let resultHeaders = {};
+  const upstream = http.createServer((req, res) => {
+    req.resume();
+    seen.push([req.url, req.headers.authorization, req.headers.cookie]);
+    res.writeHead(200, {
+      'Content-Type': 'image/webp',
+      'Content-Length': webp.length,
+      ...resultHeaders,
+    });
+    res.end(webp);
+  });
+  upstream.listen(0, '127.0.0.1');
+  await once(upstream, 'listening');
+  const server = createAdminServer({ apiUrl: `http://127.0.0.1:${upstream.address().port}` });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const url = `http://127.0.0.1:${server.address().port}` + endpoint;
+  const headers = { Authorization: token, Cookie: 'sayman_admin_refresh=private' };
+  try {
+    const anonymous = await fetch(url);
+    assert.equal(anonymous.status, 401);
+    assert.equal(anonymous.headers.get('Cache-Control'), 'private, no-store');
+    assert.equal((await fetch(url + '?other=1', { headers })).status, 404);
+    assert.equal((await fetch(url + '/extra', { headers })).status, 404);
+    assert.equal(seen.length, 0);
+    const approved = await fetch(url, { headers });
+    assert.equal(approved.status, 200);
+    assert.equal(approved.headers.get('Content-Type'), 'image/webp');
+    assert.equal(approved.headers.get('Cache-Control'), 'private, no-store');
+    assert.deepEqual(Buffer.from(await approved.arrayBuffer()), webp);
+    assert.deepEqual(seen, [[endpoint, token, undefined]]);
+    for (const malformed of [
+      { 'Content-Type': 'text/html' },
+      { 'Set-Cookie': 'private=do-not-forward' },
+      { 'Content-Length': 2097153 },
+    ]) {
+      resultHeaders = malformed;
+      const result = await fetch(url, { headers });
+      assert.equal(result.status, 503);
+      assert.equal(result.headers.get('Set-Cookie'), null);
+    }
+  } finally {
+    for (const instance of [server, upstream]) instance.closeAllConnections();
+    await Promise.all(
+      [server, upstream].map((instance) => new Promise((resolve) => instance.close(resolve))),
+    );
+  }
+});
+
 test('public image proxy admits exact approved WebP reads and never forwards private authority', async () => {
   const bytes = Buffer.from('RIFF\x08\x00\x00\x00WEBPtest');
   const sha = (value) => createHash('sha256').update(value).digest('hex');

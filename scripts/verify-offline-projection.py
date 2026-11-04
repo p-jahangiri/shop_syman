@@ -23,7 +23,7 @@ for port in [3105,5181]:
     with socket.socket() as probe:
         try:probe.bind(('127.0.0.1',port))
         except OSError:raise SystemExit(f'QA port {port} is occupied; no existing process was changed.')
-source="""import {storefrontSnapshot} from './apps/storefront/lib/fixtures.ts';import {localizeData} from './apps/storefront/lib/i18n.ts';import {offlineCatalog} from './apps/storefront/lib/offline-catalog.ts';process.stdout.write(JSON.stringify(Object.fromEntries(['fa','en'].map(locale=>[locale,offlineCatalog(localizeData(storefrontSnapshot,locale),locale)]))));"""
+source="""import {storefrontSnapshot} from './apps/storefront/lib/data/fixtures.ts';import {localizeData} from './apps/storefront/lib/navigation/i18n.ts';import {offlineCatalog} from './apps/storefront/lib/offline/offline-catalog.ts';process.stdout.write(JSON.stringify(Object.fromEntries(['fa','en'].map(locale=>[locale,offlineCatalog(localizeData(storefrontSnapshot,locale),locale)]))));"""
 fixtures=json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',source],cwd=root))
 mode='normal'; full_reads=0; forbidden_headers=0; requests=0
 

@@ -1,0 +1,333 @@
+.cheque-workspace,
+.cheque-navigation,
+.cheque-policy-grid {
+  display: grid;
+  gap: 0.95rem;
+  min-inline-size: 0;
+}
+.cheque-workspace [hidden] {
+  display: none;
+}
+.cheque-navigation {
+  justify-items: start;
+}
+.cheque-section-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.cheque-section-title h2,
+.cheque-section-title p {
+  margin: 0;
+}
+.cheque-section-title p {
+  margin-block-start: 0.3rem;
+  color: var(--muted);
+}
+.cheque-section-title h2:focus {
+  outline: none;
+}
+.cheque-section-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  block-size: 42px;
+  border-radius: 0.7rem;
+  color: var(--foreground);
+  background: color-mix(in oklch, var(--primary) 16%, var(--surface));
+}
+.cheque-view-switch,
+.cheque-report-presets,
+.cheque-pagination {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.cheque-view-switch > button,
+.cheque-report-presets > button,
+.cheque-pagination > button,
+.cheque-report-filter > button,
+.cheque-case-lookup-line > button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+  min-block-size: 44px;
+  max-inline-size: 100%;
+  white-space: normal;
+}
+.cheque-view-switch > button[aria-pressed='true'] {
+  color: var(--foreground);
+  border-color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 17%, var(--surface));
+  font-weight: 700;
+}
+.cheque-report-filter {
+  display: grid;
+  align-items: start;
+  justify-items: start;
+  gap: 0.9rem;
+  margin-block: 1rem;
+  padding: 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+}
+.cheque-report-fields,
+.cheque-queue-filters {
+  display: grid;
+  gap: 0.75rem;
+  align-items: end;
+  inline-size: 100%;
+}
+.cheque-report-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.cheque-queue-filters {
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  margin-block: 0.8rem;
+}
+.cheque-control {
+  display: grid;
+  gap: 0.35rem;
+  min-inline-size: 0;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+.cheque-control :is(input, select) {
+  min-inline-size: 0;
+  min-block-size: 44px;
+  inline-size: 100%;
+}
+.cheque-report-guide,
+.cheque-detail-step {
+  margin-block: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  padding-inline: 0.85rem;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.cheque-report-guide > summary,
+.cheque-detail-step > summary {
+  min-block-size: 44px;
+  align-content: center;
+  cursor: pointer;
+  font-weight: 700;
+}
+.cheque-detail-step[open] > summary {
+  border-block-end: 1px solid var(--border);
+  margin-block-end: 0.65rem;
+}
+.cheque-detail-step[open] {
+  padding-block-end: 0.85rem;
+}
+.cheque-report-caption {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.cheque-report-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 0.65rem;
+}
+.cheque-report-summary > div {
+  min-inline-size: 0;
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--cheque-mark, var(--primary));
+  border-radius: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--surface-soft);
+}
+.cheque-report-summary dt {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.cheque-report-summary dd {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+}
+.cheque-report-summary dd small {
+  color: var(--muted);
+}
+.cheque-report-summary dd strong,
+.cheque-money {
+  font-variant-numeric: tabular-nums;
+}
+.cheque-money {
+  white-space: nowrap;
+}
+.cheque-status {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  margin-inline-end: 0.3rem;
+  padding: 0.18rem 0.5rem;
+  border: 1px solid color-mix(in oklch, var(--cheque-mark, var(--primary)) 45%, var(--border));
+  border-radius: 0.65rem;
+  background: color-mix(in oklch, var(--cheque-mark, var(--primary)) 12%, var(--surface));
+  color: var(--foreground);
+  font-size: 0.78rem;
+}
+.cheque-status[data-tone='danger'],
+.cheque-report-summary > [data-tone='danger'] {
+  --cheque-mark: oklch(59% 0.18 30);
+}
+.cheque-status[data-tone='attention'],
+.cheque-report-summary > [data-tone='attention'] {
+  --cheque-mark: oklch(64% 0.14 72);
+}
+.cheque-status[data-tone='info'],
+.cheque-report-summary > [data-tone='info'] {
+  --cheque-mark: oklch(62% 0.12 232);
+}
+.cheque-reference {
+  overflow-wrap: anywhere;
+}
+.cheque-pagination {
+  justify-content: space-between;
+  margin-block-start: 0.8rem;
+}
+.cheque-order-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+}
+.cheque-order-detail .cheque-section-title {
+  margin-block-end: 0.8rem;
+}
+.ticket-workspace.cheque-application-workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+.cheque-application-workspace > .ticket-panel[hidden] {
+  display: none;
+}
+.cheque-application-workspace .ticket-panel {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.cheque-application-workspace .cheque-case-heading {
+  align-items: center;
+  margin-block-end: 1rem;
+}
+.cheque-case-heading h2,
+.cheque-case-heading p {
+  margin: 0;
+}
+.cheque-case-heading h2:focus {
+  outline: none;
+}
+.cheque-case-heading p {
+  margin-block-start: 0.25rem;
+  color: var(--muted);
+}
+.cheque-case-controls {
+  display: grid;
+  gap: 0.9rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface-soft);
+}
+.cheque-case-controls .cheque-case-queues {
+  padding-block-end: 0.85rem;
+  border-block-end: 1px solid var(--border);
+}
+.cheque-case-lookup-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.65rem;
+}
+.cheque-case-lookup .ticket-field {
+  min-inline-size: 0;
+  margin: 0;
+}
+.cheque-case-lookup .ticket-field input,
+.cheque-case-lookup .cheque-case-lookup-line > button {
+  min-block-size: 44px;
+  block-size: 44px;
+}
+.cheque-case-lookup input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+.cheque-case-lookup > small {
+  display: block;
+  margin-block-start: 0.4rem;
+  color: var(--danger);
+}
+.cheque-case-empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-block-start: 1rem;
+  padding: 0.85rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.85rem;
+}
+.cheque-case-empty p {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+}
+.cheque-case-results:empty {
+  display: none;
+}
+.cheque-case-list .cheque-case-results button {
+  grid-template-columns: minmax(7rem, 0.85fr) minmax(10rem, 1.1fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: 0.45rem 0.7rem;
+}
+.cheque-case-results button > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+.cheque-case-results button > small {
+  color: var(--muted);
+  text-align: end;
+}
+.cheque-case-results button > strong bdi {
+  font-size: 0.94rem;
+}
+.cheque-application-workspace .ticket-list button[aria-current='page'] {
+  border-color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 10%, var(--surface));
+}
+.cheque-application-workspace .ticket-list button strong {
+  font-variant-numeric: tabular-nums;
+}
+.cheque-application-workspace .ticket-list button small {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 980px) {
+  .cheque-order-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .cheque-report-fields,
+  .cheque-queue-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cheque-case-list .cheque-case-results button {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cheque-case-results button > small {
+    text-align: start;
+  }
+}
+@media (max-width: 460px) {
+  .cheque-case-lookup-line {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cheque-case-lookup-line > button {
+    justify-self: stretch;
+  }
+}

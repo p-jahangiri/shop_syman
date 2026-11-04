@@ -348,6 +348,9 @@ namespace Shop.Api.Migrations.Catalog
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<string>("BrandId")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -403,8 +406,12 @@ namespace Shop.Api.Migrations.Catalog
 
                     b.HasIndex("CategoryId", "Status");
 
+                    b.HasIndex("ArchivedAt", "UpdatedAt", "Id");
+
                     b.ToTable("Products", "catalog", t =>
                         {
+                            t.HasCheckConstraint("CK_Product_ArchivedVisibility", "[ArchivedAt] IS NULL OR [Status] = 'Hidden'");
+
                             t.HasCheckConstraint("CK_Product_Status", "[Status] IN ('Draft','Published','Hidden')");
                         });
                 });
@@ -532,11 +539,17 @@ namespace Shop.Api.Migrations.Catalog
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<string>("VideoAssetId")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AssetId");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("VideoAssetId");
 
                     b.ToTable("ProductMedia", "catalog");
                 });
@@ -951,6 +964,98 @@ namespace Shop.Api.Migrations.Catalog
                         });
                 });
 
+            modelBuilder.Entity("Shop.Modules.Catalog.Infrastructure.ProductFormConfiguration", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ProductFormConfigurations", "catalog");
+                });
+
+            modelBuilder.Entity("Shop.Modules.Catalog.Infrastructure.ProductFormField", b =>
+                {
+                    b.Property<string>("ConfigurationId")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("Key")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Help")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Visible")
+                        .HasColumnType("bit");
+
+                    b.HasKey("ConfigurationId", "Key");
+
+                    b.ToTable("ProductFormFields", "catalog", t =>
+                        {
+                            t.HasCheckConstraint("CK_ProductFormField_Order", "[SortOrder] >= 0 AND [SortOrder] <= 1000");
+                        });
+                });
+
+            modelBuilder.Entity("Shop.Modules.Catalog.Infrastructure.ProductWorkspaceCommand", b =>
+                {
+                    b.Property<string>("ActorId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("RequestId")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("ReceiptJson")
+                        .IsRequired()
+                        .HasMaxLength(16384)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ActorId", "RequestId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.ToTable("ProductWorkspaceCommands", "catalog", t =>
+                        {
+                            t.HasCheckConstraint("CK_ProductWorkspaceCommand_Kind", "[Kind] IN ('save','prices','archive','restore','fields')");
+                        });
+                });
+
             modelBuilder.Entity("Shop.Modules.Catalog.Infrastructure.UsedItemCommand", b =>
                 {
                     b.Property<string>("ActorId")
@@ -1066,6 +1171,43 @@ namespace Shop.Api.Migrations.Catalog
                         });
                 });
 
+            modelBuilder.Entity("Shop.Modules.Catalog.Infrastructure.UsedItemInspectionPhoto", b =>
+                {
+                    b.Property<string>("InspectionId")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AltEn")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<string>("AltFa")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<string>("AssetId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.HasKey("InspectionId", "Position");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("InspectionId", "AssetId")
+                        .IsUnique();
+
+                    b.ToTable("UsedItemInspectionPhotos", "catalog", t =>
+                        {
+                            t.HasCheckConstraint("CK_UsedInspectionPhoto_Position", "[Position] BETWEEN 1 AND 12");
+                        });
+                });
+
             modelBuilder.Entity("Shop.Modules.Catalog.Media.PublicImageAsset", b =>
                 {
                     b.Property<string>("Id")
@@ -1158,6 +1300,70 @@ namespace Shop.Api.Migrations.Catalog
                             t.HasCheckConstraint("CK_PublicImageVariant_Name", "[Name] IN ('thumb','card','zoom')");
 
                             t.HasCheckConstraint("CK_PublicImageVariant_Size", "[Bytes] > 0 AND [Bytes] <= 8388608 AND [Width] > 0 AND [Height] > 0");
+                        });
+                });
+
+            modelBuilder.Entity("Shop.Modules.Catalog.Media.PublicVideoAsset", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int>("Bytes")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("DurationMilliseconds")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Extension")
+                        .IsRequired()
+                        .HasMaxLength(4)
+                        .HasColumnType("nvarchar(4)");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("int");
+
+                    b.Property<int>("InputBytes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("PublicVideos", "catalog", t =>
+                        {
+                            t.HasCheckConstraint("CK_PublicVideo_Extension", "[Extension] IN ('mp4','webm')");
+
+                            t.HasCheckConstraint("CK_PublicVideo_Size", "[InputBytes] > 0 AND [InputBytes] <= 33554432 AND [Bytes] > 0 AND [Bytes] <= 41943040 AND [Width] > 0 AND [Width] <= 4096 AND [Height] > 0 AND [Height] <= 4096 AND [DurationMilliseconds] > 0 AND [DurationMilliseconds] <= 600000");
+
+                            t.HasCheckConstraint("CK_PublicVideo_Status", "[Status] IN ('Staged','Ready','Failed')");
                         });
                 });
 
@@ -1368,6 +1574,11 @@ namespace Shop.Api.Migrations.Catalog
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Shop.Modules.Catalog.Media.PublicVideoAsset", null)
+                        .WithMany()
+                        .HasForeignKey("VideoAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Shop.Modules.Catalog.Domain.ProductPurchaseMethod", b =>
@@ -1450,11 +1661,35 @@ namespace Shop.Api.Migrations.Catalog
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Shop.Modules.Catalog.Infrastructure.ProductFormField", b =>
+                {
+                    b.HasOne("Shop.Modules.Catalog.Infrastructure.ProductFormConfiguration", null)
+                        .WithMany("Fields")
+                        .HasForeignKey("ConfigurationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Shop.Modules.Catalog.Infrastructure.UsedItemInspection", b =>
                 {
                     b.HasOne("Shop.Modules.Catalog.Domain.ProductVariant", null)
                         .WithMany()
                         .HasForeignKey("VariantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Shop.Modules.Catalog.Infrastructure.UsedItemInspectionPhoto", b =>
+                {
+                    b.HasOne("Shop.Modules.Catalog.Media.PublicImageAsset", null)
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Shop.Modules.Catalog.Infrastructure.UsedItemInspection", null)
+                        .WithMany()
+                        .HasForeignKey("InspectionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -1512,6 +1747,11 @@ namespace Shop.Api.Migrations.Catalog
             modelBuilder.Entity("Shop.Modules.Catalog.Infrastructure.AccountingImportBatch", b =>
                 {
                     b.Navigation("Rows");
+                });
+
+            modelBuilder.Entity("Shop.Modules.Catalog.Infrastructure.ProductFormConfiguration", b =>
+                {
+                    b.Navigation("Fields");
                 });
 
             modelBuilder.Entity("Shop.Modules.Catalog.Media.PublicImageAsset", b =>

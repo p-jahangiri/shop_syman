@@ -1,11 +1,11 @@
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
-import { PhoneDetail } from '@/components/phone-market';
-import { marketIdSchema } from '@/lib/market-contract';
-import { getPhoneItem } from '@/lib/phone-discovery-server';
-import { PhoneReadError } from '@/lib/phone-discovery-http';
-import { serverI18n } from '@/lib/server-locale';
-import { pageMetadata } from '@/lib/seo';
+import { PhoneDetail } from '@/components/market/phone-market';
+import { marketIdSchema } from '@sayman/web-shared/lib/market/market-contract.ts';
+import { getPhoneItem } from '@/lib/market/phone-discovery-server';
+import { PhoneReadError } from '@/lib/market/phone-discovery-http';
+import { serverI18n } from '@/lib/navigation/server-locale';
+import { pageMetadata } from '@/lib/seo/seo';
 export const dynamic = 'force-dynamic';
 const read = cache(async (locale: 'fa' | 'en', id: string) => {
   if (!marketIdSchema.safeParse(id).success) notFound();

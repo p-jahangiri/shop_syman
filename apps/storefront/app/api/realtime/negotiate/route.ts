@@ -1,4 +1,4 @@
-import { proxyPrivateRealtime } from '@/lib/realtime-proxy';
+import { proxyPrivateRealtime } from '@/lib/notifications/realtime-proxy';
 export async function POST(request: Request) {
   return proxyPrivateRealtime(request, {
     SHOP_API_URL: process.env.SHOP_API_URL,

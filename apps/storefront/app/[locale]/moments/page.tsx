@@ -1,10 +1,11 @@
-import { serverI18n } from '@/lib/server-locale';
-import { pageMetadata } from '@/lib/seo';
-import { activeHomeBlocks, curatedProducts } from '@/lib/home-blocks';
-import { getCatalogProducts } from '@/lib/catalog-server';
-import { ProductsScope } from '@/components/locale-provider';
-import { Spotlight } from '@/components/spotlight';
-import Link from '@/components/localized-link';
+import { serverI18n } from '@/lib/navigation/server-locale';
+import { pageMetadata } from '@/lib/seo/seo';
+import { activeHomeBlocks, curatedProducts } from '@/lib/content/home-blocks';
+import { getCatalogProducts } from '@/lib/catalog/catalog-server';
+import { ProductsScope } from '@/components/navigation/locale-provider';
+import { Spotlight } from '@/components/catalog/spotlight';
+import Link from '@/components/navigation/localized-link';
+import { isUsedCatalogHref } from '@sayman/web-shared/lib/content/appearance.ts';
 
 export async function generateMetadata() {
   const snapshot = await serverI18n();
@@ -19,7 +20,11 @@ export async function generateMetadata() {
 export default async function MomentsPage() {
   const { locale, site, t } = await serverI18n();
   const blocks = activeHomeBlocks(site.homeBlocks ?? [], Date.now()).filter(
-    (block) => block.kind === 'spotlight',
+    (block) =>
+      block.kind === 'spotlight' &&
+      (site.appearance?.showUsedProducts !== false ||
+        !block.href ||
+        !isUsedCatalogHref(block.href)),
   );
   const collections = await Promise.all(
     blocks.map(async (block) => ({

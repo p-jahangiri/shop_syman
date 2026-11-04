@@ -34,7 +34,7 @@ public sealed class StaffAdministrationTests
     }
     [Fact] public void OnlyAdministratorRoleContainsStaffPermissions()
     {
-        var catalog=StaffInput.Catalog();Assert.Equal(new[]{"Administrator","CatalogManager","ContentManager","CreditReviewer","FinanceManager","InventoryManager","SalesManager","SupportAgent"},catalog.Roles.Select(x=>x.Id));Assert.Contains("staff.write",catalog.Roles.Single(x=>x.Id=="Administrator").Permissions);
+        var catalog=StaffInput.Catalog();Assert.Equal(new[]{"Administrator","CatalogManager","ContentEditor","ContentManager","CreditReviewer","FinanceManager","InventoryManager","SalesManager","SupportAgent"},catalog.Roles.Select(x=>x.Id));Assert.Contains("staff.write",catalog.Roles.Single(x=>x.Id=="Administrator").Permissions);
         Assert.All(catalog.Roles.Where(x=>x.Id!="Administrator"),r=>Assert.DoesNotContain(r.Permissions,p=>p.StartsWith("staff.",StringComparison.Ordinal)));
     }
     [Fact] public void CandidateContractKeepsFalseCredentialCapabilityWithoutHashOrContactValues()

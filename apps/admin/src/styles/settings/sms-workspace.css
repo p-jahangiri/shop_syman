@@ -1,0 +1,390 @@
+.sms-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  min-width: 0;
+}
+.sms-workspace > * {
+  min-width: 0;
+}
+.sms-workspace-intro details {
+  margin: 18px 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.9;
+}
+.sms-workspace-intro summary {
+  cursor: pointer;
+  font-weight: 650;
+  color: var(--foreground);
+}
+.sms-workspace-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sms-workspace-title > div {
+  flex: 1;
+  min-width: 0;
+}
+.sms-workspace-title h2 {
+  margin: 0 0 6px;
+}
+.sms-workspace-title p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.sms-workspace-icon {
+  display: grid;
+  place-items: center;
+  background: var(--surface-soft);
+  color: var(--primary);
+  border-radius: 16px;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
+.sms-tabbar {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+  padding: 0 0 14px;
+  overflow: auto;
+}
+.sms-tabbar button {
+  border-color: transparent;
+  background: transparent;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.sms-tabbar button.active {
+  background: var(--surface-soft);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+.sms-editor-fields {
+  border: 0;
+  padding: 0;
+  margin: 20px 0;
+  min-width: 0;
+}
+.sms-master-detail {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 28px;
+}
+.sms-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sms-list-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.sms-list-heading strong {
+  font-size: 13px;
+}
+.sms-list-heading strong span {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.sms-item-list > button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: start;
+  gap: 6px;
+  padding: 13px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  min-width: 0;
+}
+.sms-item-list > button.selected {
+  border-color: var(--primary);
+  background: var(--surface-soft);
+}
+.sms-item-list small,
+.sms-section-heading p,
+.sms-help-note,
+.sms-key-box p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.9;
+  font-weight: 400;
+}
+.sms-detail {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.sms-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.sms-section-heading h3,
+.sms-section-heading h4 {
+  margin: 0 0 6px;
+}
+.sms-section-heading p {
+  margin: 0;
+  max-width: 65ch;
+}
+.sms-section-heading > button {
+  flex-shrink: 0;
+}
+.sms-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.sms-key-box {
+  padding: 20px;
+  background: var(--surface-soft);
+  border-radius: 14px;
+  display: grid;
+  gap: 14px;
+}
+.sms-key-box h4 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sms-parameters {
+  display: grid;
+  gap: 12px;
+}
+.sms-parameter {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.sms-parameter > .field {
+  flex: 1;
+  min-width: 0;
+}
+.sms-preview {
+  padding: 20px;
+  background: var(--surface-soft);
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+}
+.sms-preview small {
+  color: var(--muted);
+}
+.sms-preview p {
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 2;
+  margin: 10px 0;
+}
+.sms-route {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+}
+.sms-route strong {
+  font-size: 14px;
+}
+.sms-route p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+.sms-route > .field {
+  margin: 0;
+}
+.sms-log-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 280px));
+  gap: 16px;
+  margin: 22px 0;
+}
+.sms-table-wrap {
+  overflow: auto;
+}
+.sms-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.sms-table-wrap th {
+  text-align: start;
+  color: var(--muted);
+  font-size: 12px;
+  background: var(--surface-soft);
+  font-weight: 500;
+  padding: 14px;
+}
+.sms-table-wrap td {
+  padding: 16px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.sms-table-wrap td small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.sms-status {
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--surface-soft);
+  font-size: 11px;
+}
+.sms-status-accepted {
+  background: var(--admin-success-surface);
+  color: var(--admin-success);
+}
+.sms-status-rejected,
+.sms-status-unknown {
+  background: var(--admin-danger-surface);
+  color: var(--danger);
+}
+.sms-empty {
+  padding: 30px 12px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+.sms-log-paging {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+.sms-test {
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+.sms-test summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.sms-test > p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.9;
+}
+.sms-test > .sms-fields-grid {
+  margin: 16px 0;
+}
+.sms-test > .primary {
+  margin-top: 14px;
+}
+.sms-command-result {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.sms-command-result p {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 12px;
+}
+.sms-command-result span {
+  font-size: 12px;
+}
+.sms-policy-grid {
+  margin-top: 8px;
+}
+@media (max-width: 1100px) {
+  .sms-master-detail {
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 20px;
+  }
+  .sms-parameter {
+    flex-wrap: wrap;
+  }
+  .sms-route {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .sms-route > label {
+    grid-column: 2;
+  }
+  .sms-route > .field {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+@media (max-width: 720px) {
+  .sms-workspace-title {
+    flex-wrap: wrap;
+  }
+  .sms-workspace-title > button {
+    margin-inline-start: auto;
+  }
+  .sms-master-detail {
+    grid-template-columns: 1fr;
+  }
+  .sms-item-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .sms-list-heading {
+    grid-column: 1/-1;
+  }
+  .sms-fields-grid {
+    grid-template-columns: 1fr;
+  }
+  .sms-section-heading {
+    flex-wrap: wrap;
+  }
+  .sms-parameter {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .sms-parameter > .field {
+    grid-column: 1/-1;
+  }
+  .sms-parameter > .icon-button {
+    grid-column: 2;
+  }
+  .sms-route {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .sms-route > div:first-child {
+    grid-column: 1/-1;
+  }
+  .sms-route > .field {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .sms-route > label {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .sms-log-filters {
+    grid-template-columns: 1fr;
+  }
+  .sms-tabbar {
+    margin-inline: -8px;
+  }
+  .sms-tabbar button {
+    padding: 10px;
+  }
+  .sms-key-box {
+    padding: 16px;
+  }
+}

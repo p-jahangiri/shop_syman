@@ -60,6 +60,13 @@ public sealed partial class OrderShipmentSqlTests(OrderFixture fixture) : IClass
         var s = await Create(); using var customer = s.Customer; var before = await Stock(s.Variant); var ready = await Read(s); Assert.True(ready.CanPack); Assert.False(ready.CanDispatch);
         var pack = Input(ready, "pack"); var packed = await Body<ShipmentCommandResult>(await fixture.Admin.PostAsJsonAsync(Route(s.OrderId), pack)); Assert.Equal(before, await Stock(s.Variant)); Assert.Equal("packed", packed.Shipment.State);
         var dispatch = Input(await Read(s), "dispatch"); var sent = await Body<ShipmentCommandResult>(await fixture.Admin.PostAsJsonAsync(Route(s.OrderId), dispatch)); var after = await Stock(s.Variant); Assert.Equal(before.OnHand - 1, after.OnHand); Assert.Equal(0, after.Reserved); Assert.Equal(before.Movements + 1, after.Movements); Assert.Equal("Paid", (await Read(s)).OrderState);
+        await using (var check = fixture.Sql.Factory.Services.CreateAsyncScope()) {
+            var sales = check.ServiceProvider.GetRequiredService<SalesDbContext>();
+            var signal = await sales.SmsSignals.Include(x => x.OrderEvent).SingleAsync(x => x.OrderEvent.OrderId == s.OrderId && x.Kind == "orderShipped");
+            Assert.Equal("QA-001", signal.TrackingCode);
+            var message = (await new SalesSmsSignals(sales, TimeProvider.System).PendingAsync(default)).Single(x => x.SourceId == signal.Id);
+            Assert.Equal("QA-001", message.Values["trackingCode"]); Assert.Equal("ارسال‌شده", message.Values["orderStatus"]);
+        }
         var replay = await Body<ShipmentCommandResult>(await fixture.Admin.PostAsJsonAsync(Route(s.OrderId), dispatch)); Assert.True(replay.Replayed); Assert.Equal(JsonSerializer.Serialize(sent with { Replayed = true }), JsonSerializer.Serialize(replay)); Assert.Equal(after, await Stock(s.Variant));
         var delivered = await Body<ShipmentCommandResult>(await fixture.Admin.PostAsJsonAsync(Route(s.OrderId), Input(await Read(s), "deliver"))); Assert.Equal("delivered", delivered.Shipment.State); Assert.Equal("Fulfilled", (await Read(s)).OrderState); Assert.Equal(after, await Stock(s.Variant));
         var historical = await Get<ShipmentCommandResult>(fixture.Admin, Route(s.OrderId) + "/" + pack.CommandId); Assert.Equal("packed", historical.Shipment.State); Assert.Null(historical.Shipment.DispatchedAt); Assert.Equal(packed.OrderVersion, historical.OrderVersion);

@@ -47,7 +47,7 @@ public sealed class CatalogSourcingReader(CatalogDbContext db):ICatalogSourcingR
             }).ToArray();
             // Parent versions cover their translation/options/category assignment children.
             // Values are included as an additional defense and deterministic display snapshot.
-            var version=Convert.ToBase64String(p.Version);var images=p.Media.OrderBy(m=>m.SortOrder).ThenBy(m=>m.Id,StringComparer.Ordinal).Select(m=>m.Url).ToArray();
+            var version=Convert.ToBase64String(p.Version);var images=p.Media.Where(m=>m.Type=="image").OrderBy(m=>m.SortOrder).ThenBy(m=>m.Id,StringComparer.Ordinal).Select(m=>m.Url).ToArray();
             var fingerprint=Hash(new{p.Id,Version=version,CategoryVersion=Convert.ToBase64String(category.Version),BrandVersion=Convert.ToBase64String(brand.Version),Definitions=definitions.Where(d=>p.Attributes.Any(a=>a.AttributeId==d.Id)).OrderBy(d=>d.Id,StringComparer.Ordinal).Select(d=>new{d.Id,Version=Convert.ToBase64String(d.Version)}),Attributes=attributes,Images=images,Available=fresh[p.Id].HasAvailableStoreOffer});
             result.Add(p.Id,new(p.Id,p.Slug,p.CategoryId,categoryFa.Name,categoryEn.Name,p.BrandId,brand.Name,fa.Name,en.Name,fa.Description,en.Description,images,version,fingerprint,fresh[p.Id].HasAvailableStoreOffer,attributes));
         }

@@ -18,14 +18,21 @@ public sealed class CheckoutOrderV2Tests
     [Theory][InlineData(null)][InlineData("")][InlineData("unknown")][InlineData("AAAAAAAAAAA==")][InlineData("AAAAAAAAAAB=")]
     public void UnknownLegacyVersionsStayExplicitlyUnknown(string? value)=>Assert.Null(OrderV2HistoryRules.PriceVersion(value));
     [Fact]public void CanonicalHistoricalVersionIsPreserved()=>Assert.Equal(V,OrderV2HistoryRules.PriceVersion(V));
-    [Fact]public void OrderDeadlineHonorsQuotePurchaseAllocationAndConfiguredLifetimeWithoutRenewal()
+    [Fact]public void FreshQuoteAllowsConfiguredPaymentHoldWhilePurchaseAndAllocationDeadlinesRemainAbsolute()
     {
-        var line=Accepted();Assert.Equal(At.AddMinutes(5),CheckoutQuoteV5Rules.OrderExpiry(At,At.AddMinutes(5),[line],60));
+        var line=Accepted();Assert.Equal(At.AddMinutes(10),CheckoutQuoteV5Rules.OrderExpiry(At,At.AddMinutes(5),[line],60));
         Assert.Equal(At.AddMinutes(1),CheckoutQuoteV5Rules.OrderExpiry(At,At.AddMinutes(5),[line],1));
         Assert.Equal(At.AddSeconds(20),CheckoutQuoteV5Rules.OrderExpiry(At,At.AddMinutes(5),[Accepted(allocation:At.AddSeconds(20))],60));
         Assert.Equal(At.AddSeconds(10),CheckoutQuoteV5Rules.OrderExpiry(At,At.AddMinutes(5),[Accepted(purchase:At.AddSeconds(10),allocation:At.AddSeconds(10))],60));
-        // Waiting never converts the remaining quote time into now+duration.
-        Assert.Equal(At.AddMinutes(5),CheckoutQuoteV5Rules.OrderExpiry(At.AddMinutes(4),At.AddMinutes(5),[line],60));
+        // A quote is a creation precondition, not the separate payment hold.
+        // Accepted allocation rights still cannot be renewed by waiting.
+        Assert.Equal(At.AddMinutes(10),CheckoutQuoteV5Rules.OrderExpiry(At.AddMinutes(4),At.AddMinutes(5),[line],60));
+    }
+    [Fact]public void OrdinaryOrderGetsItsConfiguredHourOnlyAfterValidQuoteCreation()
+    {
+        var ordinary=Accepted()with{LineKind="ordinary",Accepted=null};
+        Assert.Equal(At.AddHours(1),CheckoutQuoteV5Rules.OrderExpiry(At,At.AddSeconds(1),[ordinary],60));
+        Assert.Equal("quote_accepted_offer_expired_conflict",Assert.Throws<BusinessException>(()=>CheckoutQuoteV5Rules.OrderExpiry(At,At,[ordinary],60)).Code);
     }
     [Theory][InlineData(0)][InlineData(61)]public void ReservationLifetimeHasNoImplicitNewPolicy(int minutes)=>Assert.Equal("invalid_order_settings",Assert.Throws<BusinessException>(()=>CheckoutQuoteV5Rules.OrderExpiry(At,At.AddMinutes(5),[Accepted()],minutes)).Code);
     [Theory][InlineData("quote")][InlineData("purchase")][InlineData("allocation")]

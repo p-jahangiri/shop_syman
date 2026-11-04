@@ -1,0 +1,49 @@
+.cms-publication-summary {
+  margin-block: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.cms-publication-summary h3,
+.cms-publication-summary p {
+  margin-block: 0.25rem;
+}
+.cms-language-readiness {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+.cms-language-readiness li {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.625rem;
+}
+.cms-editor-actions {
+  margin-block: 1rem;
+}
+.cms-editor-history {
+  margin-block: 1rem;
+}
+.cms-editor-history summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+.cms-page-editor fieldset,
+.blog-editor fieldset {
+  min-inline-size: 0;
+}
+.cms-page-editor .cms-content-block {
+  margin-block: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.625rem;
+}
+.cms-page-editor .cms-content-block > legend {
+  padding-inline: 0.25rem;
+  font-weight: 650;
+}

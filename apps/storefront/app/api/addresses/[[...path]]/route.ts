@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { proxyAddresses } from '@/lib/address-proxy';
+import { proxyAddresses } from '@/lib/address/address-proxy';
 async function handler(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
   return proxyAddresses(request, (await params).path ?? [], {
     SHOP_API_URL: process.env.SHOP_API_URL,

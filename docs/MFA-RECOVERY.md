@@ -31,7 +31,7 @@
 
 این تراکنش‌ها فقط Identity را لمس می‌کنند؛ مرز ماژول‌ها تغییر نکرد. deadlock با جریان‌های همزمان می‌تواند409 بدهد؛ retry خودکار تولید یا مصرف کد وجود ندارد. پذیرش ترکیبی refresh/recovery زیر بار و بازیابی عملی backup/key ring همچنان باقی است. کدهای پشتیبان جای backup SQL، key ring و certificate را نمی‌گیرند.
 
-Migration سورس۱۹ `20261023005118_IdentityMfaRecovery` شامل MfaRecoveryPending و MfaRecoveryCodes است؛ SQL idempotent در backend/sql/identity.sql تولید و model check بدون تغییر جامانده است. اصلی آخرین‌بار۱۷ migration داشت؛ برای اجرای سورس تازه، Sales۱۸ و Identity۱۹ هر دو لازم‌اند. طبق D19 تا اعلام مالک هیچ‌یک اعمال نشده‌اند و SQL/Docker تازه اجرا نشد.
+Migration سورس۱۹ `20261023005118_IdentityMfaRecovery` شامل MfaRecoveryPending و MfaRecoveryCodes است؛ SQL idempotent در database/sqlserver/snapshots/identity.sql تولید و model check بدون تغییر جامانده است. اصلی آخرین‌بار۱۷ migration داشت؛ برای اجرای سورس تازه، Sales۱۸ و Identity۱۹ هر دو لازم‌اند. طبق D19 تا اعلام مالک هیچ‌یک اعمال نشده‌اند و SQL/Docker تازه اجرا نشد.
 
 ## شواهد و حد پذیرش
 

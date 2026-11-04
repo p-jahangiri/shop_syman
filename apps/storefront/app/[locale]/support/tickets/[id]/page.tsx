@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
-import { CustomerTickets } from '@/components/customer-tickets';
-import { serverI18n } from '@/lib/server-locale';
+import { CustomerTickets } from '@/components/support/customer-tickets';
+import { serverI18n } from '@/lib/navigation/server-locale';
 export async function generateMetadata() {
   const { locale } = await serverI18n();
   return {

@@ -1,4 +1,4 @@
-import { proxyReviews } from '@/lib/reviews-proxy';
+import { proxyReviews } from '@/lib/reviews/reviews-proxy';
 async function handler(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
   return proxyReviews(request, (await params).path, {
     SHOP_API_URL: process.env.SHOP_API_URL,

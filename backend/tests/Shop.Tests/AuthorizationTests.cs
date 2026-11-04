@@ -59,7 +59,21 @@ public sealed class AuthorizationTests(ApiFactory factory) : IClassFixture<ApiFa
     }
     [Fact] public async Task PendingMfaCannotReadCustomerProfile() { using var client = factory.CreateClient(); client.DefaultRequestHeaders.Add("X-Test-Kind", "mfa_pending"); Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/auth/me")).StatusCode); }
     [Fact] public async Task AuthenticatedProfileExposesOnlyOwnClaims() { using var client = factory.CreateClient(); client.DefaultRequestHeaders.Add("X-Test-Kind", "access"); var response = await client.GetAsync("/api/auth/me"); Assert.Equal(HttpStatusCode.OK, response.StatusCode); Assert.Contains("test-user", await response.Content.ReadAsStringAsync()); }
-    [Fact] public async Task OtpWithoutProviderFailsClosed() { using var client = factory.CreateClient(); client.DefaultRequestHeaders.Add("Origin", "http://127.0.0.1:3000"); var response = await client.PostAsync("/api/auth/otp", new StringContent("{}", System.Text.Encoding.UTF8, "application/json")); Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode); }
+    [Fact]
+    public async Task MalformedOtpRequestIsPrivateAndRejectedBeforeDatabaseOrProviderAccess()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("Origin", "http://127.0.0.1:3000");
+        using var response = await client.PostAsync("/api/auth/otp", new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.True(response.Headers.CacheControl!.Private);
+        Assert.True(response.Headers.CacheControl.NoStore);
+        Assert.Contains("noindex", string.Join(",", response.Headers.GetValues("X-Robots-Tag")));
+        Assert.Equal("nosniff", Assert.Single(response.Headers.GetValues("X-Content-Type-Options")));
+        Assert.Contains("Origin", response.Headers.Vary);
+        Assert.Contains("Cookie", response.Headers.Vary);
+        Assert.Contains("Authorization", response.Headers.Vary);
+    }
     [Fact] public async Task NullRequiredInputReturnsValidationErrorBeforeDatabaseAccess() { using var client = factory.CreateClient(); var response = await client.PostAsync("/api/auth/password", new StringContent("{\"identifier\":null,\"password\":\"test\"}", System.Text.Encoding.UTF8, "application/json")); Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode); }
     [Fact] public async Task StorefrontOriginCannotRefreshAdminSession() { using var client = factory.CreateClient(); client.DefaultRequestHeaders.Add("Origin", "http://127.0.0.1:3000"); client.DefaultRequestHeaders.Add("X-Sayman-Client", "admin"); var response = await client.PostAsync("/api/auth/refresh", new StringContent("{}", System.Text.Encoding.UTF8, "application/json")); Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode); }
     [Theory]

@@ -1,0 +1,272 @@
+.staff-workspace {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.staff-workspace-intro {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  margin: 0;
+  border-color: color-mix(in oklch, var(--primary) 26%, var(--border));
+  background: linear-gradient(
+    125deg,
+    color-mix(in oklch, var(--primary) 8%, var(--surface)),
+    var(--surface) 65%
+  );
+}
+
+.staff-workspace-intro h2,
+.staff-account-summary h3,
+.staff-roster .section-heading h3 {
+  margin: 0;
+}
+
+.staff-workspace-intro p,
+.staff-roster .section-heading p {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.staff-section-icon {
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  border-radius: 1rem;
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 13%, var(--surface));
+}
+
+.staff-workspace-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.staff-workspace-stats > div,
+.security-recovery-status {
+  min-width: 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface);
+}
+
+.staff-workspace-stats dt,
+.security-recovery-status small {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.security-recovery-status .busy {
+  padding: 0.35rem 0;
+  min-height: 0;
+}
+
+.staff-workspace-stats dd,
+.security-recovery-status strong {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0.2rem 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.staff-roster {
+  margin: 0;
+}
+
+.staff-roster .section-heading .row-buttons,
+.security-workspace .row-buttons {
+  flex-wrap: wrap;
+}
+
+.staff-segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  align-self: end;
+}
+
+.staff-segments button {
+  min-height: 44px;
+}
+
+.staff-segments button[aria-pressed='true'] {
+  color: var(--primary);
+  border-color: color-mix(in oklch, var(--primary) 52%, var(--border));
+  background: color-mix(in oklch, var(--primary) 10%, var(--surface));
+}
+
+.staff-page .staff-state.is-active,
+.staff-page .staff-mfa.is-ready,
+.staff-account-summary .staff-state.is-active {
+  color: var(--admin-success);
+  background: var(--admin-success-surface);
+}
+
+.staff-page .staff-mfa.needs-attention {
+  color: var(--admin-warning);
+}
+
+.staff-page .staff-mfa.is-ready,
+.staff-page .staff-mfa.needs-attention {
+  width: fit-content;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.55rem;
+}
+
+.staff-detail-tabs {
+  margin-bottom: 1rem;
+}
+
+.staff-account-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  padding-block: 0.75rem;
+}
+
+.staff-account-summary bdi {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.staff-change-review,
+.staff-permission-summary,
+.staff-event-list details {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--surface-soft);
+}
+
+.staff-change-review h4,
+.staff-change-review p {
+  margin: 0.4rem 0;
+}
+
+.staff-change-review dl,
+.staff-event-list dl {
+  margin: 0.6rem 0;
+}
+
+.staff-change-review dl div,
+.staff-event-list dl div {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) minmax(0, 1fr);
+  gap: 0.55rem;
+  padding-block: 0.25rem;
+}
+
+.staff-change-review dt,
+.staff-event-list dt,
+.staff-event-list time,
+.staff-event-list summary span {
+  color: var(--muted);
+}
+
+.staff-change-review dd,
+.staff-event-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.staff-permission-summary summary,
+.staff-event-list summary {
+  min-height: 44px;
+  padding-block: 0.65rem;
+  cursor: pointer;
+}
+
+.staff-permission-summary ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+  gap: 0.4rem 1rem;
+  padding-inline-start: 1rem;
+}
+
+.staff-event-list {
+  display: grid;
+  gap: 0.55rem;
+  list-style: none;
+  padding: 0;
+}
+
+.staff-event-list summary span,
+.staff-event-list summary time {
+  display: inline-block;
+  margin-inline-start: 0.65rem;
+}
+
+.security-workspace .staff-password-panel,
+.security-workspace .mfa-recovery-panel {
+  margin: 0;
+}
+
+.recovery-form-fields {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.security-password-rules {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.8rem;
+  padding: 0;
+  margin: 0.75rem 0 1rem;
+  color: var(--muted);
+}
+
+.security-password-rules li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.security-password-rules li[data-met='true'] {
+  color: var(--admin-success);
+}
+
+.security-codes .recovery-codes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(21rem, 100%), 1fr));
+  gap: 0.35rem 1rem;
+  list-style-position: inside;
+  padding: 0;
+  user-select: text;
+}
+
+.security-codes .recovery-codes code {
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 650px) {
+  .staff-workspace-intro {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .staff-workspace-intro > button,
+  .security-recovery-status {
+    grid-column: 1 / -1;
+  }
+
+  .staff-workspace-stats > div {
+    padding: 0.65rem;
+  }
+
+  .staff-workspace-stats dt {
+    font-size: 0.77rem;
+  }
+}

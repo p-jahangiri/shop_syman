@@ -8,7 +8,7 @@ public static class AdminProductsQuery
 {
     public static IQueryable<AdminProductSummary> Read(CatalogDbContext db,AdminProductQuery query,string? after=null,string[]? ids=null)
     {
-        var rows=db.Products.AsNoTracking();if(query.Status!="all")rows=rows.Where(p=>p.Status==query.Status);if(query.CategoryId is not null)rows=rows.Where(p=>p.CategoryId==query.CategoryId);if(query.BrandId is not null)rows=rows.Where(p=>p.BrandId==query.BrandId);
+        var rows=db.Products.AsNoTracking().Where(p=>p.ArchivedAt==null);if(query.Status!="all")rows=rows.Where(p=>p.Status==query.Status);if(query.CategoryId is not null)rows=rows.Where(p=>p.CategoryId==query.CategoryId);if(query.BrandId is not null)rows=rows.Where(p=>p.BrandId==query.BrandId);
         foreach(var token in query.Search.Split(' ',StringSplitOptions.RemoveEmptyEntries))rows=rows.Where(p=>p.Translations.Any(t=>t.SearchName.Contains(token))||p.Variants.Any(v=>v.SearchSku.Contains(token)));
         if(after is not null)rows=rows.Where(p=>string.Compare(p.Id,after)>0);if(ids is not null)rows=rows.Where(p=>ids.Contains(p.Id));
         return rows.OrderBy(p=>p.Id).Select(p=>new AdminProductSummary(p.Id,p.Slug,p.Translations.Where(t=>t.Locale=="fa").Select(t=>t.Name).FirstOrDefault()??"",p.Translations.Where(t=>t.Locale=="en").Select(t=>t.Name).FirstOrDefault()??"",p.CategoryId,p.BrandId,p.Status,p.Featured,p.Variants.Count));

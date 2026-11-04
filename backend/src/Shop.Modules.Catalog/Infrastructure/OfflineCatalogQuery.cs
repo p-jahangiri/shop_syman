@@ -16,12 +16,13 @@ public static class OfflineCatalogQuery
                 Description = c.Translations.Where(t => t.Locale == locale).Select(t => t.Description).FirstOrDefault() ?? c.Translations.Where(t => t.Locale == "fa").Select(t => t.Description).FirstOrDefault() ?? "" });
         return raw.Select(c => new OfflineCategoryDto(c.Key, c.Name.Length > 250 ? c.Name.Substring(0, 250) : c.Name, c.Description.Length > 800 ? c.Description.Substring(0, 800) : c.Description));
     }
-    public static IQueryable<OfflineProductDto> Products(CatalogDbContext db, string locale, string[] categoryIds, DateTimeOffset now)
+    public static IQueryable<OfflineProductDto> Products(CatalogDbContext db, string locale, string[] categoryIds, DateTimeOffset now, bool hideUsed = false)
     {
         OfflineCatalogRules.Locale(locale);
         var raw = db.Products.AsNoTracking().Where(p => p.Status == "Published" && (p.PublishAt == null || p.PublishAt <= now)
                 && categoryIds.Contains(p.CategoryId) && db.Brands.Any(b => b.Id == p.BrandId && b.IsActive)
-                && p.Variants.Any(v => v.IsActive) && p.Translations.Any(t => (t.Locale == locale || t.Locale == "fa") && t.Name != ""))
+                && p.Variants.Any(v => v.IsActive && (!hideUsed || v.UsedInspectionId == null))
+                && p.Translations.Any(t => (t.Locale == locale || t.Locale == "fa") && t.Name != ""))
             .OrderByDescending(p => p.Featured).ThenByDescending(p => p.CreatedAt).ThenBy(p => p.Id)
             .Select(p => new { p.Id, p.Slug,
                 Name = p.Translations.Where(t => t.Locale == locale && t.Name != "").Select(t => t.Name).FirstOrDefault() ?? p.Translations.Where(t => t.Locale == "fa").Select(t => t.Name).FirstOrDefault() ?? "",
@@ -34,12 +35,12 @@ public static class OfflineCatalogQuery
 }
 public sealed partial class CatalogService
 {
-    public async Task<OfflineCatalogSlice> ReadOfflineAsync(string locale, int? requestedLimit, CancellationToken ct)
+    public async Task<OfflineCatalogSlice> ReadOfflineAsync(string locale, int? requestedLimit, CancellationToken ct, bool hideUsed = false)
     {
         OfflineCatalogRules.Locale(locale); var limit = OfflineCatalogRules.Limit(requestedLimit);
         var categoryRows = await OfflineCatalogQuery.Categories(db, locale).Take(OfflineCatalogRules.CategoryLimit + 1).ToArrayAsync(ct);
         var categories = categoryRows.Take(OfflineCatalogRules.CategoryLimit).Select(c => c with { Name = OfflineCatalogRules.Text(c.Name, 250), Description = OfflineCatalogRules.Text(c.Description, 800) }).ToArray();
-        var rows = await OfflineCatalogQuery.Products(db, locale, categories.Select(c => c.Key).ToArray(), DateTimeOffset.UtcNow).Take(limit + 1).ToArrayAsync(ct);
+        var rows = await OfflineCatalogQuery.Products(db, locale, categories.Select(c => c.Key).ToArray(), DateTimeOffset.UtcNow, hideUsed).Take(limit + 1).ToArrayAsync(ct);
         var products = rows.Take(limit).Select(p => p with { Name = OfflineCatalogRules.Text(p.Name, 250), Brand = OfflineCatalogRules.Text(p.Brand, 250), Description = OfflineCatalogRules.Text(p.Description, 800), Image = OfflineCatalogRules.Image(p.Image) }).ToArray();
         return new(categories, products, categoryRows.Length > OfflineCatalogRules.CategoryLimit || rows.Length > limit);
     }
