@@ -6,6 +6,7 @@ import {
   canIndex,
   publicOrigin,
   pageMetadata,
+  homePageMetadata,
   catalogTarget,
   jsonLd,
   productStructuredData,
@@ -133,21 +134,30 @@ test('product structured data preserves Int64 money, stock, current locale and c
   p.variants[0].priceRial = '9223372036854775807';
   p.variants[0].stock = 0;
   const data = productStructuredData(s, p, 'en', env);
-  const offers = data[0].offers as {
-    price: string;
-    priceCurrency: string;
-    availability: string;
+  assert.equal(data[0]['@type'], 'ProductGroup');
+  assert.equal(data[0].productGroupID, p.id);
+  assert.equal(data[0].url, 'https://shop.example/en/product/' + p.slug);
+  assert.deepEqual(data[0].variesBy, ['https://schema.org/color']);
+  const variants = data[0].hasVariant as {
+    sku: string;
     url: string;
+    offers: {
+      price: string;
+      priceCurrency: string;
+      availability: string;
+      url: string;
+      itemCondition: string;
+    };
   }[];
+  const offers = variants.map((variant) => variant.offers);
+  assert.equal(variants[0].sku, p.variants[0].sku);
+  assert.equal(variants[0].url, data[0].url + '?variant=' + p.variants[0].id);
   assert.equal(offers[0].price, '9223372036854775807');
   assert.equal(offers[0].priceCurrency, 'IRR');
   assert.equal(offers[0].availability, 'https://schema.org/OutOfStock');
   assert.equal(offers[0].url.startsWith('https://shop.example/en/product/'), true);
   assert.equal(data[0].aggregateRating, undefined);
-  assert.equal(
-    (data[0].offers as { itemCondition: string }[])[0].itemCondition,
-    'https://schema.org/NewCondition',
-  );
+  assert.equal(offers[0].itemCondition, 'https://schema.org/NewCondition');
   assert.equal(data[1]['@type'], 'BreadcrumbList');
   assert.deepEqual(productStructuredData({ ...s, isPreview: true }, p, 'fa', env), []);
   assert.deepEqual(productStructuredData(s, p, 'fa', {}), []);
@@ -182,13 +192,24 @@ test('used-device offers declare their actual condition without inventing rating
     notesEn: '',
     inspectedAt: '2026-10-29T00:00:00Z',
   };
+  product.variants = [product.variants[0]];
   const data = productStructuredData(snapshot, product, 'fa', env);
+  assert.equal(data[0]['@type'], 'Product');
   assert.equal(
-    (data[0].offers as { itemCondition: string }[])[0].itemCondition,
+    (data[0].offers as { itemCondition: string }).itemCondition,
     'https://schema.org/UsedCondition',
   );
   assert.equal(data[0].aggregateRating, undefined);
   assert.equal(JSON.stringify(data).includes('batteryHealth'), false);
+});
+test('homepage falls back to published identity when a search override is blank', () => {
+  const snapshot = live();
+  snapshot.site.seo = { title: '  ', description: '  ', allowIndexing: true };
+  const metadata = homePageMetadata(snapshot, 'fa');
+  assert.deepEqual(metadata.title, {
+    absolute: snapshot.site.tagline + ' | ' + snapshot.site.name,
+  });
+  assert.equal(metadata.description, snapshot.site.about.slice(0, 400));
 });
 test('CMS script delimiters and Unicode separators cannot escape the JSON-LD script', () => {
   const input = { name: '</script><img src=x onerror=alert(1)> & \u2028\u2029' };

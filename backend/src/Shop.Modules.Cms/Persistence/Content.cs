@@ -43,9 +43,19 @@ public sealed class ContentService(CmsDbContext db, IPublicImageReferences image
 {
     public async Task<JsonObject> ReadAsync(string key, string locale, CancellationToken ct)
     {
-        var json = await db.Documents.AsNoTracking().Where(x => x.Key == key && x.Locale == locale).Select(x => x.PublishedJson).SingleOrDefaultAsync(ct);
+        var documents = db.Documents.AsNoTracking().Where(x => x.Key == key);
+        var shared = key == "site" && locale == "en";
+        var rows = await documents.Where(x => x.Locale == locale || (shared && x.Locale == "fa"))
+            .Select(x => new { x.Locale, x.PublishedJson }).ToListAsync(ct);
+        var json = rows.SingleOrDefault(x => x.Locale == locale)?.PublishedJson;
         var content = json is null ? new JsonObject() : JsonNode.Parse(json)!.AsObject();
-        if (key == "site") StoreIdentityRules.ProjectPublic(content, development);
+        if (key == "site")
+        {
+            var settings = shared ? rows.SingleOrDefault(x => x.Locale == "fa")?.PublishedJson : null;
+            if (json is not null && settings is not null)
+                SharedSiteSettings.Apply(JsonNode.Parse(settings)!.AsObject(), content);
+            StoreIdentityRules.ProjectPublic(content, development);
+        }
         return content;
     }
     public async Task<object> AdminAsync(CancellationToken ct) => new { Documents = await db.Documents.AsNoTracking().OrderBy(x => x.Key).ThenBy(x => x.Locale).ToListAsync(ct), Revisions = await db.Revisions.AsNoTracking().OrderByDescending(x => x.Id).Take(50).Select(x => new { x.Id, x.Key, x.Locale, x.Revision, x.PublishedBy, x.PublishedAt }).ToListAsync(ct) };
@@ -102,26 +112,17 @@ public sealed class ContentService(CmsDbContext db, IPublicImageReferences image
         foreach (var link in new[] { "actionHref", "secondaryHref" }) if (hero[link] is not null) ValidatePath(hero[link]);
         if (hero["image"] is not null) ValidateImage(hero["image"]);
         if (value["logoUrl"] is not null) ValidateImage(value["logoUrl"]);
-        if (value["font"] is not null && value["font"]!.ToString() is not ("vazirmatn" or "system")) throw new BusinessException("invalid_branding", "Select a supported local font.");
+        if (value["font"] is not null && value["font"]!.ToString() is not ("vazirmatn" or "noto-arabic" or "system")) throw new BusinessException("invalid_branding", "Select a supported local font.");
         SiteAppearanceRules.Validate(value);
         StoreIdentityRules.Validate(value);
         SitePurchaseRules.Validate(value);
-        if (value["palette"] is JsonObject palette) {
-            foreach (var pair in palette) if (pair.Key is not ("primaryLight" or "primaryDark" or "heroLight" or "heroDark") || pair.Value is not JsonValue colorNode || !colorNode.TryGetValue<string>(out var color) || !System.Text.RegularExpressions.Regex.IsMatch(color, "^#[0-9a-fA-F]{6}$")) throw new BusinessException("invalid_branding", "Use six-digit hex colors in supported palette fields.");
-            if (palette["primaryLight"] is not null && Contrast(palette["primaryLight"]!.ToString(), "#ffffff") < 4.5 || palette["primaryDark"] is not null && Contrast(palette["primaryDark"]!.ToString(), "#253321") < 4.5) throw new BusinessException("invalid_branding_contrast", "Primary colors must keep readable button text in both themes.");
-        }
-        else if (value["palette"] is not null) throw new BusinessException("invalid_branding", "Palette must be an object.");
+        SitePaletteRules.Validate(value["palette"]);
         if (value["contact"] is JsonObject contact) {
             foreach (var pair in contact) if (pair.Key is not ("phone" or "email" or "address" or "hours") || pair.Value is not JsonValue textNode || !textNode.TryGetValue<string>(out var text) || text.Length > (pair.Key == "address" ? 1000 : pair.Key == "email" ? 254 : pair.Key == "phone" ? 32 : 200)) throw new BusinessException("invalid_contact", "Contact fields must contain bounded text.");
             if (contact["phone"] is not null && !System.Text.RegularExpressions.Regex.IsMatch(contact["phone"]!.ToString(), "^[0-9+() -]{5,32}$")) throw new BusinessException("invalid_contact", "Use an ASCII phone number.");
             if (contact["email"] is not null && (!System.Net.Mail.MailAddress.TryCreate(contact["email"]!.ToString(), out var email) || email.Address != contact["email"]!.ToString())) throw new BusinessException("invalid_contact", "Email address is invalid.");
         }
         else if (value["contact"] is not null) throw new BusinessException("invalid_contact", "Contact must be an object.");
-    }
-    private static double Contrast(string a, string b)
-    {
-        static double Luminance(string hex) { var channels = new[] { 1, 3, 5 }.Select(i => Convert.ToInt32(hex.Substring(i, 2), 16) / 255d).Select(c => c <= 0.04045 ? c / 12.92 : Math.Pow((c + 0.055) / 1.055, 2.4)).ToArray(); return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722; }
-        var first = Luminance(a); var second = Luminance(b); return (Math.Max(first, second) + 0.05) / (Math.Min(first, second) + 0.05);
     }
     private static void ValidatePath(JsonNode? node) { if (node is not JsonValue v || !v.TryGetValue<string>(out var path) || path.Length > 1500 || !path.StartsWith('/') || path.StartsWith("//", StringComparison.Ordinal) || path.Contains('\\') || path.Any(char.IsControl)) throw new BusinessException("invalid_content_link", "Content links must use an internal path."); }
     private static void ValidateImage(JsonNode? node) { if (node is not JsonValue v || !v.TryGetValue<string>(out var image) || !PublicImageUrlRules.IsValid(image)) throw new BusinessException("invalid_image_url", "Use an issued public image path, a bundled product image or an HTTPS image URL without credentials or a fragment."); }
@@ -146,7 +147,7 @@ public sealed class ContentService(CmsDbContext db, IPublicImageReferences image
     }
     public async Task PublishAsync(string key, string locale, string version, string actorId, long? restoreRevisionId, CancellationToken ct, string? section = null)
     {
-        if (section is not null && (section != "socialLinks" || key != "site" || restoreRevisionId is not null))
+        if (section is not null && (section != "socialLinks" || key != "site" || locale != "fa" || restoreRevisionId is not null))
             throw new BusinessException("invalid_publish_section", "Only saved site social links can be published separately.");
         var entity = await db.Documents.SingleOrDefaultAsync(x => x.Key == key && x.Locale == locale, ct) ?? throw new BusinessException("not_found", "Content was not found.");
         if (version != Convert.ToBase64String(entity.Version)) throw new BusinessException("version_conflict", "Content changed. Reload first.");

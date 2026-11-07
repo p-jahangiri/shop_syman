@@ -148,7 +148,7 @@ export function ProductVariantsTable({
     const sign = bulk.trim().startsWith('-') ? -1n : 1n;
     const changes: { key: string; before: string; after: string }[] = [];
     for (const row of selected) {
-      const before = tomanToRial(row.price);
+      const before = operation === 'set' ? '0' : tomanToRial(row.price);
       if (before === null) {
         setBulkError('ابتدا قیمت نامعتبر ردیف‌های انتخابی را اصلاح کنید.');
         return;
@@ -779,7 +779,9 @@ export function ProductVariantsTable({
                 help={
                   operation === 'percent'
                     ? 'درصد صحیح؛ حاصل تا ریال صحیح رو به پایین گرد می‌شود و پیش از اعمال نمایش داده می‌شود.'
-                    : 'برای کاهش مبلغ علامت منفی وارد کنید.'
+                    : operation === 'add'
+                      ? 'برای کاهش مبلغ علامت منفی وارد کنید.'
+                      : 'مبلغ واردشده برای همهٔ ردیف‌های انتخابی اعمال می‌شود، حتی اگر قیمت فعلی خالی باشد.'
                 }
                 path="variants.bulk.value"
                 value={bulk}

@@ -1,0 +1,65 @@
+.recent-views {
+  margin-block: clamp(1.75rem, 4vw, 3rem);
+  min-width: 0;
+}
+.recent-views-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  justify-content: space-between;
+  align-items: center;
+  margin-block-end: 0.75rem;
+}
+.recent-views-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.15rem;
+  margin: 0;
+}
+.recent-views-heading p,
+.recent-view span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.recent-views-heading p {
+  margin: 0.2rem 0 0;
+}
+.recent-views-heading button {
+  min-block-size: 44px;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--surface);
+  color: inherit;
+}
+.recent-views-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 0.65rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.recent-view {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  block-size: 100%;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface);
+}
+.recent-view:hover,
+.recent-views-heading button:hover {
+  border-color: var(--primary);
+}
+.recent-view img {
+  object-fit: contain;
+}
+.recent-view :is(strong, span) {
+  display: block;
+  overflow-wrap: anywhere;
+}

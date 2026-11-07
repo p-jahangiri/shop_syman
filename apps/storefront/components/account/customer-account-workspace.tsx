@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   CircleHelp,
   CreditCard,
+  Clock3,
   Heart,
   LayoutDashboard,
   LogOut,
@@ -157,6 +158,11 @@ export function CustomerAccountWorkspace({
     .map((part) => Array.from(part)[0])
     .join('');
   const orders = overview.orders.status === 'ready' ? overview.orders.data : null;
+  const openOrder = now
+    ? orders?.items.find(
+        (order) => order.state === 'AwaitingPayment' && Date.parse(order.expiresAt) > now,
+      )
+    : undefined;
   const addresses = overview.addresses.status === 'ready' ? overview.addresses.data : null;
   const unread = overview.notifications.status === 'ready' ? overview.notifications.data : null;
   const defaultAddress = addresses?.items.find((address) => address.isDefault);
@@ -294,6 +300,31 @@ export function CustomerAccountWorkspace({
               </span>
             </button>
           </header>
+          {openOrder && (
+            <section className="customer-account-resume" aria-labelledby={id + '-resume'}>
+              <span className="customer-account-order-symbol">
+                <Clock3 size={21} aria-hidden="true" />
+              </span>
+              <div>
+                <h3 id={id + '-resume'}>
+                  {text('سفارش در انتظار پرداخت', 'Order awaiting payment')}
+                </h3>
+                <p>
+                  <bdi>{openOrder.reference}</bdi> · {text('مهلت رزرو تا', 'Reserved until')}{' '}
+                  <time dateTime={openOrder.expiresAt}>
+                    {new Intl.DateTimeFormat(locale === 'fa' ? 'fa-IR' : 'en-GB', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                      timeZone: 'Asia/Tehran',
+                    }).format(new Date(openOrder.expiresAt))}
+                  </time>
+                </p>
+              </div>
+              <Button asChild>
+                <Link href={'/orders/' + openOrder.id}>{text('پیگیری سفارش', 'View order')}</Link>
+              </Button>
+            </section>
+          )}
           <div className="customer-account-stats">
             <AccountStat
               icon={<Package />}

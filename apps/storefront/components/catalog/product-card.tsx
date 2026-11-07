@@ -8,17 +8,23 @@ import { discount } from '@sayman/web-shared/lib/shared/commerce.ts';
 import { availablePurchaseMethods } from '@/lib/catalog/purchasing';
 import { useShop } from '../providers/shop-provider';
 import './product-presentation.css';
+
+// Five tones keep both horizontal and vertical neighbors distinct in
+// the two-, three-, and four-column catalog layouts.
+const gridTones = [0, 1, 2, 3, 4] as const;
 export function ProductCard({
   product,
+  tone,
   compact = false,
   variantId,
 }: {
   product: Product;
+  tone: (typeof gridTones)[number];
   compact?: boolean;
   variantId?: string;
 }) {
   const { t, digits, toman, locale } = useI18n();
-  const { categories, purchaseMethods } = useStorefront();
+  const { purchaseMethods } = useStorefront();
   const { wishlist, compare, toggleWish, toggleCompare, add, cartBusy, loadError, ready } =
     useShop();
   const variant =
@@ -43,15 +49,7 @@ export function ProductCard({
     ).entries(),
   ];
   return (
-    <article
-      className={`product-card ${compact ? 'compact' : ''}`}
-      data-tone={
-        Math.max(
-          0,
-          categories.findIndex((category) => category.key === product.category),
-        ) % 4
-      }
-    >
+    <article className={`product-card ${compact ? 'compact' : ''}`} data-tone={tone}>
       <div className="product-card-head">
         <span title={t(product.brand)}>{t(product.brand)}</span>
         <div className="product-card-actions">
@@ -193,7 +191,16 @@ export function ProductGrid({
   useStorefront();
   return (
     <div className="product-grid">
-      {t(items.map((p) => <ProductCard key={p.id} product={p} variantId={variantIds?.[p.id]} />))}
+      {t(
+        items.map((p, index) => (
+          <ProductCard
+            key={p.id}
+            product={p}
+            tone={gridTones[index % gridTones.length]}
+            variantId={variantIds?.[p.id]}
+          />
+        )),
+      )}
     </div>
   );
 }

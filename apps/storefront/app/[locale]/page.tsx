@@ -4,13 +4,14 @@ import {
   getCatalogFilters,
 } from '@/lib/catalog/catalog-server';
 import { ProductsScope } from '@/components/navigation/locale-provider';
-import { pageMetadata } from '@/lib/seo/seo';
+import { homePageMetadata } from '@/lib/seo/seo';
 import { Fragment } from 'react';
 import { serverI18n } from '@/lib/navigation/server-locale';
 import Link from '@/components/navigation/localized-link';
 import Image from '@/components/media/content-image';
 import { ArrowLeft, ArrowUpLeft, Sparkles, Check, CreditCard, PackageSearch } from 'lucide-react';
 import { ProductGrid } from '@/components/catalog/product-card';
+import { RecentlyViewed } from '@/components/catalog/recently-viewed';
 import { HomeCollection } from '@/components/content/home-collection';
 import { Button } from '@/components/shared/ui';
 import { Spotlight } from '@/components/catalog/spotlight';
@@ -28,13 +29,7 @@ const lines = (text: string) =>
   ));
 export async function generateMetadata() {
   const snapshot = await serverI18n();
-  return pageMetadata(
-    snapshot,
-    snapshot.locale,
-    '/',
-    snapshot.site.seo?.title ?? snapshot.site.tagline,
-    snapshot.site.seo?.description ?? snapshot.site.about,
-  );
+  return homePageMetadata(snapshot, snapshot.locale);
 }
 export default async function HomePage() {
   const { locale, t, site, categories, purchaseMethods } = await serverI18n();
@@ -375,6 +370,7 @@ export default async function HomePage() {
               );
             return null;
           })}
+          <RecentlyViewed />
         </div>
       </div>
     </ProductsScope>

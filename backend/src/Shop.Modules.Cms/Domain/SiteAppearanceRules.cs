@@ -18,7 +18,7 @@ public static class SiteAppearanceRules
         {
             foreach (var pair in appearance)
             {
-                if (pair.Key is "stickyHeader" or "showUsedProducts")
+                if (pair.Key is "stickyHeader" or "showUsedProducts" or "motionBanners" or "motionCards" or "motionSidebar")
                 {
                     if (pair.Value is not JsonValue flag || !flag.TryGetValue<bool>(out _)) Invalid();
                     continue;
@@ -35,7 +35,10 @@ public static class SiteAppearanceRules
                     "surface" => text is "glass" or "solid",
                     "density" => text is "comfortable" or "compact",
                     "corners" => text is "soft" or "rounded",
-                    "motion" => text is "subtle" or "none",
+                    "motion" => text is "subtle" or "full" or "none",
+                    "motionPreset" => text is "ripple" or "glow" or "lift",
+                    "cards" => text is "classic" or "outline" or "editorial",
+                    "navigation" => text is "links" or "pills",
                     "heroLayout" => text is "split" or "compact",
                     _ => false
                 };

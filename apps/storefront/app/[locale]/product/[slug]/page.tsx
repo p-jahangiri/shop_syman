@@ -1,12 +1,19 @@
-import { cache } from 'react';
+import { cache, Suspense } from 'react';
 import { headers } from 'next/headers';
 import { ProductsScope } from '@/components/navigation/locale-provider';
-import { getCatalogProducts, getCatalogPage } from '@/lib/catalog/catalog-server';
+import {
+  CatalogServiceError,
+  getCatalogProducts,
+  getCatalogPage,
+} from '@/lib/catalog/catalog-server';
 import { lookupInputSchema } from '@/lib/catalog/catalog-contract';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { serverI18n } from '@/lib/navigation/server-locale';
+import { getLocale, serverI18n } from '@/lib/navigation/server-locale';
 import { ProductDetail } from '@/components/catalog/product-detail';
+import { ProductGrid } from '@/components/catalog/product-card';
+import type { Product } from '@sayman/web-shared/lib/shared/types.ts';
+import { ArrowLeft } from 'lucide-react';
 import Link from '@/components/navigation/localized-link';
 import { pageMetadata, productStructuredData, jsonLd } from '@/lib/seo/seo';
 const productBySlug = cache(async (locale: 'fa' | 'en', slug: string) => {
@@ -21,8 +28,10 @@ export async function generateMetadata({
   searchParams: Promise<{ variant?: string | string[] }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const snapshot = await serverI18n();
-  const product = await productBySlug(snapshot.locale, slug);
+  const [snapshot, product] = await Promise.all([
+    serverI18n(),
+    getLocale().then((locale) => productBySlug(locale, slug)),
+  ]);
   if (!product) notFound();
   const { variant } = await searchParams;
   return pageMetadata(
@@ -49,8 +58,10 @@ export default async function ProductPage({
 }) {
   const { slug } = await params;
   const { variant } = await searchParams;
-  const snapshot = await serverI18n();
-  const product = await productBySlug(snapshot.locale, slug);
+  const [snapshot, product] = await Promise.all([
+    serverI18n(),
+    getLocale().then((locale) => productBySlug(locale, slug)),
+  ]);
   if (!product) notFound();
   if (unavailableVariant(product.variants, variant)) {
     const fa = snapshot.locale === 'fa';
@@ -67,14 +78,9 @@ export default async function ProductPage({
       </section>
     );
   }
-  const related = (
-    await getCatalogPage(snapshot.locale, { categoryId: product.category, pageSize: 5 })
-  ).products
-    .filter((p) => p.id !== product.id)
-    .slice(0, 4);
   const data = productStructuredData(snapshot, product, snapshot.locale);
   return (
-    <ProductsScope products={[product, ...related]}>
+    <ProductsScope products={[product]}>
       {data.length > 0 && (
         <script
           nonce={(await headers()).get('x-nonce') ?? undefined}
@@ -86,8 +92,59 @@ export default async function ProductPage({
         key={`${product.id}:${variant ?? 'default'}`}
         product={product}
         initialVariantId={typeof variant === 'string' ? variant : undefined}
-        relatedProducts={related}
+        relatedProducts={
+          <Suspense fallback={null}>
+            <RelatedProducts product={product} snapshot={snapshot} />
+          </Suspense>
+        }
       />
+    </ProductsScope>
+  );
+}
+
+async function RelatedProducts({
+  product,
+  snapshot,
+}: {
+  product: Product;
+  snapshot: Awaited<ReturnType<typeof serverI18n>>;
+}) {
+  const { t, locale, site } = snapshot;
+  let related: Product[];
+  try {
+    const page = await getCatalogPage(
+      locale,
+      {
+        categoryId: product.category,
+        pageSize: 5,
+        condition: site.appearance?.showUsedProducts === false ? 'new' : undefined,
+      },
+      AbortSignal.timeout(1500),
+    );
+    related = page.products.filter((item) => item.id !== product.id).slice(0, 4);
+  } catch (error) {
+    if (error instanceof CatalogServiceError) return null;
+    throw error;
+  }
+  if (!related.length) return null;
+  return (
+    <ProductsScope products={related}>
+      <section className="related-section">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">{t('نگاهی به انتخاب‌های دیگر')}</span>
+            <h2>{t('کنار این انتخاب ببین')}</h2>
+          </div>
+          <Link
+            className="text-link"
+            href={`/catalog?category=${encodeURIComponent(product.category)}`}
+          >
+            {t('همهٔ محصولات')}
+            <ArrowLeft size={17} />
+          </Link>
+        </div>
+        <ProductGrid items={related} />
+      </section>
     </ProductsScope>
   );
 }

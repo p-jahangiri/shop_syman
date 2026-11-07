@@ -9,7 +9,7 @@ import {
 import { useI18n, useStorefront } from '@/components/navigation/locale-provider';
 import Link from '@/components/navigation/localized-link';
 import Image from '@/components/media/content-image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ArrowLeft,
   ArrowUpLeft,
@@ -34,7 +34,7 @@ import { availablePurchaseMethods, eligibleChequePlans } from '@/lib/catalog/pur
 import type { Product } from '@sayman/web-shared/lib/shared/types.ts';
 import { chequeQuote, discount } from '@sayman/web-shared/lib/shared/commerce.ts';
 import { useShop } from '../providers/shop-provider';
-import { ProductGrid } from './product-card';
+import { RecentlyViewed } from './recently-viewed';
 import { Button, Modal, groupNavigation } from '../shared/ui';
 
 function revealFirstVideo(gallery: HTMLElement | null) {
@@ -94,11 +94,11 @@ function ProductVideoItem({
 export function ProductDetail({
   product,
   initialVariantId,
-  relatedProducts = [],
+  relatedProducts,
 }: {
   product: Product;
   initialVariantId?: string;
-  relatedProducts?: Product[];
+  relatedProducts?: ReactNode;
 }) {
   const { t, digits, toman, locale } = useI18n();
   const fa = locale === 'fa';
@@ -140,6 +140,16 @@ export function ProductDetail({
   const category = categories.find((c) => c.key === product.category)!;
   const off = discount(variant.priceRial, variant.compareAtRial);
   const methods = availablePurchaseMethods(product, variant, purchaseMethods);
+  const availableAlternative =
+    variant.stock <= 0
+      ? product.variants.find(
+          (item) =>
+            item.stock > 0 &&
+            Boolean(item.usedCondition) === Boolean(variant.usedCondition) &&
+            availablePurchaseMethods(product, item, purchaseMethods).length > 0,
+        )
+      : undefined;
+  const selectedQuantity = Math.min(count, Math.max(1, variant.stock));
   const plans = eligibleChequePlans(chequePlans, BigInt(variant.priceRial), [product]);
   const chequeMethod = methods.some((m) => m.kind === 'cheque');
   const quote =
@@ -161,7 +171,8 @@ export function ProductDetail({
       view: old.key === galleryKey ? old.view : 0,
       zoom: open,
     }));
-  const related = relatedProducts;
+  const [shareUrl, setShareUrl] = useState('');
+  const shareButton = useRef<HTMLButtonElement>(null);
   const isIllustration = selectedImage.startsWith('/products/') && selectedImage.endsWith('.svg');
   const stockLabel = variant.stock
     ? fixturePreview
@@ -179,11 +190,13 @@ export function ProductDetail({
     setGallery({ key: '', view: 0, zoom: false });
   }
   async function share() {
+    const url = new URL(window.location.pathname, window.location.origin);
+    url.searchParams.set('variant', variant.id);
     try {
-      await navigator.clipboard.writeText(window.location.href);
-      notify(t('لینک محصول کپی شد'));
+      await navigator.clipboard.writeText(url.href);
+      notify(fa ? 'لینک این تنوع کپی شد' : 'Variant link copied');
     } catch {
-      notify(t('برای اشتراک‌گذاری، نشانی صفحه را از مرورگر کپی کنید'));
+      setShareUrl(url.href);
     }
   }
   return (
@@ -216,7 +229,12 @@ export function ProductDetail({
             >
               <GitCompareArrows size={20} />
             </button>
-            <button className="icon-button" onClick={share} aria-label={t('کپی لینک محصول')}>
+            <button
+              className="icon-button"
+              ref={shareButton}
+              onClick={share}
+              aria-label={fa ? 'کپی لینک این تنوع' : 'Copy variant link'}
+            >
               <Share2 size={18} />
             </button>
           </div>
@@ -361,6 +379,7 @@ export function ProductDetail({
               {t(
                 product.variants.map((v) => (
                   <button
+                    id={`product-variant-${v.id}`}
                     role="radio"
                     tabIndex={variantId === v.id ? 0 : -1}
                     aria-checked={variantId === v.id}
@@ -477,16 +496,16 @@ export function ProductDetail({
                   <span>{t('تعداد')}</span>
                   <div className="quantity-control">
                     <button
-                      onClick={() => setCount((n) => n + 1)}
-                      disabled={count >= variant.stock}
+                      onClick={() => setCount(selectedQuantity + 1)}
+                      disabled={selectedQuantity >= variant.stock}
                       aria-label={t('افزایش تعداد')}
                     >
                       <Plus size={15} />
                     </button>
-                    <span>{t(digits(count))}</span>
+                    <span>{t(digits(selectedQuantity))}</span>
                     <button
-                      onClick={() => setCount((n) => n - 1)}
-                      disabled={count <= 1}
+                      onClick={() => setCount(selectedQuantity - 1)}
+                      disabled={selectedQuantity <= 1}
                       aria-label={t('کاهش تعداد')}
                     >
                       <Minus size={15} />
@@ -496,13 +515,31 @@ export function ProductDetail({
                 <Button
                   className="full"
                   disabled={!methods.length || cartBusy || loadError || !ready}
-                  onClick={() => add(variant.id, count, product)}
+                  onClick={() => add(variant.id, selectedQuantity, product)}
                 >
                   {t('افزودن به سبد خرید')}
                   <Plus size={18} />
                 </Button>
               </>
             ) : null,
+          )}
+          {availableAlternative && (
+            <div className="product-stock-alternative">
+              <strong>{fa ? 'تنوع دیگری موجود است' : 'Another variant is available'}</strong>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  selectVariant(availableAlternative.id);
+                  document.getElementById(`product-variant-${availableAlternative.id}`)?.focus();
+                }}
+              >
+                {fa ? 'انتخاب' : 'Choose'}{' '}
+                {availableAlternative.label ||
+                  availableAlternative.colorName ||
+                  availableAlternative.sku}
+              </Button>
+            </div>
           )}
           <div className="purchase-method-list">
             <strong>{t('روش‌های خرید این کالا')}</strong>
@@ -625,23 +662,25 @@ export function ProductDetail({
           )}
         </div>
       </section>
-      {t(
-        related.length > 0 && (
-          <section className="related-section">
-            <div className="section-heading">
-              <div>
-                <span className="eyebrow">{t('نگاهی به انتخاب‌های دیگر')}</span>
-                <h2>{t('کنار این انتخاب ببین')}</h2>
-              </div>
-              <Link className="text-link" href={`/catalog?category=${category.key}`}>
-                {t('همهٔ محصولات')}
-                <ArrowLeft size={17} />
-              </Link>
-            </div>
-            <ProductGrid items={related} />
-          </section>
-        ),
-      )}
+      <RecentlyViewed currentProductId={product.id} currentVariantId={variant.id} />
+      {relatedProducts}
+      <Modal
+        open={!!shareUrl}
+        onOpenChange={(open) => {
+          if (!open) setShareUrl('');
+        }}
+        title={fa ? 'لینک این تنوع' : 'Variant link'}
+        restoreFocusRef={shareButton}
+      >
+        <input
+          className="product-share-url"
+          aria-label={fa ? 'نشانی قابل کپی' : 'Link to copy'}
+          dir="ltr"
+          value={shareUrl}
+          readOnly
+          onFocus={(event) => event.currentTarget.select()}
+        />
+      </Modal>
       <div className="mobile-purchase">
         <div>
           <strong>{t(toman(variant.priceRial))}</strong>
@@ -651,7 +690,7 @@ export function ProductDetail({
         </div>
         <Button
           disabled={!variant.stock || !methods.length || cartBusy || loadError || !ready}
-          onClick={() => add(variant.id, count, product)}
+          onClick={() => add(variant.id, selectedQuantity, product)}
         >
           {variant.stock === 0
             ? t('فعلاً ناموجود')

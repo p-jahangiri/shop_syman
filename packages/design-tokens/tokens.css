@@ -6,7 +6,9 @@
   --muted: oklch(0.53 0.018 115);
   --border: oklch(0.9 0.013 100);
   --primary: var(--shop-primary-light, oklch(0.43 0.065 135));
-  --primary-foreground: oklch(0.99 0.005 100);
+  --primary-fill: var(--shop-primary-fill-light, var(--primary));
+  --primary-foreground: var(--shop-primary-text-light, #fff);
+  --primary-hover: var(--shop-primary-hover-light, var(--primary-fill));
   --accent: oklch(0.87 0.1 112);
   --danger: oklch(0.52 0.16 30);
   --hero: var(--shop-hero-light, oklch(0.92 0.03 120));
@@ -20,8 +22,25 @@
   --muted: oklch(0.72 0.02 115);
   --border: oklch(0.33 0.018 120);
   --primary: var(--shop-primary-dark, oklch(0.78 0.09 125));
-  --primary-foreground: oklch(0.2 0.02 130);
+  --primary-fill: var(--shop-primary-fill-dark, var(--primary));
+  --primary-foreground: var(--shop-primary-text-dark, #000);
+  --primary-hover: var(--shop-primary-hover-dark, var(--primary-fill));
   --accent: oklch(0.7 0.09 115);
   --danger: oklch(0.72 0.13 30);
   --hero: var(--shop-hero-dark, oklch(0.29 0.038 130));
+}
+
+@font-face {
+  font-family: 'Noto Sans Arabic';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('./fonts/noto-sans-arabic-v33.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+200C-200E, U+FB50-FDFF, U+FE70-FEFC;
+}
+[data-shop-font='noto-arabic'] {
+  --shop-font: 'Noto Sans Arabic', system-ui, 'Vazirmatn', sans-serif;
+}
+[data-shop-font='system'] {
+  --shop-font: system-ui, sans-serif;
 }

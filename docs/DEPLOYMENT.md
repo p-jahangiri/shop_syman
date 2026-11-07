@@ -1,58 +1,41 @@
-# انتشار سایمان با tag، Vercel و Linux
+# رویهٔ انتشار سایمان با tag، Vercel و Linux
 
-تاریخ: 2026-10-29. مخزن: [shop_syman](https://github.com/p-jahangiri/shop_syman).
+این رویه را پس از اجازهٔ صریح مالک و آماده‌شدن مقصد اجرا کنید. شناسه‌ها، وضعیت تنظیمات، آخرین تصمیم بودجه و قیمت‌های تاریخ‌دار در [وضعیت حساب و مقصد انتشار](DEPLOYMENT-STATE.md) هستند.
 
-## تنظیمات انجام‌شده برای این مخزن
+## آماده‌سازی بستهٔ سورس
 
-GitHub خصوصی روی شاخهٔ `main` متصل و push شده است. در تیم مالک، دو پروژهٔ Vercel ساخته و اتصال آن‌ها به همین GitHub تأیید شده؛ Node22 و دسترسی build به workspaceهای بیرون Root تنظیم شده‌اند:
-
-| بخش     | پروژه                                                                               | شناسه                              | Root Directory    | دامنهٔ تخصیص‌یافته            |
-| ------- | ----------------------------------------------------------------------------------- | ---------------------------------- | ----------------- | ----------------------------- |
-| فروشگاه | [shop-syman](https://vercel.com/parviz21jgmailcoms-projects/shop-syman)             | `prj_rnKzD8MmUPSSNeKWFdZr5205tKOm` | `apps/storefront` | `shop-syman.vercel.app`       |
-| پنل     | [shop-syman-admin](https://vercel.com/parviz21jgmailcoms-projects/shop-syman-admin) | `prj_Av5SLbbD4JZIGRudmjNRaZvkXAlW` | `apps/admin`      | `shop-syman-admin.vercel.app` |
-
-`VERCEL_ORG_ID=team_r5gwfze48ez83lvEPUhu7Mul` و شناسهٔ هر دو پروژه و `STOREFRONT_PUBLIC_URL` در GitHub Variables ثبت شده‌اند؛ Environment با نام `production` نیز ساخته شده است. هر دو متغیر `VERCEL_DEPLOY_ENABLED` و `PRODUCTION_DEPLOY_ENABLED` فعلاً `false` هستند. envهای غیرمحرمانهٔ شناخته‌شدهٔ Production در دو پروژه ثبت شده‌اند؛ `SHOP_API_URL` و `ADMIN_API_URL` تا تعیین API واقعی عمداً مقدار ساختگی ندارند.
-
-**این پروژه‌ها هنوز deploy نشده‌اند. درخواست تازهٔ D53 توقف قبلی را لغو کرده و انتشار کامل با SQL/API واقعی را می‌خواهد.** مالک برای میزبان مکمل، اتصال Railway را انتخاب کرده؛ اتصال و ساخت منابع هنوز تأیید نشده‌اند. دامنهٔ تخصیص‌یافته به‌معنی سایت فعال نیست. موارد لازم برای فعال‌سازی: میزبان واقعی API/SQL و HTTPS، ثبت URL API در هر دو پروژه، build موفق و بررسی سلامت/گردش متصل، و secret `VERCEL_TOKEN` در GitHub Environment به نام `production` برای انتشار خودکار tag. ساخت و ورود token را مالک حساب انجام دهد؛ در چت ارسال نشود. این بخش برای همین حساب ثبت شده است؛ انتقال به حساب دیگر نیازمند شناسه‌های همان مقصد است.
-
-طبق D53، انتشار تازه از بستهٔ allowlist شامل سورس لازم برای ساخت/اجرا انجام می‌شود؛ آزمون‌ها، شواهد، مستندات داخلی و ابزارهای محلی در این بسته نیستند. حذف آن‌ها از بسته به معنی حذف از پوشهٔ توسعه یا بازنویسی main نیست. گردش CI جامع پایین، مسیر تاریخی D52 است و نباید برای انتشار D53 بدون آزمون به‌عنوان گردش اجراشده گزارش شود.
-
-سورس محدود در شاخهٔ [production](https://github.com/p-jahangiri/shop_syman/tree/production)، commit `d431dfa4ee24b98baa7f53eb948a316ba46cb94c` push شد:۱۲۰۹فایل ساخت/اجرا و یک manifest،۱۲٫۵MB، SHA درخت تولید `4a36809e0a4fb6103ceda2f441756804590524461785a9b3bd55b4362e32a198`. شاخه تاریخچهٔ مستقل دارد؛ checkout رویmain و تغییرات محلی حفظ شدند. این ارسال، build یا deploy موفق نیست؛ هیچ tag انتشار ساخته نشده و این شاخه فعلاً workflow خودکار ندارد. فایل‌های موردنیاز build مانند TypeScript و کلاس‌های کامپایل‌شوندهٔ Development باقی‌اند، اما دادهٔ توسعه/کلید/رمز/آزمون ارسال نشده و guardهای Production حفظ‌اند.
+برای مسیر سورس محدود، فقط فایل‌های لازم برای ساخت و اجرا را با ابزار allowlist صادر کنید. فایل‌های محرمانه، داده‌های Development، آزمون‌ها، شواهد و ابزارهای محلی در بسته نباشند. شاخهٔ مقصد، سازگاری CI و مجوز انتشار را جداگانه بررسی کنید.
 
 برای ساخت مجدد بسته از سورس هماهنگ و ثابت، مسیر خروجی تازه بدهید:
 
 ```sh
-python3 deploy/package-production.py --output /private/tmp/sayman-production-next
+python3 deploy/package-production.py --output tmp/sayman-production-next
 ```
 
 برای بردن یک بخش به میزبان یا مخزن جدا، نام آن بخش را مشخص کنید.
 
 ```sh
-python3 deploy/package-production.py --component admin --output /private/tmp/sayman-admin
-python3 deploy/package-production.py --component storefront --output /private/tmp/sayman-storefront
-python3 deploy/package-production.py --component api --output /private/tmp/sayman-api
-python3 deploy/package-production.py --component database --output /private/tmp/sayman-database
+python3 deploy/package-production.py --component admin --output tmp/sayman-admin
+python3 deploy/package-production.py --component storefront --output tmp/sayman-storefront
+python3 deploy/package-production.py --component api --output tmp/sayman-api
+python3 deploy/package-production.py --component database --output tmp/sayman-database
 ```
 
 هر خروجی رابط شامل همان برنامه، دو بستهٔ مشترک و lockfile است. از ریشهٔ خروجی، `npm ci --workspace @sayman/admin` یا `npm ci --workspace @sayman/storefront` را اجرا کنید و سپس `npm run build:admin` یا `npm run build` را بزنید. خروجی API با `dotnet build backend/src/Shop.Api/Shop.Api.csproj` ساخته می‌شود. خروجی دیتابیس پیکربندی Compose و خروجی‌های تاریخی SQL را دارد. [راهنمای دیتابیس](../database/README.md)
 
 این ابزار checkout/Git را تغییر نمی‌دهد؛ فایل‌ها و hashها را در `production-source-manifest.json` ثبت می‌کند و تغییر هم‌زمان سورس را رد می‌کند. تغییرهای فقط در بسته: محدودکردن scriptهای npm بهbuild/start، حذف ارجاع دیتاستDevelopment منتشرنشدنی ازcsproj و حذفstageآزمون/COPYSeedازDockerfileبک‌اند. ثبت/pushشاخه جدا از export است و باید بدونcheckout/stashپوشهٔ مشترک انجام شود. برای انتشار tag بعدی، پس از مشخص‌شدن میزبان و دسترسی‌ها باید workflow متناسب با همین شاخه فعال شود؛ مسیر قدیمیmainخودکار به آن منتقل نشده است.
 
-### زیرساخت لازم برای نسخهٔ متصل
+## پیش‌نیازهای محیط متصل
 
-فروشگاه و پنل در دو پروژهٔ Vercel بالا می‌مانند. SQL Server، API با workerهای پیوسته، key ring رمزگذاری‌شدهٔ پایدار و اسکنر فایل باید منابع واقعی داشته باشند. [Vercel Daemons](https://vercel.com/docs/daemons/limits) ورودی شبکه و دیسک محلی پایدار ندارد و میزبان SQL Server نیست. Marketplace متصل نیز فعلاً دیتابیس SQL Server ندارد. مسیر منتخب برای بررسی و آماده‌سازی، Railway در کنار Vercel است؛ نصب افزونه به‌تنهایی ایجاد حساب/منابع یا پذیرش هزینه نیست.
+میزبان واقعی HTTPS برای API، SQL Server، workerهای پایدار، key ring رمزگذاری‌شده، backup و اسکنر معتبر فراهم کنید. تصاویر عمومی و مدارک خصوصی به bucket و دسترسی جدا نیاز دارند. کلید، حساب و دادهٔ نمونهٔ Development را به Production منتقل نکنید. برای پرداخت و پیامک، قرارداد و تنظیم واقعی لازم است.
 
-تصاویر عمومی و مدارک خصوصی، bucket و دسترسی مستقل می‌خواهند. filesystem محلی فقط برای Development است؛ غیرفعال‌کردن اسکن یا عمومی‌کردن مدارک، راه‌حل انتشار نیست. حساب مدیر Production جدا با فرمان `--bootstrap-admin` ساخته می‌شود؛ seed توسعه و حساب/کلید مک به محیط عمومی منتقل نمی‌شود. منابع پرداخت و پیامک نیز به قرارداد و تنظیم واقعی مالک نیاز دارند.
-
-**تصمیم آخر بودجه:** مالک طرح Railway با برآورد۴۰تا۷۵دلارماهانه، هشدار۵۵دلار و سقف توقف۷۵دلار را نپذیرفت: «بودجهٔ کمتر؛ فعلاً منابع را نساز». هیچ منبعی خریداری یا ساخته نشده است. اتصال Railway نیز هنوز تأیید نشده است. گزینهٔ کم‌هزینه‌تر برای بررسی، یک VPSلینوکسیx86با۸GBرم و حدود۸۰GBدیسک برایAPI/SQLExpress/اسکنر است؛ S3وbackupباید جداگانه پذیرفته شوند. قیمت درج‌شدهٔ [شتابان‌هاستRSP-8GB](https://shetabanhost.com/vps/iran-ssd/) در2026-10-29، ماهانه۱٬۱۷۹٬۰۰۰تومان(`11790000`ریال) با۸GBرم/۸۰GBNVMeو۱۰۰GBترافیک بود؛ backupشامل نیست. [OVHVPS-2](https://www.ovhcloud.com/en/vps/) از۸٫۵۰دلار با۸GBرم/۷۵GBNVMeاعلام شده است؛ شرایط سفارش،موجودی،مالیات و دسترسی حساب هنوز بررسی نهایی نشده‌اند. این‌ها قیمت اعلامی ارائه‌دهنده‌اند، نه تأیید عملکرد یا پیش‌فاکتور نهایی. سقف بودجهٔ جایگزین/حساب میزبان هنوز لازم است. هزینهٔ تجاریVercelوbackup/storageجداست؛ نسخهٔ کامل تا فراهم‌شدن منابع واقعی منتشر نمی‌شود.
-
-## انتخاب فعلی: رابط روی Vercel، API و SQL روی سرور
+## مسیر ترکیبی: رابط روی Vercel، API و SQL روی میزبان جدا
 
 دو پروژه از همین مخزن بسازید: فروشگاه Next.js با Root Directory برابر `apps/storefront` و پنل Vite با Root Directory برابر `apps/admin`. در هر دو، گزینهٔ **Include source files outside of the Root Directory in the Build Step** روشن باشد؛ وابستگی‌های workspace و توکن‌های طراحی در ریشهٔ مخزن‌اند. تنظیمات build/install و مسیرهای پنل در `vercel.json` هر پروژه قرار دارند.
 
-پیکربندی آمادهٔ این راهنما رابط‌ها را روی Vercel و API/SQL را روی میزبان جدا قرار می‌دهد. Vercel اکنون [Container Runtime برای OCI](https://vercel.com/docs/functions/runtimes/container) دارد و اجرای API دات‌نت در کانتینر از نظر runtime ممکن است. این API فعلی به key ring مشترک و پایدار، گواهی رمزگذاری، SQL Server و workerهای پس‌زمینه وابسته است؛ انتقال آن به Vercel به طراحی و پذیرش ماندگاری کلیدها، اجرای کارها، migration و backup نیاز دارد. برای اجرای پیوسته نیز سرویس‌های مخصوص پلتفرم باید جدا بررسی و پیکربندی شوند. فایل‌های فعلی این انتقال را پیاده نمی‌کنند و SQL/کلیدها نباید به filesystem گذرای تابع سپرده شوند. `SHOP_API_URL` و `ADMIN_API_URL` باید آدرس واقعی HTTPS یک API در دسترس Vercel باشند؛ `localhost` و IP خصوصی مک قابل استفاده نیستند. بدون API، نمایش داده، ورود و عملیات تجاری متصل پذیرفته نیست. برای ظاهرسازی، Production را به Development یا preview تغییر ندهید و کلیدهای دیتابیس را در دو پروژهٔ رابط Vercel قرار ندهید.
+پیکربندی آمادهٔ این راهنما رابط‌ها را روی Vercel و API/SQL را روی میزبان جدا قرار می‌دهد. برای ارزیابی میزبان دیگر، [مستند Container Runtime](https://vercel.com/docs/functions/runtimes/container) و الزامات برنامه را بررسی کنید. API سایمان به key ring مشترک و پایدار، گواهی رمزگذاری، SQL Server و workerهای پس‌زمینه وابسته است؛ انتقال آن به Vercel به طراحی و پذیرش ماندگاری کلیدها، اجرای کارها، migration و backup نیاز دارد. برای اجرای پیوسته نیز سرویس‌های مخصوص پلتفرم باید جدا بررسی و پیکربندی شوند. فایل‌های فعلی این انتقال را پیاده نمی‌کنند و SQL/کلیدها نباید به filesystem گذرای تابع سپرده شوند. `SHOP_API_URL` و `ADMIN_API_URL` باید آدرس واقعی HTTPS یک API در دسترس Vercel باشند؛ `localhost` و IP خصوصی مک قابل استفاده نیستند. بدون API، نمایش داده، ورود و عملیات تجاری متصل پذیرفته نیست. برای ظاهرسازی، Production را به Development یا preview تغییر ندهید و کلیدهای دیتابیس را در دو پروژهٔ رابط Vercel قرار ندهید.
 
-در صفحهٔ [New Project تیم مالک](https://vercel.com/new?teamSlug=parviz21jgmailcoms-projects)، GitHub و سپس `p-jahangiri/shop_syman` را انتخاب کنید. پروژه‌ها را جداگانه import کنید:
+در صفحهٔ [New Project](https://vercel.com/new)، تیم مقصد و مخزن مجاز سایمان را انتخاب کنید. پروژه‌ها را جداگانه import کنید:
 
 | تنظیم              | فروشگاه           | پنل                |
 | ------------------ | ----------------- | ------------------ |
@@ -68,7 +51,7 @@ python3 deploy/package-production.py --component database --output /private/tmp/
 SHOP_DATA_MODE=api
 SHOP_API_URL=https://api.example.com
 SHOP_ENABLE_PREVIEW=false
-SHOP_PUBLIC_URL=https://shop-syman.vercel.app
+SHOP_PUBLIC_URL=https://shop.example.com
 SHOP_ENABLE_INDEXING=false
 SHOP_PWA_ENABLED=true
 ```
@@ -77,12 +60,19 @@ SHOP_PWA_ENABLED=true
 
 ```dotenv
 ADMIN_API_URL=https://api.example.com
-ADMIN_PUBLIC_URL=https://shop-syman-admin.vercel.app
+ADMIN_PUBLIC_URL=https://admin.example.com
 NODEJS_HELPERS=0
-VITE_STOREFRONT_URL=https://shop-syman.vercel.app
+VITE_STOREFRONT_URL=https://shop.example.com
 ```
 
 دامنهٔ واقعی تخصیص‌یافته را جایگزین نمونه کنید. `VITE_STOREFRONT_URL` در زمان build وارد فایل عمومی می‌شود؛ رمز در متغیرهای `VITE_*` یا `NEXT_PUBLIC_*` قرار ندهید. API نیز باید `Cors__Origins__0` را برابر origin فروشگاه، `Cors__Origins__1` را برابر origin پنل و `Cors__AdminOrigins__0` را برابر origin پنل بشناسد. در صورت انتشار مستقیم API پشت reverse proxy، تنظیم Host و اعتماد به proxy را طبق پیکربندی همان سرور انجام دهید؛ `AllowedHosts=*` راه‌حل تنظیم اشتباه نیست.
+
+### آماده‌سازی ایندکس فروشگاه
+
+1. دامنهٔ عمومی HTTPS را در `SHOP_PUBLIC_URL` بگذارید و فروشگاه را با API واقعی بررسی کنید.
+2. در پنل، «محتوا و تنظیمات ← تنظیمات فروشگاه ← جست‌وجو و اشتراک» را برای هر زبان بررسی کنید. عنوان و توضیح را با پیش‌نمایش نسخهٔ منتشرشده مقایسه کنید. اجازهٔ نمایه‌سازی هر دو زبان را در سند تنظیمات مشترک منتشر کنید.
+3. در محیط عمومی `SHOP_ENABLE_INDEXING=true` را اعمال کنید. پاسخ صفحهٔ محصول، canonical بدون پارامتر تنوع، robots و فهرست `/sitemap.xml` را کنترل کنید. پیوند یک SKU را باز کنید و قیمت، موجودی و JSON-LD همان SKU را با صفحه بسنجید. [راهنمای تنوع کالا در گوگل](https://developers.google.com/search/docs/appearance/structured-data/product-variants/)
+4. دامنه را در Search Console تأیید و نقشهٔ سایت را ثبت کنید. وضعیت URL، پوشش ایندکس و Core Web Vitals را با دادهٔ بازدید واقعی پیگیری کنید. [راهنمای تجربهٔ صفحه در گوگل](https://developers.google.com/search/docs/appearance/page-experience)
 
 پنل روی Vercel همان کنترل‌های BFF را از `server.mjs` به‌صورت تابع Node اجرا می‌کند. [حد بدنهٔ درخواست تابع](https://vercel.com/docs/functions/limitations) 4.5MB است و adapter این پروژه کل multipart را به۴MiB محدود می‌کند؛ overhead فرم هم جزو آن است. UI فعلی هنوز قابلیت۸MiB بک‌اند را نشان می‌دهد و سقف میزبان را نمی‌شناسد؛ این ناهماهنگی پیش از پذیرش کامل آپلود روی Vercel باید رفع شود.
 
@@ -92,12 +82,9 @@ Vercel از [WebSocket](https://vercel.com/docs/functions/websockets) پشتیب
 
 ## انتشار فقط با tag
 
-پس از آماده‌شدن مقصد و secretها، از کد بازبینی‌شده و commitشده در `main` نسخه بسازید:
+پس از مجوز صریح انتشار، آماده‌شدن مقصد و secretها، از commit بازبینی‌شده در شاخهٔ مجاز نسخه بسازید. این مثال برای workflow شاخهٔ `main` است؛ برای شاخهٔ محدود ابتدا گردش CI و انتشار همان شاخه را آماده و جداگانه تأیید کنید:
 
 ```sh
-git add .
-git commit -m "Prepare release"
-git push origin main
 git tag -a v1.0.0 -m "Release v1.0.0"
 git push origin v1.0.0
 ```
@@ -228,6 +215,6 @@ unset Bootstrap__AdminUserName Bootstrap__AdminPassword
 
 ## مرز آماده‌سازی و پذیرش
 
-درگاه، SMS، ایمیل، هلو و سیاست تجاریِ تعیین‌نشده خودکار فعال نمی‌شوند. `Media__Storage=Disabled` و `Files__Storage=Disabled` به‌معنی غیرقابل استفاده بودن آپلود/رسانهٔ وابسته‌اند؛ برای فعال‌سازی، S3 واقعی HTTPS و scanner معتبر با مجوز/bucketهای مجزا لازم است. دادهٔ نمونهٔ Sayman محلی با انتشار سورس به دیتابیس Production منتقل نمی‌شود. قابلیت دیجیتال A102 و سایر موارد باز طبق [STATUS](STATUS.md) همچنان بازند.
+درگاه، SMS، ایمیل، هلو و سیاست تجاریِ تعیین‌نشده خودکار فعال نمی‌شوند. `Media__Storage=Disabled` و `Files__Storage=Disabled` به‌معنی غیرقابل استفاده بودن آپلود/رسانهٔ وابسته‌اند؛ برای فعال‌سازی، S3 واقعی HTTPS و scanner معتبر با مجوز/bucketهای مجزا لازم است. دادهٔ نمونهٔ Sayman محلی با انتشار سورس به دیتابیس Production منتقل نمی‌شود. قابلیت دیجیتال A102 و سایر موارد باز را در [وضعیت جاری](STATE.md) و [ماتریس تحویل](FINAL-REVIEW.md) بررسی کنید.
 
-اجرای CI روی GitHub، ساخت کامل Linux، استقرار و پذیرش Vercel/سرور فقط با شواهد همان اجرا پذیرفته‌اند؛ بررسی syntax یا تست macOS معادل آن‌ها نیست. وضعیت دقیق تحویل در STATUS ثبت می‌شود.
+اجرای CI روی GitHub، ساخت کامل Linux، استقرار و پذیرش Vercel/سرور فقط با شواهد همان اجرا پذیرفته‌اند؛ بررسی syntax یا تست macOS معادل آن‌ها نیست. نتیجهٔ اجرا و محدودیت‌ها را در [تاریخچهٔ برش](changelog/README.md) ثبت کنید و وضعیت حساب را در [DEPLOYMENT-STATE](DEPLOYMENT-STATE.md) به‌روز کنید.

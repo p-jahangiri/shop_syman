@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-11-07",
+  "scope": "canonical-local",
+  "ownerDecision": "D44",
+  "latestProductSlice": "D109",
+  "database": {
+    "name": "Sayman",
+    "engine": "SQL Server",
+    "port": 11433,
+    "migrationCount": 94,
+    "tableCount": 245,
+    "source": "tmp/api-runtime-current.json"
+  },
+  "services": {
+    "storefront": {
+      "port": 3000,
+      "descriptor": "tmp/storefront-runtime-current.json",
+      "artifactId": "5ca3f01d96ff4ed3845c40f43366f133",
+      "releaseEvidence": "artifacts/checks/frontend-quality-5ca3f01d96ff4ed3845c40f43366f133-main-release.json",
+      "observedHttp": {
+        "/fa": 200,
+        "/en": 200
+      }
+    },
+    "api": {
+      "port": 5080,
+      "descriptor": "tmp/api-runtime-current.json",
+      "artifactId": "c713ffaf19e043cf82a90519b49b703c",
+      "releaseEvidence": "artifacts/checks/d109-motion/api-c713ffaf19e043cf82a90519b49b703c-release.json",
+      "observedHttp": {
+        "/health/ready": 200
+      }
+    },
+    "admin": {
+      "port": 3173,
+      "descriptor": "tmp/admin-runtime-current.json",
+      "artifactId": "5ca3f01d96ff4ed3845c40f43366f133",
+      "releaseEvidence": "artifacts/checks/frontend-quality-5ca3f01d96ff4ed3845c40f43366f133-main-release.json",
+      "observedHttp": {
+        "/": 200
+      }
+    }
+  },
+  "acceptance": {
+    "slice": "D109",
+    "built": true,
+    "unitTested": {
+      "storefront": 923,
+      "admin": 439,
+      "backend": 39
+    },
+    "sqlTested": {
+      "passed": 3,
+      "cleanupVerified": true,
+      "evidence": "artifacts/checks/d109-motion/sql.trx"
+    },
+    "activeOnMain": true,
+    "browserVerified": {
+      "adminPresets": 3,
+      "storefrontCases": 7,
+      "disabledCases": 6,
+      "publishedMotion": "none",
+      "evidence": "artifacts/checks/d109-motion/browser.json",
+      "previewGif": "artifacts/checks/d109-motion/motion-preview.gif"
+    },
+    "ownerVerified": false,
+    "production": false,
+    "notVerified": [
+      "authenticated CMS publication on main",
+      "physical devices",
+      "owner acceptance",
+      "production"
+    ]
+  },
+  "openDependencies": [
+    "payment-contracts",
+    "holoo-contract",
+    "provider-config",
+    "scanner-and-storage",
+    "hosting-budget"
+  ],
+  "nextAction": {
+    "id": "quality-audit-stage-2",
+    "status": "needs-owner",
+    "ownerDecision": "D105"
+  },
+  "nextReadyProductSlice": {
+    "id": "public-sku-stock-notification",
+    "status": "ready"
+  },
+  "documents": {
+    "state": "docs/STATE.md",
+    "plan": "docs/PLAN.md",
+    "decisionIndex": "docs/DECISIONS-INDEX.md",
+    "changelog": "docs/changelog/README.md",
+    "latestProductChangelog": "docs/changelog/D109.md",
+    "deploymentProcedure": "docs/DEPLOYMENT.md",
+    "deploymentState": "docs/DEPLOYMENT-STATE.md"
+  },
+  "latestDocumentationSlice": "D105",
+  "openAcceptance": [
+    "authenticated-palette-flow",
+    "similar-product-browser-flow",
+    "digital-and-mixed-fulfillment-end-to-end"
+  ]
+}

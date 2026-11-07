@@ -59,10 +59,10 @@ public sealed class UsedItemSqlTests(OrderFixture fixture):IClassFixture<OrderFi
 
         var usedOnlySlug = await db.Products.Where(p => p.Variants.Any(v => v.Id == usedOnly.Variant))
             .Select(p => p.Slug).SingleAsync();
-        const string contentPath = "/api/admin/content/site/en";
+        const string contentPath = "/api/admin/content/site/fa";
         async Task<JsonNode> Document() =>
             (await OrderFixture.Json(await fixture.Admin.GetAsync("/api/admin/content")))["documents"]!.AsArray()
-                .Single(doc => (string?)doc!["key"] == "site" && (string?)doc["locale"] == "en")!;
+                .Single(doc => (string?)doc!["key"] == "site" && (string?)doc["locale"] == "fa")!;
         async Task Draft(JsonObject content)
         {
             using var response = await fixture.Admin.PutAsJsonAsync(contentPath, new ContentInput(content, (string?)(await Document())["version"]));
@@ -95,12 +95,11 @@ public sealed class UsedItemSqlTests(OrderFixture fixture):IClassFixture<OrderFi
 
             var lookup = new ProductLookupInput(VariantIds: [item.Variant, usedOnly.Variant]);
             Assert.Empty((await OrderFixture.Json(await client.PostAsJsonAsync("/api/catalog/en/lookup", lookup)))["products"]!.AsArray());
-            Assert.Equal(2, (await OrderFixture.Json(await client.PostAsJsonAsync("/api/catalog/fa/lookup", lookup)))["products"]!.AsArray().Count);
+            Assert.Empty((await OrderFixture.Json(await client.PostAsJsonAsync("/api/catalog/fa/lookup", lookup)))["products"]!.AsArray());
             var offline = await OrderFixture.Json(await client.GetAsync("/api/catalog/en/offline"));
             Assert.DoesNotContain(offline["products"]!.AsArray(), product => (string?)product!["slug"] == usedOnlySlug);
             var sitemap = await OrderFixture.Json(await client.GetAsync("/api/catalog/fa/sitemap/products"));
-            var entry = Assert.Single(sitemap["items"]!.AsArray(), row => (string?)row!["key"] == usedOnlySlug);
-            Assert.False((bool?)entry!["en"]);
+            Assert.DoesNotContain(sitemap["items"]!.AsArray(), row => (string?)row!["key"] == usedOnlySlug);
             Assert.Equal(used.InspectionId, (string?)(await Detail(item.Variant))["inspection"]!["inspectionId"]);
             var checkout = await scope.ServiceProvider.GetRequiredService<ICheckoutCatalogReader>().ReadCheckoutVariantsAsync("en", [item.Variant], default);
             Assert.Equal(used.InspectionId, Assert.Single(checkout).Value.UsedCondition!.InspectionId);

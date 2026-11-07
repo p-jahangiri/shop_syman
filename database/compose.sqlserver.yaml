@@ -3,6 +3,7 @@ services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-CU22-ubuntu-22.04@sha256:db9a8fe3098b7e8bbde41106bdc7caee942e97124e5fdb71b872ca208de3092d
     platform: linux/amd64
+    restart: 'on-failure:3'
     ports: ["127.0.0.1:11433:1433"]
     environment:
       ACCEPT_EULA: "Y"

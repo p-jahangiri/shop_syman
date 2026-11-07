@@ -13,6 +13,7 @@ import {
   Check,
   Boxes,
   PackageCheck,
+  Share2,
 } from 'lucide-react';
 import {
   catalogBrowseCondition,
@@ -65,6 +66,9 @@ export function Catalog({
   const [query, setQuery] = useState(serverQuery);
   const intended = useRef(serverQuery);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [copied, setCopied] = useState(false);
+  const shareTrigger = useRef<HTMLButtonElement>(null);
   const filterTrigger = useRef<HTMLButtonElement>(null);
   const [prices, setPrices] = useState(() => priceInputs(serverQuery));
   const [brandSearch, setBrandSearch] = useState('');
@@ -77,6 +81,22 @@ export function Catalog({
     setQuery((old) => (queryKey(old) === serverKey ? old : serverQuery));
     if (externalNavigation) setPrices(priceInputs(serverQuery));
   }, [serverKey, serverQuery, pending]);
+  function openShare() {
+    const filters = catalogQueryParams({ ...serverQuery, page: 1 });
+    const path = localeHref('/catalog', locale);
+    const url = new URL(path, window.location.origin);
+    url.search = filters.toString();
+    setCopied(false);
+    setShareUrl(url.href);
+  }
+  async function copyShareUrl() {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
   function href(change: Partial<CatalogQuery>, base = intended.current) {
     const qs = queryKey(patchCatalogQuery(base, change));
     return `/catalog${qs ? '?' + qs : ''}`;
@@ -455,6 +475,16 @@ export function Catalog({
                   <ChevronDown size={15} aria-hidden="true" />
                 </span>
               </label>
+              <button
+                type="button"
+                ref={shareTrigger}
+                className="catalog-share-button"
+                disabled={pending || priceWaiting}
+                onClick={openShare}
+              >
+                <Share2 size={16} aria-hidden="true" />
+                {text('اشتراک نتایج', 'Share results')}
+              </button>
               <span className="catalog-total" role="status">
                 {pending || priceWaiting
                   ? t('در حال دریافت محصولات…')
@@ -632,6 +662,35 @@ export function Catalog({
             )}
           </section>
         </div>
+        <Modal
+          open={!!shareUrl}
+          onOpenChange={(open) => {
+            if (!open) setShareUrl('');
+          }}
+          title={text('اشتراک نتایج جست‌وجو', 'Share catalog results')}
+          description={text(
+            'لینک با فیلترها و ترتیب فعلی باز می‌شود.',
+            'The link opens with the current filters and sort order.',
+          )}
+          restoreFocusRef={shareTrigger}
+        >
+          <div className="catalog-share-dialog">
+            <input
+              type="url"
+              aria-label={text('نشانی نتایج', 'Results link')}
+              dir="ltr"
+              value={shareUrl}
+              readOnly
+              onFocus={(event) => event.currentTarget.select()}
+            />
+            <Button type="button" onClick={() => void copyShareUrl()}>
+              {copied ? text('لینک کپی شد', 'Link copied') : text('کپی لینک', 'Copy link')}
+            </Button>
+            <span role="status">
+              {copied ? text('نشانی آمادهٔ ارسال است.', 'The link is ready to send.') : ''}
+            </span>
+          </div>
+        </Modal>
         <Modal
           open={filtersOpen}
           onOpenChange={setFiltersOpen}

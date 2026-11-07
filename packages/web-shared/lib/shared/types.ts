@@ -1,11 +1,18 @@
 import type { UsedCondition } from '../catalog/used-condition-contract';
 import type { StoreIdentity } from '../content/store-identity';
+import type { SitePalette } from '../content/site-palette';
 
 export interface SiteAppearance {
   surface?: 'glass' | 'solid';
   density?: 'comfortable' | 'compact';
   corners?: 'soft' | 'rounded';
-  motion?: 'subtle' | 'none';
+  motion?: 'subtle' | 'full' | 'none';
+  motionPreset?: 'ripple' | 'glow' | 'lift';
+  motionBanners?: boolean;
+  motionCards?: boolean;
+  motionSidebar?: boolean;
+  cards?: 'classic' | 'outline' | 'editorial';
+  navigation?: 'links' | 'pills';
   heroLayout?: 'split' | 'compact';
   stickyHeader?: boolean;
   showUsedProducts?: boolean;
@@ -161,9 +168,9 @@ export interface SiteContent {
   chequeDisclaimer: string;
   about: string;
   logoUrl?: string;
-  font?: 'vazirmatn' | 'system';
+  font?: 'vazirmatn' | 'noto-arabic' | 'system';
   appearance?: SiteAppearance;
-  palette?: { primaryLight?: string; primaryDark?: string; heroLight?: string; heroDark?: string };
+  palette?: SitePalette;
   contact?: { phone?: string; email?: string; address?: string; hours?: string };
   storeIdentity?: StoreIdentity;
 }

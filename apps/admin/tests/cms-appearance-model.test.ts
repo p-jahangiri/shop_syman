@@ -26,6 +26,7 @@ type Element = {
 function editor(value?: SiteAppearance) {
   const exported: Record<string, unknown> = {};
   const changes: (SiteAppearance | undefined)[] = [];
+  let previewState: unknown;
   const jsx = (type: unknown, props: Element['props']) => ({ type, props });
   const code = swc.transformSync(
     fs.readFileSync(
@@ -45,6 +46,18 @@ function editor(value?: SiteAppearance) {
     exports: exported,
     require(name: string) {
       if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
+      if (name === 'react')
+        return {
+          useState(initial: unknown) {
+            previewState ??= initial;
+            return [
+              previewState,
+              (update: (previous: unknown) => unknown) => {
+                previewState = update(previewState);
+              },
+            ];
+          },
+        };
       if (name === '@sayman/web-shared/lib/content/appearance.ts') return appearance;
       if (name === './cms-appearance-model') return model;
       if (name === '../../components/ui') return { Field: 'Field', Check: 'Check' };
@@ -53,28 +66,31 @@ function editor(value?: SiteAppearance) {
     },
   });
   const component = exported.CmsAppearanceEditor as (props: unknown) => Element;
-  const tree = component({
-    value,
-    name: 'سایمان',
-    onChange: (v?: SiteAppearance) => changes.push(v),
-  });
-  const nodes: Element[] = [];
-  function visit(value: unknown) {
-    if (Array.isArray(value)) value.forEach(visit);
-    else if (value && typeof value === 'object' && 'props' in value) {
-      const node = value as Element;
-      nodes.push(node);
-      visit(node.props.children);
+  function render(nextValue = value) {
+    const tree = component({
+      value: nextValue,
+      name: 'سایمان',
+      onChange: (v?: SiteAppearance) => changes.push(v),
+    });
+    const nodes: Element[] = [];
+    function visit(value: unknown) {
+      if (Array.isArray(value)) value.forEach(visit);
+      else if (value && typeof value === 'object' && 'props' in value) {
+        const node = value as Element;
+        nodes.push(node);
+        visit(node.props.children);
+      }
     }
+    visit(tree);
+    return nodes;
   }
-  visit(tree);
-  return { nodes, changes };
+  return { nodes: render(), changes, render };
 }
 
 test('the actual editor uses shared defaults and every finite design option reaches the draft', () => {
   const view = editor();
   const controls = view.nodes.filter((node) => node.type === 'select');
-  assert.equal(controls.length, 5);
+  assert.equal(controls.length, model.appearanceChoices.length);
   for (const [index, choice] of model.appearanceChoices.entries()) {
     const control = controls[index];
     assert.equal(control.props.value, appearance.defaultAppearance[choice.key]);
@@ -85,7 +101,9 @@ test('the actual editor uses shared defaults and every finite design option reac
       assert.deepEqual(Object.keys(result), [choice.key]);
     }
   }
-  const checkbox = view.nodes.find((node) => node.type === 'Check')!;
+  const checkbox = view.nodes.find(
+    (node) => node.props.label === 'هدر هنگام پیمایش در دسترس بماند',
+  )!;
   assert.equal(checkbox.props.checked, true);
   (checkbox.props.onChange as (event: unknown) => void)({ target: { checked: false } });
   assert.equal(view.changes.at(-1)?.stickyHeader, false);
@@ -107,7 +125,9 @@ test('the actual preview follows persisted appearance and reset removes only the
   assert.equal(preview.props['data-corners'], 'soft');
   assert.equal(preview.props['data-motion'], 'none');
   assert.equal(preview.props['data-hero-layout'], 'compact');
-  const checkbox = view.nodes.find((node) => node.type === 'Check')!;
+  const checkbox = view.nodes.find(
+    (node) => node.props.label === 'هدر هنگام پیمایش در دسترس بماند',
+  )!;
   assert.equal(checkbox.props.checked, false);
   (checkbox.props.onChange as (event: unknown) => void)({ target: { checked: true } });
   assert.deepEqual(structuredClone(view.changes.at(-1)), { ...value, stickyHeader: true });
@@ -116,4 +136,33 @@ test('the actual preview follows persisted appearance and reset removes only the
   assert.equal(view.changes.at(-1), undefined);
   assert.deepEqual(appearance.resolveAppearance(view.changes.at(-1)), appearance.defaultAppearance);
   assert.equal(value.stickyHeader, false);
+});
+
+test('motion preview starts on request and reflects independent scope switches', () => {
+  const draft: SiteAppearance = { motionPreset: 'ripple', motionCards: false };
+  const view = editor(draft);
+  const canvas = (nodes: Element[]) =>
+    nodes.find((node) => node.props.className === 'cms-appearance-canvas')!.props;
+  const replay = view.nodes.find((node) => node.props.children === 'پخش نمونهٔ حرکت')!;
+  assert.equal(canvas(view.nodes)['data-preview-motion'], false);
+  assert.equal(canvas(view.nodes)['data-motion-preset'], 'ripple');
+  assert.equal(canvas(view.nodes)['data-motion-cards'], false);
+  assert.equal(canvas(view.nodes)['data-motion-banners'], true);
+  assert.equal(canvas(view.nodes)['data-motion-sidebar'], true);
+  (replay.props.onClick as () => void)();
+  assert.equal(canvas(view.render())['data-preview-motion'], true);
+  assert.equal(view.changes.length, 0);
+
+  const sidebar = view.nodes.find((node) => node.props.label === 'پنل فیلتر')!;
+  (sidebar.props.onChange as (event: unknown) => void)({ target: { checked: false } });
+  assert.deepEqual(structuredClone(view.changes.at(-1)), { ...draft, motionSidebar: false });
+  const switched = view.render(view.changes.at(-1));
+  assert.equal(canvas(switched)['data-motion-sidebar'], false);
+  assert.equal(canvas(switched)['data-preview-motion'], false);
+  const stopped = view.render({ ...draft, motion: 'none' });
+  assert.equal(canvas(stopped)['data-preview-motion'], false);
+  assert.equal(
+    stopped.some((node) => node.props.children === 'پخش نمونهٔ حرکت'),
+    false,
+  );
 });

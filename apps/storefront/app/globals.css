@@ -128,8 +128,12 @@ textarea::placeholder {
   transform: translateY(-2px);
 }
 .button-primary {
-  background: var(--primary);
+  background: var(--primary-fill);
   color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+.button-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
 }
 .button-outline {
   border-color: var(--border);
@@ -193,7 +197,7 @@ textarea::placeholder {
   letter-spacing: -0.7px;
 }
 .announcement {
-  background: var(--primary);
+  background: var(--primary-fill);
   color: var(--primary-foreground);
   height: 32px;
   font-size: 11px;
@@ -307,19 +311,20 @@ textarea::placeholder {
   width: 44px;
   height: 44px;
   flex: 0 0 44px;
-  border: 0;
+  border: 1px solid var(--primary);
   border-radius: 8px;
   color: var(--primary-foreground);
-  background: var(--primary);
+  background: var(--primary-fill);
   cursor: pointer;
 }
 .search-submit:disabled {
   color: var(--muted);
   background: transparent;
+  border-color: transparent;
   cursor: default;
 }
 .search-submit:hover:not(:disabled) {
-  background: color-mix(in oklch, var(--primary) 80%, var(--foreground));
+  background: var(--primary-hover);
 }
 .search-results {
   position: absolute;
@@ -398,7 +403,7 @@ textarea::placeholder {
   position: absolute;
   top: 0;
   left: -2px;
-  background: var(--primary);
+  background: var(--primary-fill);
   color: var(--primary-foreground);
   border: 2px solid var(--surface);
   border-radius: 50%;
@@ -687,9 +692,6 @@ textarea::placeholder {
   background: var(--surface-soft);
   transition: transform 0.25s;
 }
-.category-card:hover {
-  transform: translateY(-5px);
-}
 .category-card > div {
   position: relative;
   z-index: 2;
@@ -730,9 +732,6 @@ textarea::placeholder {
   left: -37px;
   max-width: none;
   transition: transform 0.25s;
-}
-.category-card:hover > img {
-  transform: scale(1.08) rotate(-4deg);
 }
 .category-phones {
   background: color-mix(in srgb, #a6b9a2 20%, var(--surface));
@@ -778,7 +777,7 @@ textarea::placeholder {
   font-size: 11px;
 }
 .collection-tabs > button.active {
-  background: var(--primary);
+  background: var(--primary-fill);
   color: var(--primary-foreground);
 }
 .product-grid {
@@ -817,9 +816,6 @@ textarea::placeholder {
   aspect-ratio: 1.18;
   object-fit: contain;
   transition: transform 0.3s;
-}
-.product-card:hover .product-picture img {
-  transform: translateY(-5px) scale(1.035);
 }
 .product-badge {
   position: absolute;
@@ -910,7 +906,7 @@ textarea::placeholder {
   transition: background 0.2s;
 }
 .add-circle:hover {
-  background: var(--primary);
+  background: var(--primary-fill);
   color: var(--primary-foreground);
 }
 .out-of-stock {
@@ -974,17 +970,11 @@ textarea::placeholder {
   z-index: 1;
   transition: transform 0.3s;
 }
-.promo-card:hover > img {
-  transform: translateY(-8px) rotate(-3deg);
-}
 .laptop-promo > img {
   width: 326px;
   bottom: -7px;
   left: -37px;
   transform: rotate(-10deg);
-}
-.laptop-promo:hover > img {
-  transform: rotate(-14deg) translateY(-8px);
 }
 .promo-watermark {
   position: absolute;
@@ -2401,7 +2391,7 @@ textarea::placeholder {
   margin-top: 3px;
 }
 .compare-table tbody tr.different {
-  background: color-mix(in srgb, var(--hero) 40%, var(--surface));
+  background: var(--sf-tint, var(--surface-soft));
 }
 .checkout-layout {
   display: grid;
@@ -2457,7 +2447,7 @@ textarea::placeholder {
   font-weight: 600;
 }
 .checkout-steps .active > span {
-  background: var(--primary);
+  background: var(--primary-fill);
   color: var(--primary-foreground);
   border-color: var(--primary);
 }
@@ -2610,7 +2600,7 @@ textarea::placeholder {
   margin-block: 20px;
 }
 .installment-intro {
-  background: var(--hero);
+  background: var(--sf-tint-strong, var(--surface-soft));
   border-radius: 16px;
   display: grid;
   grid-template-columns: 1.3fr 1fr;
@@ -2750,7 +2740,7 @@ textarea::placeholder {
   margin-bottom: 12px;
 }
 .calculator-main {
-  background: var(--hero);
+  background: var(--sf-tint-strong, var(--surface-soft));
   border-radius: 10px;
   padding: 23px 20px;
   margin-bottom: 23px;
@@ -2864,7 +2854,7 @@ textarea::placeholder {
   min-height: 480px;
 }
 .login-story {
-  background: var(--hero);
+  background: var(--sf-tint-strong, var(--surface-soft));
   border-radius: 15px;
   padding: 45px 35px;
   position: relative;
@@ -3195,7 +3185,7 @@ textarea::placeholder {
   align-self: flex-start;
 }
 .chat-message.user {
-  background: var(--primary);
+  background: var(--primary-fill);
   color: var(--primary-foreground);
   align-self: flex-end;
 }
@@ -3217,7 +3207,7 @@ textarea::placeholder {
   outline: none;
 }
 .chat-form button {
-  background: var(--primary);
+  background: var(--primary-fill);
   color: var(--primary-foreground);
   border-radius: 7px;
   transform: rotate(180deg);
@@ -4421,7 +4411,7 @@ textarea::placeholder {
     font-size: 11px;
   }
   .filter-mobile-button > span {
-    background: var(--primary);
+    background: var(--primary-fill);
     color: var(--primary-foreground);
     border-radius: 50%;
     width: 18px;
@@ -7423,4 +7413,14 @@ body {
   border-radius: 8px;
   background: var(--surface);
   text-align: start;
+}
+
+.product-share-url {
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--surface);
+  color: var(--foreground);
 }

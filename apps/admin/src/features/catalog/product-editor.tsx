@@ -46,8 +46,11 @@ import {
   type FormFieldsConfiguration,
 } from '../../api/contracts/catalog/product-workspace-contract';
 import {
+  copyProductVariantLayout,
+  draftFromSimilarProduct,
   draftOfProduct,
   productInput,
+  validProductSlug,
   validateProductDraft,
   type ProductDraft,
   type ProductFieldErrors,
@@ -131,6 +134,7 @@ function focusField(root: HTMLElement | null, path: string) {
 }
 export function ProductEditor({
   item,
+  copyFrom,
   videos = [],
   data,
   methods,
@@ -141,13 +145,14 @@ export function ProductEditor({
   onInventory,
 }: {
   item?: Product;
+  copyFrom?: Product;
   videos?: ProductVideo[];
   data: Catalog;
   methods: PurchaseMethod[];
   plans: ChequePlan[];
   viewerId: string;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (productId: string) => void;
   onInventory?: () => void;
 }) {
   const fullScreen = useMediaQuery('(max-width:700px)');
@@ -197,6 +202,7 @@ export function ProductEditor({
       ) : fields.data ? (
         <ProductEditorForm
           item={item}
+          copyFrom={copyFrom}
           videos={videos}
           data={data}
           methods={methods}
@@ -213,6 +219,7 @@ export function ProductEditor({
 }
 function ProductEditorForm({
   item,
+  copyFrom,
   videos,
   data,
   methods,
@@ -224,6 +231,7 @@ function ProductEditorForm({
   onInventory,
 }: {
   item?: Product;
+  copyFrom?: Product;
   videos: ProductVideo[];
   data: Catalog;
   methods: PurchaseMethod[];
@@ -231,13 +239,15 @@ function ProductEditorForm({
   viewerId: string;
   configuration: FormFieldsConfiguration;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (productId: string) => void;
   onInventory?: () => void;
 }) {
-  const [value, setValue] = useState(() => ({
-    ...draftOfProduct(item, crypto.randomUUID(), methods),
-    videos,
-  }));
+  const [value, setValue] = useState(() => {
+    const key = crypto.randomUUID();
+    return copyFrom
+      ? draftFromSimilarProduct(copyFrom, key, methods)
+      : { ...draftOfProduct(item, key, methods), videos };
+  });
   const initial = useRef(JSON.stringify(value));
   const tabsId = useId();
   const [activeSection, setActiveSection] = useState<EditorSection>('identity');
@@ -284,6 +294,7 @@ function ProductEditorForm({
       .filter(
         (f) =>
           f.visible ||
+          (copyFrom && ['slug', 'description', 'translation'].includes(f.key)) ||
           (f.key === 'slug' && errors.slug) ||
           (f.key === 'description' && errors.descriptionFa) ||
           (f.key === 'translation' && (errors.nameEn || errors.descriptionEn)),
@@ -329,6 +340,10 @@ function ProductEditorForm({
   );
   const editVariant = useCallback((key: string) => setVariantKey(key), []);
   const variant = value.variants.find((v) => v.key === variantKey);
+  const copyCategory =
+    copyFrom && value.categoryId === copyFrom.categoryId
+      ? data.categories.find((category) => category.id === copyFrom.categoryId)
+      : undefined;
   function firstError(next: ProductFieldErrors) {
     const path = Object.keys(next)[0];
     if (!path) return;
@@ -349,21 +364,37 @@ function ProductEditorForm({
     }
     onClose();
   }
+  function copyVariants() {
+    if (!copyFrom || !copyCategory || value.variants.length || disabled) return;
+    if (!validProductSlug(value.slug) || value.slug === copyFrom.slug) {
+      const errors = { slug: 'برای ساخت کد تنوع‌ها، نشانی یکتای مدل جدید را وارد کنید.' };
+      setServerErrors((old) => ({ ...old, ...errors }));
+      firstError(errors);
+      return;
+    }
+    change({
+      variants: copyProductVariantLayout(copyFrom, copyCategory, value.slug, () =>
+        crypto.randomUUID(),
+      ),
+    });
+  }
   async function save() {
     if (disabled) return;
     setSubmitted(true);
     const invalid = validateProductDraft(value, data);
-    setServerErrors({});
+    const reusedSlug = copyFrom && value.slug === copyFrom.slug;
+    if (reusedSlug) invalid.slug = 'نشانی این کالا باید با کالای مبنا متفاوت باشد.';
+    setServerErrors(reusedSlug ? { slug: invalid.slug } : {});
     if (Object.keys(invalid).length) {
       firstError(invalid);
       return;
     }
     try {
-      await command.send('save', value.id ?? null, {
+      const result = await command.send('save', value.id ?? null, {
         productId: value.id ?? null,
         product: productInput(value),
       });
-      onSaved();
+      if (result.productId) onSaved(result.productId);
     } catch (error) {
       if (error instanceof ApiError) {
         const mapped = productErrorPaths(
@@ -383,7 +414,7 @@ function ProductEditorForm({
         result.productId &&
         (value.id == null || result.productId === value.id)
       )
-        onSaved();
+        onSaved(result.productId);
     } catch {
       /* The exact command and error remain available. */
     }
@@ -456,10 +487,12 @@ function ProductEditorForm({
                 variant="subtitle1"
                 sx={{ display: 'block', fontWeight: 800, overflowWrap: 'anywhere' }}
               >
-                {item
-                  ? 'ویرایش: ' +
-                    (item.translations.find((t) => t.locale === 'fa')?.name || item.slug)
-                  : 'تعریف کالای جدید'}
+                {copyFrom
+                  ? 'ساخت کالای مشابه'
+                  : item
+                    ? 'ویرایش: ' +
+                      (item.translations.find((t) => t.locale === 'fa')?.name || item.slug)
+                    : 'تعریف کالای جدید'}
               </Typography>
               <Stack direction="row" useFlexGap sx={{ mt: 0.75, gap: 0.75, flexWrap: 'wrap' }}>
                 <Chip
@@ -530,7 +563,19 @@ function ProductEditorForm({
         dividers
         sx={{ p: { xs: 1.25, md: 2.5 }, bgcolor: 'background.default' }}
       >
-        <Stack>
+        <Stack spacing={1.5}>
+          {copyFrom && activeSection === 'identity' && (
+            <Alert severity="info">
+              <strong>
+                مبنا <bdi>{nameOf(copyFrom) || copyFrom.slug}</bdi>
+              </strong>
+              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                دسته، برند، مشخصات و توضیحات آماده‌اند. نام و نشانی مدل جدید را وارد کنید و متن‌های
+                منتقل‌شده را مرور کنید. تصاویر و شرایط فروش را برای همین مدل تعیین کنید. برای انتقال
+                رنگ و ویژگی‌های تنوع، به بخش «تنوع و قیمت» بروید.
+              </Typography>
+            </Alert>
+          )}
           {section(
             'identity',
             'اطلاعات پایهٔ کالا',
@@ -718,16 +763,36 @@ function ProductEditorForm({
           {section(
             'variants',
             'تنوع‌ها و قیمت فروش',
-            <ProductVariantsTable
-              active={activeSection === 'variants'}
-              rows={value.variants}
-              errors={errors}
-              fields={configuration.fields}
-              disabled={disabled}
-              onChange={variantsChanged}
-              onEdit={editVariant}
-              onGenerate={() => setGenerator(true)}
-            />,
+            <Stack spacing={2}>
+              {copyFrom &&
+                copyCategory &&
+                copyFrom.variants.length > 0 &&
+                value.variants.length === 0 && (
+                  <Alert severity="info">
+                    <Typography variant="body2">
+                      ترکیب رنگ و ویژگی‌های تنوع را بگیرید و قیمت مدل جدید را جداگانه تعیین کنید.
+                      کدهای پیشنهادی از نشانی جدید ساخته می‌شوند و قابل ویرایش‌اند.
+                    </Typography>
+                    <Button
+                      disabled={disabled}
+                      onClick={copyVariants}
+                      sx={{ minHeight: 44, mt: 0.5 }}
+                    >
+                      انتقال {copyFrom.variants.length.toLocaleString('fa-IR')} ترکیب تنوع
+                    </Button>
+                  </Alert>
+                )}
+              <ProductVariantsTable
+                active={activeSection === 'variants'}
+                rows={value.variants}
+                errors={errors}
+                fields={configuration.fields}
+                disabled={disabled}
+                onChange={variantsChanged}
+                onEdit={editVariant}
+                onGenerate={() => setGenerator(true)}
+              />
+            </Stack>,
           )}
           {section(
             'media',
@@ -802,8 +867,12 @@ function ProductEditorForm({
                   error={errors.status}
                   select
                   value={value.status}
-                  disabled={disabled}
-                  help="پیش‌نویس در فروشگاه دیده نمی‌شود. انتشار نیازمند تصویر، تنوع فعال و مشخصات لازم است؛ موجودی از انبار تأمین می‌شود."
+                  disabled={disabled || Boolean(copyFrom)}
+                  help={
+                    copyFrom
+                      ? 'بعد از ذخیره و بازکردن پیش‌نویس جدید، می‌توانید وضعیت نمایش آن را تغییر دهید.'
+                      : 'پیش‌نویس در فروشگاه دیده نمی‌شود. انتشار نیازمند تصویر، تنوع فعال و مشخصات لازم است؛ موجودی از انبار تأمین می‌شود.'
+                  }
                   onChange={(e) => change({ status: e.target.value as Product['status'] })}
                 >
                   <MenuItem value="Draft">پیش‌نویس</MenuItem>

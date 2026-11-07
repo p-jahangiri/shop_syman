@@ -56,7 +56,9 @@ public sealed class DomainTests
         var site = JsonNode.Parse("{\"name\":\"S\",\"latinName\":\"S\",\"tagline\":\"S\",\"announcement\":\"S\",\"about\":\"S\",\"chequeDisclaimer\":\"S\",\"hero\":{\"eyebrow\":\"S\",\"title\":\"S\",\"description\":\"S\",\"action\":\"S\",\"secondary\":\"S\"},\"nav\":[{\"label\":\"Shop\",\"href\":\"//evil.test\"}]}")!.AsObject();
         Assert.Throws<BusinessException>(() => ContentService.Validate("site", "en", site)); site["nav"]![0]!["href"] = "/catalog"; ContentService.Validate("site", "en", site);
         site["palette"] = JsonNode.Parse("{\"primaryLight\":\"url(https://bad.test)\"}"); Assert.Throws<BusinessException>(() => ContentService.Validate("site", "en", site));
-        site["palette"] = JsonNode.Parse("{\"primaryLight\":\"#ffffff\"}"); Assert.Throws<BusinessException>(() => ContentService.Validate("site", "en", site));
+        site["palette"] = JsonNode.Parse("{\"primaryLight\":\"#ffffff\",\"primaryDark\":\"#000000\"}"); ContentService.Validate("site", "en", site);
+        site["palette"] = JsonNode.Parse("{\"primaryLight\":\"#ffffff\\n\"}"); Assert.Throws<BusinessException>(() => ContentService.Validate("site", "en", site));
+        site["palette"] = JsonNode.Parse("{\"primaryTextLight\":\"#ffffff\"}"); Assert.Throws<BusinessException>(() => ContentService.Validate("site", "en", site));
         site["palette"] = JsonNode.Parse("{\"primaryLight\":\"#425b36\",\"primaryDark\":\"#b9cf9e\"}"); ContentService.Validate("site", "en", site);
         site["homeBlocks"] = JsonNode.Parse("[{\"id\":\"b\",\"kind\":\"script\",\"enabled\":true}]"); Assert.Throws<BusinessException>(() => ContentService.Validate("site", "en", site));
         site["homeBlocks"] = JsonNode.Parse("[{\"id\":\"b\",\"kind\":\"products\",\"enabled\":true,\"startsAt\":\"2026-01-02T00:00:00Z\",\"endsAt\":\"2026-01-01T00:00:00Z\"}]"); Assert.Throws<BusinessException>(() => ContentService.Validate("site", "en", site));

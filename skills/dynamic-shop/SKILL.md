@@ -1,45 +1,62 @@
 ---
 name: dynamic-shop
-description: Implement and maintain this Persian dynamic commerce project from its approved requirements, ASP.NET Core modules, Next.js storefront, and Vite admin. Use for work in the shop workspace and its implementation roadmap.
+description: Implement and maintain the Persian Sayman commerce project and its roadmap in the shop repository. Use for Next.js storefront, React/Vite admin, modular .NET API, SQL Server, and local delivery work.
 ---
 
 # Dynamic Shop
 
-Workspace: `/Users/jahangiri/ shop`. Resolve this path from the repository if it moves.
+## Project rules
 
-Read `docs/PRD.md`, `docs/DECISIONS.md`, and `docs/PLAN.md` before implementation. The source PDF is authoritative unless the user changes a requirement. Record new user decisions and their implications; distinguish confirmed requirements, temporary development assumptions, and external dependencies. Keep the roadmap and handoff current so future turns resume the next unfinished task.
+- Follow the source PDF and [PRD](../../docs/PRD.md), subject to recorded owner decisions. Keep Next.js 16 / React 19 / TypeScript, React / Vite admin, and .NET 10 / EF Core 10 / SQL Server.
+- Keep a modular monolith. Modules own their tables; use contracts and events across modules. Keep UI code with its feature and shared code in shared packages.
+- Store money as integer rial (C# long / SQL bigint). Send JSON decimal strings and use TypeScript bigint. Convert to toman only for display. Preserve historical price and order snapshots.
+- Use typed category attributes to drive forms, specifications, filters and comparison. Keep each variant's SKU, price and stock independent. Preserve SellerId without introducing a marketplace. Reserve stock transactionally and enforce durable checkout and callback idempotency.
+- Manage content, navigation, branding, appearance and commercial settings through authorized CMS/admin workflows. Give administrators clear defaults, useful previews and actionable validation. Keep backend authorization, validation, staff MFA, audit and version checks authoritative.
+- Support Persian RTL and English LTR, normalize digits, store UTC instants, and display Persian dates where appropriate. Preserve shared OKLCH tokens, legible contrast, keyboard focus and reduced motion. Never cache private or financial responses in the PWA.
+- Keep public reads explicitly anonymous. Require actual contracts and sandbox evidence for provider claims. Use authorized data sources; never scrape or copy third-party reviews without permission. Keep Development samples and substitutes explicit, opt-in and unavailable in production.
+- Follow the [used-device contract](../../docs/USED-DEVICES.md): one physical unit per SKU, immutable inspection snapshots, explicit unknown facts, and catalog plus inventory authorization.
+- Keep SSR, canonical URLs, sitemap, structured data and indexing gates consistent with published content. Distinguish local lab measurements from field Core Web Vitals.
+- Reuse existing packages first. Before adding one, check maintenance, license, bundle cost, SSR and RTL; record the rationale. Read the frontend design skill if available before designing a new page.
 
-## Project constraints
+## Scope and authorization
 
-- Keep Next.js 16 / React 19 / TypeScript storefront and a separate React / Vite admin. Backend: .NET 10, EF Core 10, SQL Server; modular monolith with each module owning its tables. Cross-module access uses contracts/events, not other modules' DbContexts.
-- Persist financial amounts as integer rial (`long` / SQL `bigint`). JSON money values are decimal strings; TypeScript uses `bigint`. Format toman only at the presentation boundary. Preserve price snapshots in orders.
-- Category attributes are typed relational values driving forms, filters, specifications and comparison. JSON is only for rare, non-filterable extras. Variants independently own SKU, price and stock. Retain SellerId for future use without implementing a marketplace.
-- Menus, banners, public copy, branding and page blocks come from CMS data. Development seed data must be clearly labeled and isolated from production.
-- Public reads are explicitly anonymous. Mutations and private data require backend policies. Development adapters must be opt-in, restricted to Development and unavailable in production.
-- Inventory reservations require a database transaction and concurrency control. Checkout and verified payment callbacks require persistent idempotency and meaningful concurrency/replay tests.
-- Put payment, installment, SMS, shipping and market providers behind integration contracts. Do not invent a provider API or claim an integration works without its actual documentation and sandbox verification. Unconfigured providers stay unavailable.
-- Persian RTL, Persian digit normalization, accessible mobile interactions, shared OKLCH design tokens, Gregorian UTC storage and Persian calendar display are requirements. Never cache account, cart, checkout, payment or financial responses in the PWA.
-- Market data requires authorized sources; do not copy third-party review text or scrape Torob.
+- Keep one local shop: storefront 3000, API 5080, admin 3173, and SQL database Sayman. D44 supersedes historical local promotion restrictions. Do not create persistent preview services, extra app ports or QA databases.
+- Within the requested slice, proceed with code changes, tests, offline builds, guarded local restarts and verified local migrations. Short-lived automated fixtures must clean up.
+- Require explicit owner authorization for reading or entering credentials or MFA, unlocking accounts, deleting owner data, creating paid resources, publishing externally, or operating Chrome while the owner is active.
+- Verify ownership before stopping any process. Preserve unrelated services, the current runtime, recovery artifacts, keys, media and backups. Never delete tmp wholesale, replay an applied migration, or run Down on Sayman.
 
-## Execution and evidence
+## Slice workflow
 
-### One local version — owner decision D44
+1. Read [STATE](../../docs/STATE.md), then [PLAN](../../docs/PLAN.md), the relevant [PRD](../../docs/PRD.md) and [decisions](../../docs/DECISIONS-INDEX.md). Retrieve only the relevant changelog slice.
+2. Take the next authorized ready item. State its goal and acceptance in one paragraph. If clarification is necessary, group up to five short questions and continue independent authorized work.
+3. Implement the smallest complete vertical slice. Keep money, permissions, concurrency and failure handling explicit. Verify user-facing changes in both languages and themes at mobile and desktop sizes.
+4. Run the relevant checks. Activate the accepted artifact on the same local shop when the slice requires it; verify the current descriptors and live responses.
+5. Update STATE, state.json, PLAN and the slice's changelog. Record new owner decisions with date and impact. Report the evidence reached, what remains unverified, and the next action.
 
-Maintain one running local shop: storefront `http://127.0.0.1:3000`, API `http://127.0.0.1:5080`, and admin `http://127.0.0.1:3173`, using the local `Sayman` database. Apply requested changes to these canonical services, including the necessary local schema migrations, explicit Development data and coordinated restarts. The owner says the local data is not important and explicitly rejects separate test/review versions. Do not create or deliver alternate preview hosts, persistent QA databases, staging servers or extra app ports for routine work. Retire superseded shop preview listeners after moving their accepted changes into the canonical services.
+## References
 
-Run appropriate automated checks; short-lived isolated test fixtures are permitted for those checks and must finish and clean up. Offline build artifacts and a small recoverable backup do not constitute another running version. Do not make a staging deployment, clone rehearsal or another confirmation a prerequisite for already-authorized local changes. D44 supersedes older local promotion restrictions in historical documents. Preserve authentication, integer-rial rules and provider boundaries; this decision does not authorize unrelated data deletion, disabling protections, or external production publication.
+- [Local ops](references/local-ops.md): canonical start, restart and local promotion.
+- [Migrations](references/migrations.md): exact history, verified backup and recovery.
+- [Testing](references/testing.md): test selection, real SQL, cleanup and build evidence.
+- [Browser QA](references/browser-qa.md): ownership, visual and interaction coverage.
+- [Escalation](references/escalation.md): permissions and blockers.
+- [Acceptance](references/acceptance.md): delivery criteria, evidence ladder and changelog format.
+- [Architecture](../../docs/ARCHITECTURE.md), [API](../../docs/API.md), [changelog](../../docs/changelog/README.md), [deployment procedure](../../docs/DEPLOYMENT.md), [deployment account state](../../docs/DEPLOYMENT-STATE.md).
 
-Current user-directed order: the user explicitly approved the storefront appearance and flow. Finish the requested dynamic purchase options, configurable content, Persian/English localization and mobile OTP plus email/username-password login flows, then proceed autonomously with API, a separate Vite admin and SQL Server. Do not ask for the same UI approval again. All commercial metadata and enabled login methods must be configurable; backend authorization and validation remain authoritative. Initial categories are phones, laptops, game consoles and phone accessories; inventory is managed in this project's admin, and installment sales initially use admin-configurable cheque terms. Target Linux Docker deployment; develop locally. D60 confirms initial postpaid physical shipping (merchant online shipping charge0; external carrier charge unknown), tax included without itemization (`included_unitemized`, explicit null tax rather than zero/exemption), ordinary reservation60minutes, unpaid-order cap2 and return-request window3days after actual customer delivery. These settings remain admin-configurable and must be applied through the authorized CAS workflow after accepted code; quote freshness and earlier allocation/credit deadlines stay independent. Returns are request/review only: refunds remain disabled until a real gateway is connected. Exact warranty exclusions and provider names remain undecided; do not invent them.
+## Check commands
 
-Implement reviewable vertical slices and continue independent work while awaiting business answers. Do not call scaffolded modules complete. Record exact build/test evidence, environment limitations and remaining work in `docs/STATUS.md`. Preserve authorized scope through all phases; production service activation depends on actual credentials/contracts and deployment settings. Local development does not require publishing through Sites.
+Run from the repository root. Quote paths and arguments; the workspace name contains a space. Run only checks relevant to the slice.
 
-Use `docs/API.md` for the current API boundary and `docs/STATUS.md` for exact local blockers and test evidence. Keep preview credentials out of API mode; do not turn provider placeholders into successful authentication or payment. Real SQL tests live separately in `backend/tests/Shop.SqlTests` and must run on SQL Server before database/concurrency acceptance.
-
-Use `references/acceptance.md` when planning tests and delivery. Run meaningful domain/integration checks for money, attributes, access control, concurrency and payment replay. Record unmet acceptance criteria honestly.
-
-
-## Used-device reports and local build retention
-
-For used devices, follow `docs/USED-DEVICES.md`: one physical unit per independent SKU, immutable Catalog inspection revisions and an Inventory single-unit SQL constraint. Require both catalog.write and inventory.write for inspection commands. Unknown is an explicit fact; never infer healthy condition or a battery percentage. Quotes retain the exact SKU report, and orders read their immutable historical quote JSON (the internal PascalCase, number-as-string snapshot format), never today's Catalog report. Keep existing new-product contracts backward compatible. Market agreements must not silently turn into used-device consent.
-
-`tmp` also contains live standalone runtimes, rollback versions, restart helper dependencies, private keys and verified backups. Never delete it wholesale. User-authorized cleanup can remove inspected superseded build directories while preserving current/rollback dependencies and recording hashes and measured physical reclaimed space; APFS clone sizes differ from actual free-space gains. See `scripts/local/cleanup-local-artifacts.py` and the latest STATUS; historical evidence may mention deliberately removed build paths.
+```sh
+npm test
+npm run test:admin-contract
+npm run test:admin-server
+npm run typecheck
+npm run typecheck:admin
+npm run lint
+npm run format:check
+dotnet test 'backend/tests/Shop.Tests' --disable-build-servers -m:1
+python3 'scripts/test-sql-local.py' --filter 'FullyQualifiedName~<TestClass>'
+python3 'scripts/verify-sql-test-cleanup.py'
+python3 'scripts/local/build-local-frontends.py' --only storefront
+```

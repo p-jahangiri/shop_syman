@@ -1,6 +1,7 @@
+import { motionPresets } from '@sayman/web-shared/lib/content/appearance.ts';
 import type { SiteAppearance } from '@sayman/web-shared/lib/shared/types.ts';
 
-export const appearanceChoices = [
+export const layoutAppearanceChoices = [
   {
     key: 'surface',
     label: 'سطح هدر و کارت‌ها',
@@ -29,12 +30,22 @@ export const appearanceChoices = [
     ],
   },
   {
-    key: 'motion',
-    label: 'حرکت و انیمیشن',
-    hint: 'تنظیم کاهش حرکت دستگاه همیشه اولویت دارد؛ حرکت خودکار و بی‌پایان نداریم.',
+    key: 'cards',
+    label: 'سبک کارت کالا',
+    hint: 'ظاهر کارت‌های خانه، کاتالوگ و پیشنهادهای مرتبط را تغییر می‌دهد.',
     options: [
-      { value: 'subtle', label: 'حرکت کوتاه و ملایم' },
-      { value: 'none', label: 'بدون انیمیشن تزئینی' },
+      { value: 'classic', label: 'کلاسیک' },
+      { value: 'outline', label: 'قاب‌دار' },
+      { value: 'editorial', label: 'تصویر لب‌به‌لب' },
+    ],
+  },
+  {
+    key: 'navigation',
+    label: 'سبک پیوندهای منو',
+    hint: 'ظاهر پیوندها را تغییر می‌دهد. عنوان، مقصد و ترتیب از بخش منو می‌آیند.',
+    options: [
+      { value: 'links', label: 'پیوند ساده' },
+      { value: 'pills', label: 'دکمه‌های کپسولی' },
     ],
   },
   {
@@ -48,7 +59,35 @@ export const appearanceChoices = [
   },
 ] as const;
 
-export type AppearanceChoiceKey = (typeof appearanceChoices)[number]['key'];
+const motionPresetLabels = {
+  lift: 'بالاآمدن نرم',
+  glow: 'درخشش قاب',
+  ripple: 'موج نور',
+};
+
+export const motionAppearanceChoices = [
+  {
+    key: 'motion',
+    label: 'شدت حرکت',
+    hint: 'تنظیم کاهش حرکت دستگاه همیشه اولویت دارد.',
+    options: [
+      { value: 'subtle', label: 'ملایم' },
+      { value: 'full', label: 'برجسته' },
+      { value: 'none', label: 'خاموش' },
+    ],
+  },
+  {
+    key: 'motionPreset',
+    label: 'سبک جلوه',
+    hint: 'نمونهٔ سبک انتخابی را با دکمهٔ پخش در پیش‌نمایش ببینید.',
+    options: motionPresets.map((value) => ({ value, label: motionPresetLabels[value] })),
+  },
+] as const;
+
+export const appearanceChoices = [...layoutAppearanceChoices, ...motionAppearanceChoices] as const;
+
+export type AppearanceChoice = (typeof appearanceChoices)[number];
+export type AppearanceChoiceKey = AppearanceChoice['key'];
 
 export function setAppearanceChoice(
   current: SiteAppearance | undefined,

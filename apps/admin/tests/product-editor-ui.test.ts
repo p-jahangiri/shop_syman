@@ -9,6 +9,7 @@ import {
 import * as model from '../src/features/catalog/product-editor-model.ts';
 import * as contract from '../src/api/contracts/catalog/product-workspace-contract.ts';
 import * as fieldErrors from '../src/features/catalog/product-field-errors.ts';
+import type { Catalog, Product } from '../src/types/types';
 const material = [
   'Dialog',
   'DialogTitle',
@@ -63,7 +64,7 @@ const fields = [
     'images',
   ].includes(key),
 }));
-const data = {
+const data: Catalog = {
   categories: [
     {
       id: 'phones',
@@ -89,7 +90,7 @@ const data = {
   attributes: [],
   products: [],
 };
-function setup() {
+function setup(copyFrom?: Product, catalog = data) {
   const calls: { kind: string; body: unknown }[] = [],
     events: string[] = [];
   const command = {
@@ -134,7 +135,8 @@ function setup() {
     'export {ProductEditorForm};',
   );
   h.mount('ProductEditorForm', {
-    data,
+    copyFrom,
+    data: catalog,
     methods: [],
     plans: [],
     viewerId: 'staff',
@@ -204,6 +206,131 @@ test('a valid model draft can be saved without inventing price, variants or stoc
   assert.equal(input.product.status, 'Draft');
   assert.ok(!('onHand' in input.product));
   assert.ok(!('stock' in input.product));
+  assert.deepEqual(x.events, ['saved']);
+  x.h.unmount();
+});
+test('a similar model copies shared data and saves independent new variant identities', async () => {
+  const version = 'AAAAAAAAAAE=';
+  const source: Product = {
+    id: 'a10',
+    version,
+    categoryId: 'phones',
+    brandId: 'brand',
+    slug: 'galaxy-a10',
+    status: 'Published',
+    isDigital: false,
+    featured: true,
+    translations: [
+      { locale: 'fa', name: 'گلکسی A10', description: 'توضیحات مشترک', badge: 'تخفیف' },
+      { locale: 'en', name: 'Galaxy A10', description: 'Shared details' },
+    ],
+    attributes: [{ attributeId: 'screen', valueNumber: 6.4, selections: [] }],
+    media: [{ url: '/products/source.svg', sortOrder: 0 }],
+    purchaseMethods: [{ methodId: 'source-method' }],
+    creditPlans: [{ planId: 'source-plan' }],
+    variants: [
+      {
+        id: 'source-blue',
+        version,
+        sku: 'GALAXY-A10-BLUE',
+        color: '#224488',
+        colorNameFa: 'آبی',
+        colorNameEn: 'Blue',
+        priceRial: '41000000',
+        compareAtPriceRial: '49000000',
+        labelFa: 'قدیمی',
+        labelEn: 'Old',
+        warrantyFa: 'گارانتی قبلی',
+        warrantyEn: 'Old warranty',
+        isActive: false,
+        attributes: [
+          { attributeId: 'memory', valueNumber: 32, selections: [] },
+          { attributeId: 'screen', valueNumber: 6.2, selections: [] },
+        ],
+        purchaseMethods: [{ methodId: 'source-method' }],
+      },
+    ],
+  };
+  const catalog: Catalog = {
+    ...data,
+    categories: data.categories.map((category) => ({
+      ...category,
+      attributes: ['screen', 'memory'].map((attributeId, sortOrder) => ({
+        attributeId,
+        sortOrder,
+        isVariantAxis: attributeId === 'memory',
+        isRequired: false,
+        isFilterable: true,
+        isComparable: true,
+        showInSpecs: true,
+        groupName: '',
+      })),
+    })),
+    attributes: ['screen', 'memory'].map((id) => ({
+      id,
+      version,
+      key: id,
+      dataType: 'Number',
+      translations: [],
+      options: [],
+    })),
+  };
+  const x = setup(source, catalog);
+  assert.equal(x.node('ProductTextField', 'categoryId').props.value, 'phones');
+  assert.equal(x.node('ProductTextField', 'brandId').props.value, 'brand');
+  assert.equal(x.node('ProductTextField', 'nameFa').props.value, '');
+  assert.equal(x.node('ProductTextField', 'descriptionFa').props.value, 'توضیحات مشترک');
+  assert.equal(x.node('ProductTextField', 'status').props.disabled, true);
+  await x.edit('nameFa', 'گلکسی A11');
+  await x.edit('slug', 'galaxy-a10');
+  await x.save();
+  assert.equal(x.calls.length, 0);
+  assert.equal(typeof x.node('ProductTextField', 'slug').props.error, 'string');
+  await x.edit('slug', 'galaxy-a11');
+  await x.tab('variants');
+  const transfer = x.node('Button', 'انتقال ۱ ترکیب تنوع');
+  (transfer.props.onClick as () => void)();
+  await x.h.settle();
+  const grid = x.node('ProductVariantsTable');
+  const rows = grid.props.rows as model.ProductVariantDraft[];
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].sku, 'GALAXY-A11-01');
+  assert.equal(rows[0].colorNameFa, 'آبی');
+  assert.equal(rows[0].price, '');
+  assert.equal(rows[0].referencePrice, '');
+  assert.equal(rows[0].warrantyFa, '');
+  assert.equal(rows[0].id, undefined);
+  assert.notEqual(rows[0].key, source.variants[0].id);
+  await x.save();
+  assert.equal(x.calls.length, 0);
+  (
+    grid.props.onChange as (
+      transform: (old: model.ProductVariantDraft[]) => model.ProductVariantDraft[],
+    ) => void
+  )((old) => old.map((row) => ({ ...row, price: '۱۲۳٫۴' })));
+  await x.h.settle();
+  await x.save();
+  const payload = x.calls[0].body as {
+    productId: unknown;
+    product: ReturnType<typeof model.productInput>;
+  };
+  assert.equal(payload.productId, null);
+  assert.equal(payload.product.status, 'Draft');
+  assert.equal(payload.product.version, null);
+  assert.equal(payload.product.featured, false);
+  assert.equal(payload.product.imageUrls.length, 0);
+  assert.equal(payload.product.videos.length, 0);
+  assert.equal(payload.product.purchaseMethodIds.length, 0);
+  assert.equal(payload.product.chequePlanIds.length, 0);
+  assert.equal(payload.product.attributes[0].number, 6.4);
+  assert.equal(payload.product.variants[0].id, null);
+  assert.equal(payload.product.variants[0].version, null);
+  assert.equal(payload.product.variants[0].priceRial, '1234');
+  assert.deepEqual(
+    Array.from(payload.product.variants[0].attributes, (v) => [v.attributeId, v.number]),
+    [['memory', 32]],
+  );
+  assert.equal(source.variants[0].priceRial, '41000000');
   assert.deepEqual(x.events, ['saved']);
   x.h.unmount();
 });

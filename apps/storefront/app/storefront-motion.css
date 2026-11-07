@@ -1,0 +1,240 @@
+/* Decorative frames leave layout and hero media stationary. */
+@media (prefers-reduced-motion: no-preference) {
+  .storefront-design {
+    --sf-motion-frame: sf-motion-frame-lift;
+    --sf-motion-sheet: sf-motion-sheet-lift;
+    --sf-motion-welcome-duration: 800ms;
+    --sf-motion-control-duration: 220ms;
+    --sf-motion-distance: 3px;
+    --sf-motion-sheet-distance: 14px;
+    --sf-motion-frame-width: 2px;
+    --sf-motion-frame-blur: 0px;
+    --sf-motion-frame-strength: 0.75;
+    --sf-motion-origin: left center;
+  }
+  :root[dir='rtl'] .storefront-design {
+    --sf-motion-origin: right center;
+  }
+  :root[data-shop-motion='full'] .storefront-design {
+    --sf-motion-welcome-duration: 1100ms;
+    --sf-motion-control-duration: 340ms;
+    --sf-motion-distance: 6px;
+    --sf-motion-sheet-distance: 24px;
+    --sf-motion-frame-width: 3px;
+    --sf-motion-frame-strength: 1;
+  }
+  :root[data-shop-motion-preset='ripple'] .storefront-design {
+    --sf-motion-frame: sf-motion-frame-ripple;
+    --sf-motion-sheet: sf-motion-sheet-ripple;
+  }
+  :root[data-shop-motion-preset='glow'] .storefront-design {
+    --sf-motion-frame: sf-motion-frame-glow;
+    --sf-motion-sheet: sf-motion-sheet-glow;
+    --sf-motion-frame-blur: 16px;
+  }
+
+  :root:not([data-shop-motion='none'], [data-shop-motion-cards='false'])
+    .storefront-design
+    :is(.product-card, .phone-card) {
+    position: relative;
+  }
+
+  :root:not([data-shop-motion='none'], [data-shop-motion-banners='false'])
+    .storefront-design
+    :is(.hero, .promo-card, .cheque-banner, .spotlight-section)::after,
+  :root:not([data-shop-motion='none'], [data-shop-motion-cards='false'])
+    .storefront-design
+    :is(.product-card, .category-card, .phone-card)::after,
+  :root:not([data-shop-motion='none'], [data-shop-motion-sidebar='false'])
+    .storefront-design
+    :is(.filter-sidebar, .phone-filter-panel)::after {
+    --sf-motion-resting-opacity: 0;
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    border: var(--sf-motion-frame-width) solid
+      color-mix(in srgb, var(--card-tone-ink, var(--primary)) 75%, transparent);
+    border-inline-end-color: color-mix(in srgb, var(--sf-spotlight-accent) 62%, transparent);
+    border-radius: inherit;
+    box-shadow: inset 0 0 var(--sf-motion-frame-blur)
+      color-mix(in srgb, var(--card-tone-ink, var(--primary)) 22%, transparent);
+    opacity: var(--sf-motion-resting-opacity);
+    pointer-events: none;
+    transform-origin: var(--sf-motion-origin);
+    transition: opacity var(--sf-motion-control-duration) ease-out;
+    content: '';
+  }
+
+  :root:not([data-shop-motion='none'], [data-shop-motion-banners='false'])
+    .storefront-design
+    .hero::after {
+    animation: var(--sf-motion-frame) var(--sf-motion-welcome-duration) var(--sf-ease);
+  }
+
+  :root:not([data-shop-motion='none'], [data-shop-motion-banners='false'])
+    .storefront-design
+    :is(.hero, .promo-card, .cheque-banner, .spotlight-section):is(:hover, :focus-within)::after,
+  :root:not([data-shop-motion='none'], [data-shop-motion-cards='false'])
+    .storefront-design
+    :is(.product-card, .category-card, .phone-card):is(:hover, :focus-within)::after,
+  :root:not([data-shop-motion='none'], [data-shop-motion-sidebar='false'])
+    .storefront-design
+    :is(.filter-sidebar, .phone-filter-panel):is(:hover, :focus-within)::after {
+    --sf-motion-resting-opacity: 0.55;
+  }
+
+  :root:not([data-shop-motion='none'], [data-shop-motion-banners='false'])
+    .storefront-design
+    :is(.promo-card, .cheque-banner, .spotlight-section):is(:hover, :focus-within)::after,
+  :root:not([data-shop-motion='none'], [data-shop-motion-cards='false'])
+    .storefront-design
+    :is(.product-card, .category-card, .phone-card):is(:hover, :focus-within)::after,
+  :root:not([data-shop-motion='none'], [data-shop-motion-sidebar='false'])
+    .storefront-design
+    :is(.filter-sidebar, .phone-filter-panel):is(:hover, :focus-within)::after {
+    animation: var(--sf-motion-frame) var(--sf-motion-control-duration) var(--sf-ease);
+  }
+
+  :root[data-shop-motion-preset='lift']:not(
+      [data-shop-motion='none'],
+      [data-shop-motion-cards='false']
+    )
+    .storefront-design
+    :is(.product-card, .category-card, .phone-card):is(:focus-visible, :has(:focus-visible)) {
+    translate: 0 calc(-1 * var(--sf-motion-distance));
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    :root[data-shop-motion-preset='lift']:not(
+        [data-shop-motion='none'],
+        [data-shop-motion-cards='false']
+      )
+      .storefront-design
+      :is(.product-card, .category-card, .phone-card):hover {
+      translate: 0 calc(-1 * var(--sf-motion-distance));
+    }
+  }
+
+  :root:not([data-shop-motion='none'], [data-shop-motion-sidebar='false'])
+    .storefront-design
+    :is(.filter-sidebar, .catalog-filter-dialog)
+    .filter-section[open]:focus-within
+    > .filter-section-body {
+    animation: sf-motion-filter-content var(--sf-motion-control-duration) ease-out;
+  }
+
+  :root:not([data-shop-motion='none'], [data-shop-motion-sidebar='false'])
+    .storefront-design
+    :is(.catalog-filter-dialog, .drawer-content:has(> .phone-filter-sheet))[data-state='open'] {
+    animation: var(--sf-motion-sheet) var(--sf-motion-control-duration) var(--sf-ease);
+  }
+
+  :root:not([data-shop-motion='none'], [data-shop-motion-sidebar='false'])
+    .storefront-design
+    :is(.catalog-filter-dialog, .drawer-content:has(> .phone-filter-sheet))[data-state='closed'] {
+    animation: sf-motion-sheet-close 150ms ease-in both;
+  }
+}
+
+:root[data-shop-motion-sidebar='false']
+  .storefront-design
+  .modal-overlay:has(+ .catalog-filter-dialog, + .drawer-content > .phone-filter-sheet) {
+  animation: none;
+}
+
+@keyframes sf-motion-frame-ripple {
+  from {
+    opacity: 0;
+    scale: 0.84 0.96;
+  }
+  55% {
+    opacity: var(--sf-motion-frame-strength);
+  }
+  to {
+    opacity: var(--sf-motion-resting-opacity);
+    scale: 1;
+  }
+}
+
+@keyframes sf-motion-frame-glow {
+  from {
+    opacity: 0;
+  }
+  50% {
+    opacity: var(--sf-motion-frame-strength);
+  }
+  to {
+    opacity: var(--sf-motion-resting-opacity);
+  }
+}
+
+@keyframes sf-motion-frame-lift {
+  from {
+    opacity: 0;
+    translate: 0 var(--sf-motion-distance);
+  }
+  45% {
+    opacity: var(--sf-motion-frame-strength);
+  }
+  to {
+    opacity: var(--sf-motion-resting-opacity);
+    translate: 0 0;
+  }
+}
+
+@keyframes sf-motion-sheet-ripple {
+  from {
+    opacity: 0.78;
+    translate: 0 calc(var(--sf-motion-sheet-distance) * 0.7);
+  }
+  70% {
+    opacity: 1;
+    translate: 0 -2px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes sf-motion-sheet-glow {
+  from {
+    opacity: 0.65;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sf-motion-sheet-lift {
+  from {
+    opacity: 0.84;
+    translate: 0 var(--sf-motion-sheet-distance);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes sf-motion-sheet-close {
+  from {
+    opacity: 1;
+    translate: 0 0;
+  }
+  to {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+@keyframes sf-motion-filter-content {
+  from {
+    opacity: 0.75;
+    translate: 0 4px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}

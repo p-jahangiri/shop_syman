@@ -17,6 +17,7 @@ import {
   Archive,
   ArchiveRestore,
   Banknote,
+  Copy,
   Download,
   History,
   Pencil,
@@ -75,6 +76,7 @@ const ProductFormSettings = lazy(() =>
 );
 
 type CatalogColumn = ProductColumn | 'actions';
+type EditorRequest = { kind: 'new' } | { kind: 'edit' | 'copy'; id: string };
 const tabs = ['Published', 'Draft', 'Hidden', 'archived'] as const;
 const lastChange = new Intl.DateTimeFormat('fa-IR', {
   calendar: 'persian',
@@ -348,7 +350,8 @@ export function ProductsPage({
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState(initialWorkspaceFilters);
   const [searchError, setSearchError] = useState('');
-  const [editing, setEditing] = useState<string | null | undefined>();
+  const [editing, setEditing] = useState<EditorRequest | null>(null);
+  const [copiedProductId, setCopiedProductId] = useState<string | null>(null);
   const [history, setHistory] = useState<{ id: string; name: string } | null>(null);
   const [archive, setArchive] = useState<WorkspaceProductRow | null>(null);
   const [settings, setSettings] = useState(false);
@@ -476,7 +479,7 @@ export function ProductsPage({
               startIcon={<Plus size={18} />}
               variant="contained"
               disabled={command.blocked}
-              onClick={() => setEditing(null)}
+              onClick={() => setEditing({ kind: 'new' })}
             >
               افزودن کالا
             </Button>
@@ -505,6 +508,27 @@ export function ProductsPage({
         </Stack>
       </Stack>
       {command.error instanceof Error && <Alert severity="error">{command.error.message}</Alert>}
+      {copiedProductId && (
+        <Alert
+          severity="success"
+          action={
+            <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap' }}>
+              <Button
+                disabled={!writable || command.blocked}
+                onClick={() => {
+                  setEditing({ kind: 'edit', id: copiedProductId });
+                  setCopiedProductId(null);
+                }}
+              >
+                بازکردن پیش‌نویس
+              </Button>
+              <Button onClick={() => setCopiedProductId(null)}>بستن پیام</Button>
+            </Stack>
+          }
+        >
+          کالای مشابه به‌صورت پیش‌نویس ثبت شد.
+        </Alert>
+      )}
       {command.attempt?.phase === 'unknown' && (
         <Alert
           severity="warning"
@@ -657,7 +681,7 @@ export function ProductsPage({
               startIcon={<Pencil size={15} />}
               disabled={command.blocked}
               aria-label={'ویرایش ' + nameOfRow(row)}
-              onClick={() => setEditing(row.id)}
+              onClick={() => setEditing({ kind: 'edit', id: row.id })}
             >
               ویرایش
             </Button>
@@ -684,6 +708,13 @@ export function ProductsPage({
           ...(writable
             ? [
                 {
+                  key: 'copy',
+                  label: 'ساخت کالای مشابه',
+                  icon: <Copy size={17} />,
+                  disabled: command.blocked,
+                  onClick: () => setEditing({ kind: 'copy', id: row.id }),
+                },
+                {
                   key: 'archive',
                   label: row.archived ? 'بازگردانی به پیش‌نویس' : 'بایگانی کالا',
                   icon: row.archived ? <ArchiveRestore size={17} /> : <Archive size={17} />,
@@ -707,17 +738,18 @@ export function ProductsPage({
           </Dialog>
         }
       >
-        {editing !== undefined && writable && (
+        {editing && writable && (
           <WorkspaceEditor
-            key={editing ?? 'new'}
-            id={editing}
+            key={editing.kind === 'new' ? 'new' : editing.kind + '-' + editing.id}
+            request={editing}
             data={data}
             methods={methods}
             plans={plans}
             viewerId={viewerId}
-            onClose={() => setEditing(undefined)}
-            onSaved={() => {
-              setEditing(undefined);
+            onClose={() => setEditing(null)}
+            onSaved={(id) => {
+              if (editing.kind === 'copy') setCopiedProductId(id);
+              setEditing(null);
               void query.refetch();
             }}
           />
@@ -783,17 +815,18 @@ export function ProductsPage({
   );
 }
 function WorkspaceEditor({
-  id,
+  request,
   ...props
 }: {
-  id: string | null;
+  request: EditorRequest;
   data: Catalog;
   methods: PurchaseMethod[];
   plans: ChequePlan[];
   viewerId: string;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (productId: string) => void;
 }) {
+  const id = request.kind === 'new' ? null : request.id;
   const detail = useQuery({
     queryKey: ['admin', 'product-workspace-detail', id],
     queryFn: async ({ signal }) =>
@@ -806,7 +839,10 @@ function WorkspaceEditor({
     refetchOnWindowFocus: false,
     retry: false,
   });
-  if (id !== null && (detail.isPending || detail.error || detail.data?.archived))
+  if (
+    id !== null &&
+    (detail.isPending || detail.error || (request.kind === 'edit' && detail.data?.archived))
+  )
     return (
       <Dialog open maxWidth="sm" onClose={props.onClose}>
         <DialogTitle>دریافت جزئیات کالا</DialogTitle>
@@ -825,5 +861,9 @@ function WorkspaceEditor({
         </DialogActions>
       </Dialog>
     );
-  return <ProductEditor {...props} item={detail.data?.product} videos={detail.data?.videos} />;
+  return request.kind === 'copy' ? (
+    <ProductEditor {...props} copyFrom={detail.data?.product} />
+  ) : (
+    <ProductEditor {...props} item={detail.data?.product} videos={detail.data?.videos} />
+  );
 }

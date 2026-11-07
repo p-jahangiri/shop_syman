@@ -1,6 +1,6 @@
 # فروشگاه سایمان
 
-فروشگاه دوزبانهٔ فارسی و انگلیسی، پنل مدیریت مستقل و API ماژولار متصل به SQL Server. [وضعیت جاری](docs/STATUS.md)، [نقشهٔ راه](docs/PLAN.md) و [تصمیم‌های مالک](docs/DECISIONS.md) مرجع ادامهٔ پروژه‌اند.
+فروشگاه دوزبانهٔ فارسی و انگلیسی، پنل مدیریت مستقل و API ماژولار متصل به SQL Server. [وضعیت جاری](docs/STATE.md)، [صف کارها](docs/PLAN.md) و [شاخص تصمیم‌ها](docs/DECISIONS-INDEX.md) مرجع ادامهٔ پروژه‌اند.
 
 ## اجرای محلی
 
@@ -12,6 +12,27 @@
 | پنل مدیریت            | [پورت ۳۱۷۳](http://127.0.0.1:3173/)                                     |
 | سلامت API و اتصال SQL | [پورت ۵۰۸۰](http://127.0.0.1:5080/health/ready)                         |
 | SQL Server            | `127.0.0.1:11433` · `Sayman`                                            |
+
+### اجرای دوبارهٔ نسخهٔ ثبت‌شده
+
+Docker Desktop را باز کنید. اگر کانتینر SQL متوقف است، در پوشهٔ پروژه فقط سرویس SQL را بالا بیاورید.
+
+```sh
+cd '/Users/jahangiri/ shop'
+docker compose --profile backend up -d --wait --no-recreate sqlserver
+```
+
+در سه تب ترمینال، از همان پوشه ابتدا API و سپس فروشگاه و پنل را اجرا کنید. بعد از اجرای فرمان اول، صبر کنید تا نشانی سلامت API در جدول بالا وضعیت `ready` نشان دهد.
+
+| تب ترمینال | فرمان                                      |
+| ---------- | ------------------------------------------ |
+| API        | `python3 scripts/serve-main-api.py`        |
+| فروشگاه    | `python3 scripts/serve-main-storefront.py` |
+| پنل مدیریت | `node scripts/serve-main-admin.mjs`        |
+
+هر فرمان در تب خودش فعال می‌ماند و با `Ctrl+C` متوقف می‌شود. این مسیر بسته‌های ثبت‌شده در `tmp` و دیتابیس موجود را استفاده می‌کند. `--seed-dev` در بخش بعد فقط برای محیط تازه است. برای ورود به پنل، رمز فعلی حساب مدیر و کد Authenticator را وارد کنید.
+
+اگر صفحهٔ سلامت `503` داد، با `docker compose --profile backend ps -a sqlserver` وضعیت SQL را ببینید. سیاست Docker محلی پس از خروج ناموفق SQL تا سه بار راه‌اندازی دوباره را امتحان می‌کند.
 
 ### راه‌اندازی محیط تازه
 
@@ -44,7 +65,7 @@ npm run build:admin
 HOSTNAME=127.0.0.1 PORT=3173 ADMIN_API_URL=http://127.0.0.1:5080 ADMIN_PUBLIC_URL=http://127.0.0.1:3173 node apps/admin/server.mjs
 ```
 
-برای محیطی که نسخهٔ محلیِ ثبت‌شده دارد، اسکریپت‌های `scripts/serve-main-*` مشخصات و هش‌های بستهٔ انتخاب‌شده را بررسی می‌کنند و همان بسته را دوباره بالا می‌آورند. برای ساخت آفلاین رابط‌ها و جایگزینی نسخهٔ فعال، از `scripts/local/build-local-frontends.py` و مراحل `prepare` و `apply` در `scripts/publish-local-frontends.py` استفاده کنید.
+برای ساخت آفلاین رابط‌ها و جایگزینی نسخهٔ فعال، از `scripts/local/build-local-frontends.py` و مراحل `prepare` و `apply` در `scripts/publish-local-frontends.py` استفاده کنید.
 
 ## ساختار مخزن
 

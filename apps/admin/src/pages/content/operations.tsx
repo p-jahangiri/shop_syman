@@ -1,11 +1,17 @@
 import { CmsBlogPosts } from '../../features/content/cms-blog-posts';
 import { CmsRedirects } from '../../features/content/cms-redirects';
 import { CmsPages } from '../../features/content/cms-pages';
+import {
+  SiteTranslationFields,
+  translatedBlocks,
+  translatedMenu,
+} from '../../features/content/site-translation-fields';
+import { HomeSearchPreview } from '../../features/content/home-search-preview';
 import { ImageEditor } from '../../features/media/media';
 import { useCmsImageUploads } from '../../features/content/cms-image-uploads';
 import { SupportContentPreview } from '../../features/content/support-content-preview';
 import { SupportContentEditor } from '../../features/content/support-content-editor';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, RotateCcw, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 
@@ -24,6 +30,7 @@ import {
 import { CmsMenuEditor, type CmsMenuItem } from '../../features/content/cms-menu-editor';
 import { filterRetiredSourcingMenu } from '@sayman/web-shared/lib/market/retired-sourcing.ts';
 import { CmsAppearanceEditor } from '../../features/content/cms-appearance-editor';
+import { CmsPaletteEditor } from '../../features/content/cms-palette-editor';
 import {
   readPublishedIdentity,
   socialPublicationChanges,
@@ -37,38 +44,16 @@ import {
 import { CmsPurchaseDependencyField } from '../../features/content/cms-purchase-dependency-field';
 import { CustomerAuthSettingsEditor } from '../../features/content/customer-auth-settings-editor';
 import { hasSupportedCustomerLogin } from '../../features/content/customer-auth-settings';
-import type { SiteAppearance } from '@sayman/web-shared/lib/shared/types.ts';
+import type {
+  HomeBlock,
+  SiteAppearance,
+  SiteContent,
+} from '@sayman/web-shared/lib/shared/types.ts';
 import {
   cmsWorkspaceSections,
   type CmsWorkspaceSection,
 } from '../../features/content/cms-workspace-sections';
 import '../../styles/content/cms-workspace.css';
-interface Promo {
-  purchaseMethodKind?: PurchaseMethod['kind'];
-  eyebrow: string;
-  title: string;
-  action: string;
-  href: string;
-  image: string;
-  watermark?: string;
-}
-interface HomeBlock {
-  purchaseMethodKind?: PurchaseMethod['kind'];
-  id: string;
-  kind: 'categories' | 'collection' | 'promotions' | 'products' | 'spotlight' | 'brands' | 'cheque';
-  enabled: boolean;
-  eyebrow?: string;
-  title?: string;
-  description?: string;
-  action?: string;
-  href?: string;
-  categoryId?: string;
-  limit?: number;
-  productIds?: string[];
-  items?: Promo[];
-  startsAt?: string;
-  endsAt?: string;
-}
 interface SiteData {
   seo?: { title?: string; description?: string; shareImage?: string; allowIndexing?: boolean };
   name: string;
@@ -95,8 +80,8 @@ interface SiteData {
   nav: CmsMenuItem[];
   homeBlocks?: HomeBlock[];
   logoUrl?: string;
-  font?: 'vazirmatn' | 'system';
-  palette?: { primaryLight?: string; primaryDark?: string; heroLight?: string; heroDark?: string };
+  font?: SiteContent['font'];
+  palette?: SiteContent['palette'];
   appearance?: SiteAppearance;
   contact?: { phone?: string; email?: string; address?: string; hours?: string };
   storeIdentity?: StoreIdentity;
@@ -193,10 +178,22 @@ export function ContentPage({
 }
 
 const documentLabels = {
-  site: 'برند، منو و محتوای سایت',
+  site: 'تنظیمات مشترک فروشگاه',
   support: 'راهنما و پرسش‌های پشتیبانی',
   auth: 'روش‌های ورود مشتری',
 } as const;
+
+function settingsLabel(document: Pick<ContentDocument, 'key' | 'locale'>) {
+  return document.key === 'site' && document.locale === 'en'
+    ? 'ترجمهٔ انگلیسی سایت'
+    : documentLabels[document.key];
+}
+
+function settingsScope(document: Pick<ContentDocument, 'key' | 'locale'>) {
+  if (document.key === 'auth' || (document.key === 'site' && document.locale === 'fa'))
+    return 'مشترک';
+  return document.locale === 'fa' ? 'فارسی' : 'English';
+}
 
 function ContentSettings({
   data,
@@ -221,6 +218,7 @@ function ContentSettings({
   const client = useQueryClient();
   const [busy, setBusy] = useState(false);
   const document = data.documents.find((d) => `${d.key}/${d.locale}` === selected);
+  const sharedSite = data.documents.find((d) => d.key === 'site' && d.locale === 'fa');
   const missingSupport = (['fa', 'en'] as const).filter(
     (locale) => !data.documents.some((item) => item.key === 'support' && item.locale === locale),
   );
@@ -240,9 +238,7 @@ function ContentSettings({
       });
       await client.invalidateQueries({ queryKey: ['admin'] });
       setSuccess(
-        section
-          ? `شبکه‌های اجتماعی فروشگاه ${doc.locale === 'fa' ? 'فارسی' : 'انگلیسی'} به‌روز شد.`
-          : 'نسخهٔ عمومی سند به‌روز شد.',
+        section ? 'شبکه‌های اجتماعی هر دو زبان فروشگاه به‌روز شد.' : 'نسخهٔ عمومی سند به‌روز شد.',
       );
       setReview(null);
     } catch (e) {
@@ -268,8 +264,11 @@ function ContentSettings({
       <section className="panel" hidden={showHistory}>
         <div className="section-heading">
           <div>
-            <h2>سندهای تنظیمات فروشگاه</h2>
-            <p>ذخیره، پیش‌نویس را تغییر می‌دهد. انتشار، نسخهٔ عمومی را به‌روزرسانی می‌کند.</p>
+            <h2>تنظیمات و ترجمه‌های فروشگاه</h2>
+            <p>
+              ظاهر، منو، راه‌های ارتباطی و چیدمان خانه یک تنظیم مشترک دارند. متن انگلیسی جدا ویرایش
+              می‌شود.
+            </p>
           </div>
         </div>
         {!review && <ErrorBox error={error} />}
@@ -280,13 +279,13 @@ function ContentSettings({
             {
               id: 'key',
               header: 'سند',
-              accessorFn: (d) => documentLabels[d.key],
+              accessorFn: settingsLabel,
             },
             {
               id: 'social-links',
               header: 'شبکه‌های اجتماعی',
               cell: ({ row: { original } }) => {
-                if (original.key !== 'site') return '—';
+                if (original.key !== 'site' || original.locale !== 'fa') return '—';
                 const active = readPublishedIdentity(original.publishedJson).socialLinks ?? [];
                 const changes = socialPublicationChanges(
                   original.draftJson,
@@ -306,8 +305,8 @@ function ContentSettings({
             },
             {
               id: 'locale',
-              header: 'زبان',
-              accessorFn: (d) => (d.locale === 'fa' ? 'فارسی' : 'English'),
+              header: 'دامنه',
+              accessorFn: settingsScope,
             },
             { accessorKey: 'revision', header: 'نسخهٔ منتشرشده' },
             {
@@ -335,9 +334,12 @@ function ContentSettings({
                     }
                     onClick={() => askPublish(row.original)}
                   >
-                    {row.original.key === 'site' ? 'انتشار کامل' : 'انتشار'}
+                    {row.original.key === 'site' && row.original.locale === 'fa'
+                      ? 'انتشار مشترک'
+                      : 'انتشار'}
                   </button>
                   {row.original.key === 'site' &&
+                    row.original.locale === 'fa' &&
                     row.original.publishedJson &&
                     socialPublicationChanges(row.original.draftJson, row.original.publishedJson)
                       .length > 0 && (
@@ -458,13 +460,12 @@ function ContentSettings({
           ) : (
             <>
               <p>
-                {documentLabels[review.document.key]} ·{' '}
-                {review.document.locale === 'fa' ? 'فارسی' : 'English'}
+                {settingsLabel(review.document)} · {settingsScope(review.document)}
               </p>
               {review.section === 'socialLinks' ? (
                 <>
                   <p>
-                    لینک‌های زیر در پانوشت و صفحهٔ پشتیبانی این زبان به‌روز می‌شوند. بقیهٔ تغییرات
+                    لینک‌های زیر در پانوشت و صفحهٔ پشتیبانی هر دو زبان به‌روز می‌شوند. بقیهٔ تغییرات
                     برای بازبینی در پیش‌نویس می‌مانند.
                   </p>
                   <ul className="cms-contact-review">
@@ -516,11 +517,13 @@ function ContentSettings({
         </Modal>
       ) : (
         document && (
-          <Modal
-            title={`${documentLabels[document.key]} · ${document.locale === 'fa' ? 'فارسی' : 'English'}`}
-            onClose={() => setSelected(null)}
-          >
-            <ContentForm document={document} onClose={() => setSelected(null)} catalog={catalog} />
+          <Modal title={settingsLabel(document)} onClose={() => setSelected(null)}>
+            <ContentForm
+              document={document}
+              sharedSite={sharedSite}
+              onClose={() => setSelected(null)}
+              catalog={catalog}
+            />
           </Modal>
         )
       )}
@@ -851,15 +854,26 @@ function HomeBlocksEditor({
 }
 function ContentForm({
   document,
+  sharedSite,
   onClose,
   catalog,
 }: {
   document: ContentDocument;
+  sharedSite?: ContentDocument;
   onClose: () => void;
   catalog?: Catalog;
 }) {
+  const translationOnly = document.key === 'site' && document.locale === 'en';
+  const common = useMemo<SiteData | undefined>(
+    () => (translationOnly && sharedSite ? JSON.parse(sharedSite.draftJson) : undefined),
+    [translationOnly, sharedSite],
+  );
   const [value, set] = useState<SiteData | Record<string, boolean>>(() => {
     const draft = JSON.parse(document.draftJson);
+    if (common) {
+      draft.nav = translatedMenu(common.nav, draft.nav);
+      draft.homeBlocks = translatedBlocks(common.homeBlocks, draft.homeBlocks);
+    }
     return document.key === 'site' && Array.isArray(draft.nav)
       ? { ...draft, nav: filterRetiredSourcingMenu(draft.nav) }
       : draft;
@@ -881,13 +895,16 @@ function ContentForm({
     document.key !== 'auth' || hasSupportedCustomerLogin(value as Record<string, boolean>);
   const identityUsable =
     document.key !== 'site' || storeIdentitySchema.safeParse(site.storeIdentity ?? {}).success;
+  const titleLength = site.seo?.title?.length ?? 0;
+  const descriptionLength = site.seo?.description?.length ?? 0;
+  const seoUsable = titleLength <= 150 && descriptionLength <= 400;
   const uploads = useCmsImageUploads();
   return (
     <form
       dir={document.locale === 'en' ? 'ltr' : 'rtl'}
       onSubmit={(e) => {
         e.preventDefault();
-        if (!uploads.isBusy() && !mutation.isPending && authUsable && identityUsable)
+        if (!uploads.isBusy() && !mutation.isPending && authUsable && identityUsable && seoUsable)
           mutation.mutate();
       }}
     >
@@ -900,13 +917,21 @@ function ContentForm({
           <CustomerAuthSettingsEditor value={value as Record<string, boolean>} onChange={set} />
         ) : (
           <>
-            <nav className="row-buttons cms-form-sections" aria-label="بخش‌های سند فروشگاه">
-              <a href="#cms-site-brand">هویت بصری</a>
-              <a href="#cms-site-contact">راه‌های ارتباطی و مجوزها</a>
-              <a href="#cms-site-home">صفحهٔ اصلی</a>
-              <a href="#cms-site-seo">جست‌وجو و اشتراک</a>
-              <a href="#cms-site-nav">منو</a>
-            </nav>
+            {translationOnly ? (
+              <p dir="rtl" className="notice">
+                این فرم برای متن انگلیسی است. برای تغییر ظاهر، مقصد و ترتیب منو یا چیدمان خانه،
+                تنظیمات مشترک را باز کنید.
+              </p>
+            ) : (
+              <nav className="row-buttons cms-form-sections" aria-label="بخش‌های سند فروشگاه">
+                <a href="#cms-site-brand">هویت بصری</a>
+                <a href="#cms-site-palette">رنگ فروشگاه</a>
+                <a href="#cms-site-contact">راه‌های ارتباطی و مجوزها</a>
+                <a href="#cms-site-home">صفحهٔ اصلی</a>
+                <a href="#cms-site-seo">جست‌وجو و اشتراک</a>
+                <a href="#cms-site-nav">منو</a>
+              </nav>
+            )}
             <div className="form-grid">
               {(
                 [
@@ -915,73 +940,113 @@ function ContentForm({
                   ['tagline', 'شعار'],
                   ['announcement', 'نوار اطلاع‌رسانی'],
                 ] as const
-              ).map(([key, label]) => (
-                <Text
-                  key={key}
-                  label={label}
-                  value={site[key]}
-                  onChange={(text) => set({ ...site, [key]: text })}
-                  required
-                />
-              ))}
-            </div>
-            <fieldset id="cms-site-brand">
-              <legend>هویت بصری و تماس</legend>
-              <div className="form-grid">
-                <ImageEditor
-                  label="لوگوی فروشگاه — اختیاری"
-                  max={1}
-                  allowExternal={false}
-                  disabled={mutation.isPending}
-                  value={site.logoUrl ? [site.logoUrl] : []}
-                  onBusy={(busy) => uploads.setBusy('logo', busy)}
-                  onChange={(urls) =>
-                    set((previous) => {
-                      const current = previous as SiteData;
-                      return { ...current, logoUrl: urls[0] || undefined };
-                    })
-                  }
-                />
-                <Field label="فونت">
-                  <select
-                    value={site.font ?? 'vazirmatn'}
-                    onChange={(e) =>
-                      set({ ...site, font: e.target.value as 'vazirmatn' | 'system' })
-                    }
-                  >
-                    <option value="vazirmatn">Vazirmatn</option>
-                    <option value="system">System</option>
-                  </select>
-                </Field>
-                {(
-                  [
-                    ['primaryLight', 'رنگ اصلی روشن', '#425b36'],
-                    ['primaryDark', 'رنگ اصلی تاریک', '#b9cf9e'],
-                    ['heroLight', 'پس‌زمینهٔ بنر روشن', '#e5ead8'],
-                    ['heroDark', 'پس‌زمینهٔ بنر تاریک', '#293b24'],
-                  ] as const
-                ).map(([key, label, fallback]) => (
+              )
+                .filter(([key]) => !translationOnly || key !== 'latinName')
+                .map(([key, label]) => (
                   <Text
                     key={key}
                     label={label}
-                    type="color"
-                    value={site.palette?.[key] ?? fallback}
-                    onChange={(color) =>
-                      set({ ...site, palette: { ...site.palette, [key]: color } })
-                    }
+                    value={site[key]}
+                    onChange={(text) => set({ ...site, [key]: text })}
+                    required
                   />
                 ))}
-                {(
-                  [
-                    ['phone', 'تلفن (ارقام انگلیسی)'],
-                    ['email', 'ایمیل تماس'],
-                    ['address', 'نشانی'],
-                    ['hours', 'ساعت پاسخ‌گویی'],
-                  ] as const
-                ).map(([key, label]) => (
+            </div>
+            {!translationOnly && (
+              <>
+                <fieldset id="cms-site-brand">
+                  <legend>هویت بصری و تماس</legend>
+                  <div className="form-grid">
+                    <ImageEditor
+                      label="لوگوی فروشگاه — اختیاری"
+                      max={1}
+                      allowExternal={false}
+                      disabled={mutation.isPending}
+                      value={site.logoUrl ? [site.logoUrl] : []}
+                      onBusy={(busy) => uploads.setBusy('logo', busy)}
+                      onChange={(urls) =>
+                        set((previous) => {
+                          const current = previous as SiteData;
+                          return { ...current, logoUrl: urls[0] || undefined };
+                        })
+                      }
+                    />
+                    <Field label="فونت فروشگاه" hint="وزیرمتن و Noto از خود سایت بارگیری می‌شوند.">
+                      <select
+                        value={site.font ?? 'vazirmatn'}
+                        onChange={(e) =>
+                          set({ ...site, font: e.target.value as SiteContent['font'] })
+                        }
+                      >
+                        <option value="vazirmatn">وزیرمتن</option>
+                        <option value="noto-arabic">Noto Sans Arabic</option>
+                        <option value="system">فونت دستگاه</option>
+                      </select>
+                    </Field>
+                    {(
+                      [
+                        ['phone', 'تلفن (ارقام انگلیسی)'],
+                        ['email', 'ایمیل تماس'],
+                        ['address', 'نشانی'],
+                        ['hours', 'ساعت پاسخ‌گویی'],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <Text
+                        key={key}
+                        label={label}
+                        value={site.contact?.[key] ?? ''}
+                        onChange={(text) =>
+                          set({ ...site, contact: { ...site.contact, [key]: text || undefined } })
+                        }
+                      />
+                    ))}
+                  </div>
+                </fieldset>
+                <CmsPaletteEditor
+                  value={site.palette}
+                  onChange={(palette) => set({ ...site, palette })}
+                  disabled={mutation.isPending || uploads.busy}
+                />
+                <CmsAppearanceEditor
+                  value={site.appearance}
+                  font={site.font}
+                  name={site.name}
+                  onChange={(appearance) => set({ ...site, appearance })}
+                />
+                <div id="cms-site-contact">
+                  <StoreIdentityEditor
+                    value={site.storeIdentity}
+                    published={readPublishedIdentity(document.publishedJson)}
+                    locale={document.locale}
+                    disabled={mutation.isPending || uploads.busy}
+                    onBusy={uploads.setBusy}
+                    onChange={(storeIdentity) =>
+                      set((previous) => ({ ...previous, storeIdentity }) as SiteData)
+                    }
+                    onBadgeImageChange={(id, imageUrl) =>
+                      set((previous) => {
+                        const current = previous as SiteData;
+                        return {
+                          ...current,
+                          storeIdentity: {
+                            ...current.storeIdentity,
+                            badges: current.storeIdentity?.badges?.map((badge) =>
+                              badge.id === id ? { ...badge, imageUrl } : badge,
+                            ),
+                          },
+                        };
+                      })
+                    }
+                  />
+                </div>
+              </>
+            )}
+            {translationOnly && (
+              <div className="form-grid">
+                {(['address', 'hours'] as const).map((key) => (
                   <Text
                     key={key}
-                    label={label}
+                    label={key === 'address' ? 'Address' : 'Hours'}
                     value={site.contact?.[key] ?? ''}
                     onChange={(text) =>
                       set({ ...site, contact: { ...site.contact, [key]: text || undefined } })
@@ -989,41 +1054,7 @@ function ContentForm({
                   />
                 ))}
               </div>
-              <button type="button" onClick={() => set({ ...site, palette: undefined })}>
-                بازگشت به رنگ‌های پیش‌فرض
-              </button>
-            </fieldset>
-            <CmsAppearanceEditor
-              value={site.appearance}
-              name={site.name}
-              onChange={(appearance) => set({ ...site, appearance })}
-            />
-            <div id="cms-site-contact">
-              <StoreIdentityEditor
-                value={site.storeIdentity}
-                published={readPublishedIdentity(document.publishedJson)}
-                locale={document.locale}
-                disabled={mutation.isPending || uploads.busy}
-                onBusy={uploads.setBusy}
-                onChange={(storeIdentity) =>
-                  set((previous) => ({ ...previous, storeIdentity }) as SiteData)
-                }
-                onBadgeImageChange={(id, imageUrl) =>
-                  set((previous) => {
-                    const current = previous as SiteData;
-                    return {
-                      ...current,
-                      storeIdentity: {
-                        ...current.storeIdentity,
-                        badges: current.storeIdentity?.badges?.map((badge) =>
-                          badge.id === id ? { ...badge, imageUrl } : badge,
-                        ),
-                      },
-                    };
-                  })
-                }
-              />
-            </div>
+            )}
             <Area
               label="دربارهٔ فروشگاه"
               value={site.about}
@@ -1036,13 +1067,15 @@ function ContentForm({
             />
             <fieldset id="cms-site-home">
               <legend>محتوای ابتدای صفحه</legend>
-              <CmsPurchaseDependencyField
-                label="وابستگی نمایش کل محتوای ابتدای صفحه به نوع خرید"
-                value={site.hero.purchaseMethodKind}
-                onChange={(purchaseMethodKind) =>
-                  set({ ...site, hero: { ...site.hero, purchaseMethodKind } })
-                }
-              />
+              {!translationOnly && (
+                <CmsPurchaseDependencyField
+                  label="وابستگی نمایش کل محتوای ابتدای صفحه به نوع خرید"
+                  value={site.hero.purchaseMethodKind}
+                  onChange={(purchaseMethodKind) =>
+                    set({ ...site, hero: { ...site.hero, purchaseMethodKind } })
+                  }
+                />
+              )}
               {(
                 [
                   ['eyebrow', 'متن بالای عنوان'],
@@ -1061,21 +1094,25 @@ function ContentForm({
               ))}
             </fieldset>
             <fieldset>
-              <legend>تصویر و مسیرهای ابتدای صفحه</legend>
-              <ImageEditor
-                label="تصویر ابتدای صفحه"
-                max={1}
-                allowExternal={false}
-                disabled={mutation.isPending}
-                value={site.hero.image ? [site.hero.image] : []}
-                onBusy={(busy) => uploads.setBusy('hero', busy)}
-                onChange={(urls) =>
-                  set((previous) => {
-                    const current = previous as SiteData;
-                    return { ...current, hero: { ...current.hero, image: urls[0] || undefined } };
-                  })
-                }
-              />
+              <legend>
+                {translationOnly ? 'متن‌های تکمیلی ابتدای صفحه' : 'تصویر و مسیرهای ابتدای صفحه'}
+              </legend>
+              {!translationOnly && (
+                <ImageEditor
+                  label="تصویر ابتدای صفحه"
+                  max={1}
+                  allowExternal={false}
+                  disabled={mutation.isPending}
+                  value={site.hero.image ? [site.hero.image] : []}
+                  onBusy={(busy) => uploads.setBusy('hero', busy)}
+                  onChange={(urls) =>
+                    set((previous) => {
+                      const current = previous as SiteData;
+                      return { ...current, hero: { ...current.hero, image: urls[0] || undefined } };
+                    })
+                  }
+                />
+              )}
               <div className="form-grid">
                 {(
                   [
@@ -1086,97 +1123,137 @@ function ContentForm({
                     ['floatingDescription', 'متن کارت روی تصویر'],
                     ['footnote', 'متن پایین عنوان'],
                   ] as const
-                ).map(([key, label]) => (
-                  <Text
-                    key={key}
-                    label={label}
-                    value={site.hero[key] ?? ''}
-                    onChange={(text) =>
-                      set({ ...site, hero: { ...site.hero, [key]: text || undefined } })
-                    }
-                  />
-                ))}
+                )
+                  .filter(([key]) => !translationOnly || !key.endsWith('Href'))
+                  .map(([key, label]) => (
+                    <Text
+                      key={key}
+                      label={label}
+                      value={site.hero[key] ?? ''}
+                      onChange={(text) =>
+                        set({ ...site, hero: { ...site.hero, [key]: text || undefined } })
+                      }
+                    />
+                  ))}
               </div>
             </fieldset>
             <fieldset id="cms-site-seo">
               <legend>نمایش در جست‌وجو و شبکه‌های اجتماعی</legend>
-              <Text
-                label="عنوان صفحهٔ اصلی (اختیاری)"
-                value={site.seo?.title ?? ''}
-                onChange={(title) =>
-                  set({ ...site, seo: { ...site.seo, title: title || undefined } })
+              <HomeSearchPreview
+                draft={
+                  translationOnly
+                    ? { ...site, seo: { ...site.seo, allowIndexing: common?.seo?.allowIndexing } }
+                    : site
                 }
-              />
-              <Area
-                label="توضیح صفحهٔ اصلی (حداکثر ۴۰۰ حرف)"
-                value={site.seo?.description ?? ''}
-                onChange={(description) =>
-                  set({ ...site, seo: { ...site.seo, description: description || undefined } })
-                }
-              />
-              <ImageEditor
-                label="تصویر اشتراک عمومی — اختیاری"
-                max={1}
-                allowExternal={false}
-                disabled={mutation.isPending}
-                value={site.seo?.shareImage ? [site.seo.shareImage] : []}
-                onBusy={(busy) => uploads.setBusy('share', busy)}
-                onChange={(urls) =>
-                  set((previous) => {
-                    const current = previous as SiteData;
-                    return {
-                      ...current,
-                      seo: { ...current.seo, shareImage: urls[0] || undefined },
-                    };
-                  })
-                }
-              />
-              <Check
-                label="اجازهٔ نمایه‌سازی این زبان پس از افتتاح"
-                checked={site.seo?.allowIndexing ?? false}
-                onChange={(e) =>
-                  set({ ...site, seo: { ...site.seo, allowIndexing: e.target.checked } })
-                }
-              />
-              <small>
-                فعال‌شدن عمومی علاوه بر انتشار این تنظیم به دامنهٔ HTTPS، مجوز محیط و خروج API از
-                حالت نمونه نیاز دارد.
-              </small>
-            </fieldset>
-            <HomeBlocksEditor
-              value={site.homeBlocks ?? []}
-              onChange={(homeBlocks) =>
-                set((previous) => {
-                  const current = previous as SiteData;
-                  return {
-                    ...current,
-                    homeBlocks:
-                      typeof homeBlocks === 'function'
-                        ? homeBlocks(current.homeBlocks ?? [])
-                        : homeBlocks,
-                  };
-                })
-              }
-              catalog={catalog}
-              disabled={mutation.isPending || uploads.busy}
-              onUploadBusy={(field, busy) => uploads.setBusy('banner:' + field, busy)}
-            />
-            <fieldset id="cms-site-nav">
-              <legend>منوی سایت</legend>
-              <CmsMenuEditor
-                value={filterRetiredSourcingMenu(site.nav)}
+                publishedJson={document.publishedJson}
+                sharedPublishedJson={translationOnly ? sharedSite?.publishedJson : undefined}
                 locale={document.locale}
-                categories={catalog?.categories}
-                onChange={(nav) => set({ ...site, nav })}
               />
+              <Field
+                label="عنوان صفحهٔ اصلی (اختیاری)"
+                hint={`${titleLength.toLocaleString('fa-IR')} از ۱۵۰ حرف`}
+                error={titleLength > 150 ? 'عنوان را به ۱۵۰ حرف یا کمتر برسانید.' : undefined}
+              >
+                <input
+                  value={site.seo?.title ?? ''}
+                  onChange={(e) =>
+                    set({ ...site, seo: { ...site.seo, title: e.target.value || undefined } })
+                  }
+                />
+              </Field>
+              <Field
+                label="توضیح صفحهٔ اصلی (اختیاری)"
+                hint={`${descriptionLength.toLocaleString('fa-IR')} از ۴۰۰ حرف`}
+                error={descriptionLength > 400 ? 'توضیح را به ۴۰۰ حرف یا کمتر برسانید.' : undefined}
+              >
+                <textarea
+                  value={site.seo?.description ?? ''}
+                  onChange={(e) =>
+                    set({ ...site, seo: { ...site.seo, description: e.target.value || undefined } })
+                  }
+                  rows={3}
+                />
+              </Field>
+              {!translationOnly && (
+                <>
+                  <ImageEditor
+                    label="تصویر اشتراک عمومی — اختیاری"
+                    max={1}
+                    allowExternal={false}
+                    disabled={mutation.isPending}
+                    value={site.seo?.shareImage ? [site.seo.shareImage] : []}
+                    onBusy={(busy) => uploads.setBusy('share', busy)}
+                    onChange={(urls) =>
+                      set((previous) => {
+                        const current = previous as SiteData;
+                        return {
+                          ...current,
+                          seo: { ...current.seo, shareImage: urls[0] || undefined },
+                        };
+                      })
+                    }
+                  />
+                  <Check
+                    label="اجازهٔ نمایه‌سازی هر دو زبان پس از افتتاح"
+                    checked={site.seo?.allowIndexing ?? false}
+                    onChange={(e) =>
+                      set({ ...site, seo: { ...site.seo, allowIndexing: e.target.checked } })
+                    }
+                  />
+                  <small>
+                    فعال‌شدن عمومی علاوه بر انتشار این تنظیم به دامنهٔ HTTPS، مجوز محیط و خروج API
+                    از حالت نمونه نیاز دارد.
+                  </small>
+                </>
+              )}
             </fieldset>
+            {translationOnly ? (
+              <SiteTranslationFields
+                nav={site.nav}
+                blocks={site.homeBlocks ?? []}
+                onNavChange={(nav) => set({ ...site, nav })}
+                onBlocksChange={(homeBlocks) => set({ ...site, homeBlocks })}
+              />
+            ) : (
+              <>
+                <HomeBlocksEditor
+                  value={site.homeBlocks ?? []}
+                  onChange={(homeBlocks) =>
+                    set((previous) => {
+                      const current = previous as SiteData;
+                      return {
+                        ...current,
+                        homeBlocks:
+                          typeof homeBlocks === 'function'
+                            ? homeBlocks(current.homeBlocks ?? [])
+                            : homeBlocks,
+                      };
+                    })
+                  }
+                  catalog={catalog}
+                  disabled={mutation.isPending || uploads.busy}
+                  onUploadBusy={(field, busy) => uploads.setBusy('banner:' + field, busy)}
+                />
+                <fieldset id="cms-site-nav">
+                  <legend>منوی سایت</legend>
+                  <CmsMenuEditor
+                    value={filterRetiredSourcingMenu(site.nav)}
+                    locale={document.locale}
+                    categories={catalog?.categories}
+                    onChange={(nav) => set({ ...site, nav })}
+                  />
+                </fieldset>
+              </>
+            )}
           </>
         )}
       </fieldset>
       <div className="form-actions">
         <button
           className="primary"
-          disabled={mutation.isPending || uploads.busy || !authUsable || !identityUsable}
+          disabled={
+            mutation.isPending || uploads.busy || !authUsable || !identityUsable || !seoUsable
+          }
           type="submit"
         >
           {uploads.busy

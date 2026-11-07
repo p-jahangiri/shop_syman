@@ -62,7 +62,7 @@ public sealed class CommerceSqlTests(SqlFixture fixture) : IClassFixture<SqlFixt
         Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync("/api/admin/content/site/fa/publish", new { Version = doc["version"]!.GetValue<string>(), RestoreRevisionId = (string?)null })).StatusCode);
         var after = await Json(await client.GetAsync("/api/storefront/fa")); Assert.Equal("انتشار از تست SQL", after["site"]!["announcement"]!.GetValue<string>());
     }
-    [Fact] public async Task SpotlightPublicationUsesRealCatalogPricesAndExcludesHiddenProducts()
+    [Fact] public async Task SpotlightTranslationPreservesSharedSelectionAndPublicLookupFiltersHiddenProducts()
     {
         var session=await SignIn();using var client=session.Client;
         using var anonymous=fixture.Factory.CreateClient();
@@ -82,7 +82,7 @@ public sealed class CommerceSqlTests(SqlFixture fixture) : IClassFixture<SqlFixt
         Assert.Equal(HttpStatusCode.NoContent,(await client.PostAsJsonAsync("/api/admin/content/site/en/publish",new{Version=stale,RestoreRevisionId=(string?)null})).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict,(await client.PostAsJsonAsync("/api/admin/content/site/en/publish",new{Version=stale,RestoreRevisionId=(string?)null})).StatusCode);
         var published=await Json(await client.GetAsync("/api/storefront/en"));var selected=published["site"]!["homeBlocks"]!.AsArray().Single(b=>b!["kind"]!.GetValue<string>()=="spotlight")!;
-        Assert.Equal("SQL curated sample",selected["title"]!.GetValue<string>());Assert.Equal(new[]{"p2","p1","not-public"},selected["productIds"]!.AsArray().Select(x=>x!.GetValue<string>()));
+        Assert.Equal("SQL curated sample",selected["title"]!.GetValue<string>());var originalBlock=before["site"]!["homeBlocks"]!.AsArray().Single(b=>b!["kind"]!.GetValue<string>()=="spotlight")!;Assert.True(JsonNode.DeepEquals(originalBlock["productIds"],selected["productIds"]));
         var pricesAfter=await Json(await client.PostAsJsonAsync("/api/catalog/en/lookup",new{ProductIds=new[]{"p1","p2"},Slugs=Array.Empty<string>(),VariantIds=Array.Empty<string>()}));
         Assert.Equal(pricesBefore.ToJsonString(),pricesAfter.ToJsonString());
         await using(var scope=fixture.Factory.Services.CreateAsyncScope()){

@@ -79,12 +79,14 @@ for (const locale of ['fa', 'en'] as const)
           }),
         },
         './product-card': { ProductGrid: 'ProductGrid' },
+        './recently-viewed': { RecentlyViewed: 'RecentlyViewed' },
         '../shared/ui': { Button: 'Button', Modal: 'Modal', groupNavigation() {} },
       },
       {
         URL,
+        navigator: {},
         window: {
-          location: { href: 'http://127.0.0.1:3000/fa/product/synthetic' },
+          location: new URL(`http://127.0.0.1:3000/${locale}/product/synthetic?tracking=example`),
           history: { replaceState() {} },
         },
       },
@@ -98,7 +100,8 @@ for (const locale of ['fa', 'en'] as const)
     assert.ok(!uiElements(h.tree()).some((node) => node.props.className === 'purchase-disclaimer'));
     const main = () =>
         uiElements(h.tree()).find((n) => n.type === 'Image' && n.props.fetchPriority === 'high')!,
-      modal = () => uiElements(h.tree()).find((n) => n.type === 'Modal')!,
+      modal = () =>
+        uiElements(h.tree()).find((n) => n.type === 'Modal' && n.props.title === product.name)!,
       scopedVideo = () =>
         uiElements(h.tree()).find((node) => node.props.url === product.videos[0].url),
       button = (match: (n: ReturnType<typeof uiElements>[number]) => boolean) => {
@@ -136,6 +139,16 @@ for (const locale of ['fa', 'en'] as const)
     await h.settle();
     assert.equal(main().props.src, b.photos![0].url);
     assert.equal(modal().props.open, false);
+    await (
+      button((n) => /کپی لینک این تنوع|Copy variant link/.test(String(n.props['aria-label']))).props
+        .onClick as () => Promise<void>
+    )();
+    await h.settle();
+    const shareLink = uiElements(h.tree()).find((n) => n.props.className === 'product-share-url');
+    assert.equal(
+      shareLink?.props.value,
+      `http://127.0.0.1:3000/${locale}/product/synthetic?variant=USED_B`,
+    );
     assert.ok(scopedVideo());
     const details = { open: false };
     const videoSection = uiElements(h.tree()).find((node) => node.props.id === 'product-videos');

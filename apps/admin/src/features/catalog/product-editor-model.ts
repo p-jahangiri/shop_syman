@@ -153,6 +153,46 @@ export function draftOfProduct(
       : [],
   };
 }
+export function draftFromSimilarProduct(
+  source: Product,
+  key: string,
+  methods: PurchaseMethod[],
+): ProductDraft {
+  return {
+    ...draftOfProduct(undefined, key, methods),
+    categoryId: source.categoryId,
+    brandId: source.brandId,
+    isDigital: source.isDigital,
+    slug: '',
+    descriptionFa: source.translations.find((t) => t.locale === 'fa')?.description ?? '',
+    descriptionEn: source.translations.find((t) => t.locale === 'en')?.description ?? '',
+    attributes: valuesOfProduct(source.attributes),
+  };
+}
+export function validProductSlug(slug: string) {
+  return slug.length <= 150 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+}
+export function copyProductVariantLayout(
+  source: Product,
+  category: Catalog['categories'][number],
+  slug: string,
+  newKey: () => string,
+): ProductVariantDraft[] {
+  const axes = new Set(
+    category.attributes.filter((rule) => rule.isVariantAxis).map((rule) => rule.attributeId),
+  );
+  const prefix = slug.toUpperCase().slice(0, 70);
+  return source.variants.map((variant, index) => ({
+    ...blankProductVariant(newKey()),
+    sku: prefix + '-' + String(index + 1).padStart(2, '0'),
+    color: variant.color,
+    colorNameFa: variant.colorNameFa,
+    colorNameEn: variant.colorNameEn,
+    attributes: valuesOfProduct(
+      variant.attributes.filter((attribute) => axes.has(attribute.attributeId)),
+    ),
+  }));
+}
 export function hasAttributeValue(value: ProductValueInput | undefined) {
   return (
     !!value &&
@@ -173,7 +213,7 @@ export function validateProductDraft(value: ProductDraft, data: Catalog): Produc
     errors.categoryId = 'دستهٔ کالا را انتخاب کنید؛ از آیکون راهنما می‌توانید دسته بسازید.';
   if (!data.brands.some((b) => b.id === value.brandId))
     errors.brandId = 'برند کالا را انتخاب یا برند جدید اضافه کنید.';
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value.slug) || value.slug.length > 150)
+  if (!validProductSlug(value.slug))
     errors.slug = 'نشانی یکتا با حروف کوچک انگلیسی، عدد و خط تیره وارد کنید.';
   if (value.descriptionFa.length > 8000)
     errors.descriptionFa = 'توضیح فارسی حداکثر ۸۰۰۰ نویسه است.';

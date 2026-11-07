@@ -1,3 +1,4 @@
+import { homeSearchText } from '@sayman/web-shared/lib/content/home-search-text.ts';
 import type { Metadata, MetadataRoute } from 'next';
 import type { Locale, Product, StorefrontSnapshot } from '@sayman/web-shared/lib/shared/types.ts';
 
@@ -141,6 +142,10 @@ export function pageMetadata(
       : {}),
   };
 }
+export function homePageMetadata(snapshot: StorefrontSnapshot, locale: Locale) {
+  const { title, description } = homeSearchText(snapshot.site);
+  return pageMetadata(snapshot, locale, '/', title, description);
+}
 export type SearchQuery = Record<string, string | string[] | undefined>;
 export function catalogTarget(snapshot: StorefrontSnapshot, query: SearchQuery) {
   const category =
@@ -171,34 +176,59 @@ export function productStructuredData(
   env: SeoEnvironment = deploymentEnvironment(),
 ): Record<string, unknown>[] {
   const origin = publicOrigin(env);
-  if (!origin || !canIndex(snapshot, env)) return [];
+  if (!origin || !canIndex(snapshot, env) || !product.variants.length) return [];
   const path = `/product/${encodeURIComponent(product.slug)}`;
   const url = localizedUrl(origin, locale, path);
   const category = snapshot.categories.find((c) => c.key === product.category);
   const image = publicMedia(product.image, origin);
-  return [
-    {
-      '@context': 'https://schema.org',
+  const common = {
+    name: product.name,
+    description: product.description,
+    brand: { '@type': 'Brand', name: product.brand },
+    ...(image ? { image: [image] } : {}),
+    ...(category ? { category: category.name } : {}),
+  };
+  const variants = product.variants.map((variant) => {
+    const variantUrl = `${url}?variant=${encodeURIComponent(variant.id)}`;
+    const photo = publicMedia(variant.usedCondition?.photos?.[0]?.url, origin);
+    const label = variant.label.trim();
+    return {
       '@type': 'Product',
-      '@id': `${url}#product`,
-      url,
-      name: product.name,
-      description: product.description,
-      brand: { '@type': 'Brand', name: product.brand },
-      ...(image ? { image: [image] } : {}),
-      ...(category ? { category: category.name } : {}),
-      offers: product.variants.map((v) => ({
+      '@id': `${variantUrl}#product`,
+      ...common,
+      url: variantUrl,
+      name: label && label !== product.name ? `${product.name} · ${label}` : product.name,
+      sku: variant.sku,
+      ...(variant.colorName.trim() ? { color: variant.colorName.trim() } : {}),
+      ...(photo ? { image: [photo] } : {}),
+      offers: {
         '@type': 'Offer',
-        sku: v.sku,
-        name: v.label,
         priceCurrency: 'IRR',
-        price: v.priceRial,
-        itemCondition: `https://schema.org/${v.usedCondition ? 'UsedCondition' : 'NewCondition'}`,
-        availability: `https://schema.org/${v.stock > 0 ? 'InStock' : 'OutOfStock'}`,
-        url: `${url}?variant=${encodeURIComponent(v.id)}`,
+        price: variant.priceRial,
+        itemCondition: `https://schema.org/${variant.usedCondition ? 'UsedCondition' : 'NewCondition'}`,
+        availability: `https://schema.org/${variant.stock > 0 ? 'InStock' : 'OutOfStock'}`,
+        url: variantUrl,
         seller: { '@type': 'Organization', name: snapshot.site.name },
-      })),
-    },
+      },
+    };
+  });
+  const single = variants[0];
+  const colorVaries =
+    variants.every((variant) => variant.color) &&
+    new Set(variants.map((variant) => variant.color)).size > 1;
+  return [
+    variants.length > 1
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'ProductGroup',
+          '@id': `${url}#product-group`,
+          ...common,
+          url,
+          productGroupID: product.id,
+          ...(colorVaries ? { variesBy: ['https://schema.org/color'] } : {}),
+          hasVariant: variants,
+        }
+      : { '@context': 'https://schema.org', ...single },
     {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',

@@ -600,3 +600,36 @@
     max-width: 118px;
   }
 }
+
+.customer-account-resume {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+  margin-block-end: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in oklch, var(--primary) 30%, var(--border));
+  border-radius: var(--sf-radius, 24px);
+  background: var(--sf-tint);
+}
+.customer-account-resume h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.customer-account-resume p {
+  margin-block-start: 0.25rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.customer-account-resume .button {
+  min-block-size: 44px;
+}
+@media (max-width: 520px) {
+  .customer-account-resume {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .customer-account-resume .button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}

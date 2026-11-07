@@ -219,7 +219,7 @@
 .filter-content .category-filter.active .category-selection {
   color: var(--primary-foreground);
   border-color: var(--primary);
-  background: var(--primary);
+  background: var(--primary-fill);
 }
 .filter-content .category-filter:hover {
   color: var(--foreground);
@@ -525,7 +525,7 @@
   background: var(--muted);
 }
 .filter-content .switch-label input:checked {
-  background: var(--primary);
+  background: var(--primary-fill);
   border-color: var(--primary);
 }
 .filter-content .switch-label input:checked::before {
@@ -822,13 +822,14 @@ html[dir] .storefront-design .catalog-filter-dialog {
 .catalog-page .catalog-discovery-header {
   --catalog-header-accent: var(--primary);
   margin-block: 16px 14px;
-  padding: 12px clamp(12px, 2vw, 24px) 15px;
-  border: 1px solid var(--border);
+  padding: clamp(14px, 2.2vw, 26px);
+  border: 1px solid var(--sf-edge);
+  border-inline-start: 4px solid var(--primary);
   border-radius: var(--sf-radius);
   background: linear-gradient(
-    to bottom,
-    color-mix(in oklch, var(--surface) 93%, var(--catalog-header-accent)),
-    var(--surface)
+    145deg,
+    var(--sf-panel) 42%,
+    color-mix(in srgb, var(--sf-media) 95%, var(--catalog-header-accent))
   );
 }
 .catalog-page .catalog-discovery-header[data-view='search'] {
@@ -848,7 +849,7 @@ html[dir] .storefront-design .catalog-filter-dialog {
   min-inline-size: 0;
 }
 .catalog-discovery-header h1 {
-  font-size: clamp(1.2rem, 2.3vw, 1.75rem);
+  font-size: clamp(1.28rem, 2.6vw, 2.15rem);
   line-height: 1.4;
   letter-spacing: normal;
   overflow-wrap: anywhere;
@@ -864,7 +865,7 @@ html[dir] .storefront-design .catalog-filter-dialog {
   inline-size: 44px;
   block-size: 44px;
   border-radius: var(--sf-radius-small);
-  background: color-mix(in oklch, var(--surface) 84%, var(--catalog-header-accent));
+  background: var(--sf-media);
   color: var(--primary);
 }
 @media (max-width: 480px) {
@@ -874,4 +875,38 @@ html[dir] .storefront-design .catalog-filter-dialog {
   .catalog-page .sorting > .catalog-sort-label {
     display: none;
   }
+}
+
+.catalog-share-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-block-size: 44px;
+  padding-inline: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  color: var(--foreground);
+}
+.catalog-share-button:hover {
+  background: var(--sf-tint, var(--surface-soft));
+}
+.catalog-share-dialog {
+  display: grid;
+  gap: 0.75rem;
+}
+.catalog-share-dialog input {
+  min-block-size: 44px;
+  inline-size: 100%;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  color: var(--foreground);
+}
+.catalog-share-dialog .button {
+  justify-self: start;
+}
+.catalog-share-dialog [role='status']:empty {
+  display: none;
 }

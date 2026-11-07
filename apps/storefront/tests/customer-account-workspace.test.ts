@@ -326,6 +326,33 @@ test('actual workspace keeps unavailable unread counts distinct from zero while 
   h.unmount();
 });
 
+test('the account shortcut links to a live reservation and skips expired or paid orders', async () => {
+  const future = new Date(Date.now() + 15 * 60_000).toISOString();
+  const h = workspace('en', async (path) =>
+    path === '/api/orders/v2'
+      ? Response.json({
+          ...orders,
+          items: [
+            orders.items[0],
+            { ...orders.items[1], state: 'Paid', expiresAt: future },
+            { ...orders.items[2], expiresAt: future },
+          ],
+        })
+      : normalResponse(path),
+  );
+  await h.settle();
+  const shortcut = uiElements(h.tree()).find(
+    (node) => node.props.className === 'customer-account-resume',
+  );
+  assert.ok(shortcut);
+  assert.ok(uiText(shortcut).includes(orders.items[2].reference));
+  assert.equal(
+    uiElements(shortcut).find((node) => node.type === 'Link')?.props.href,
+    '/orders/' + orders.items[2].id,
+  );
+  h.unmount();
+});
+
 test('actual workspace rejects profile, order and address data parsed after owner changes or unmount', async () => {
   for (const exit of ['owner', 'logout', 'unmount']) {
     const release = Promise.withResolvers<void>();

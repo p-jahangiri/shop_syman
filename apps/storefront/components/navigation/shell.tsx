@@ -450,8 +450,12 @@ export function Header() {
               </Link>
             )}
             {chequeEnabled && (
-              <Link href="/installments" className="nav-credit">
-                <CreditCard size={16} />
+              <Link
+                href="/installments"
+                className="nav-credit"
+                aria-current={pathname === '/installments' ? 'page' : undefined}
+              >
+                <CreditCard size={16} aria-hidden="true" />
                 {t('خرید چکی')}
               </Link>
             )}
@@ -492,13 +496,19 @@ export function Header() {
           </div>
           <ContentMenu items={menuItems} onNavigate={() => setMenu(false)} />
           {showUsed && !hasUsedMenu && (
-            <Link href={usedHref} onClick={() => setMenu(false)}>
+            <Link href={usedHref} className="nav-used" onClick={() => setMenu(false)}>
               <PackageCheck size={19} aria-hidden="true" />
               {usedLabel}
             </Link>
           )}
           {chequeEnabled && (
-            <Link href="/installments" onClick={() => setMenu(false)}>
+            <Link
+              href="/installments"
+              className="nav-credit"
+              aria-current={pathname === '/installments' ? 'page' : undefined}
+              onClick={() => setMenu(false)}
+            >
+              <CreditCard size={19} aria-hidden="true" />
               {t('خرید چکی')}
             </Link>
           )}
@@ -616,16 +626,18 @@ export function Footer() {
             />
           </div>
         </div>
-        <div className="container footer-bottom">
-          <StoreIdentityFooter value={site.storeIdentity} locale={locale} part="policies" />
-          <span>
-            ©{' '}
-            {new Intl.DateTimeFormat(fa ? 'fa-IR' : 'en-US', {
-              year: 'numeric',
-              calendar: fa ? 'persian' : 'gregory',
-            }).format(new Date())}{' '}
-            {site.name}
-          </span>
+        <div className="footer-end">
+          <div className="container footer-bottom">
+            <StoreIdentityFooter value={site.storeIdentity} locale={locale} part="policies" />
+            <span>
+              ©{' '}
+              {new Intl.DateTimeFormat(fa ? 'fa-IR' : 'en-US', {
+                year: 'numeric',
+                calendar: fa ? 'persian' : 'gregory',
+              }).format(new Date())}{' '}
+              {site.name}
+            </span>
+          </div>
         </div>
       </footer>
     </>

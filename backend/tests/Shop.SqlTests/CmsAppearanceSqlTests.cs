@@ -17,7 +17,7 @@ public sealed class CmsAppearanceSqlTests : IAsyncLifetime
     public Task DisposeAsync() => sql.DisposeAsync();
 
     [Fact]
-    public async Task AppearanceDraftIsPrivatePublicationUsesCasAndRestoreKeepsLocaleAndOtherSettings()
+    public async Task SharedSettingsPublishToBothLanguagesAndRestorePreservesTranslation()
     {
         using var editor = await Staff("ContentManager");
         using var anonymous = sql.Factory.CreateClient(new() { HandleCookies = false });
@@ -29,10 +29,19 @@ public sealed class CmsAppearanceSqlTests : IAsyncLifetime
             x!["key"]!.GetValue<string>() == "site" && x["locale"]!.GetValue<string>() == "fa" &&
             x["revision"]!.GetValue<int>() == document["revision"]!.GetValue<int>())!;
         var draft = JsonNode.Parse(document["draftJson"]!.GetValue<string>())!.AsObject();
-        draft["appearance"] = JsonNode.Parse("""{"surface":"solid","density":"compact","corners":"soft","motion":"none","heroLayout":"compact","stickyHeader":false}""");
+        draft["appearance"] = JsonNode.Parse("""{"surface":"solid","density":"compact","corners":"soft","motion":"full","motionPreset":"glow","motionBanners":true,"motionCards":false,"motionSidebar":true,"cards":"editorial","navigation":"pills","heroLayout":"compact","stickyHeader":false}""");
+        draft["palette"] = JsonNode.Parse("""
+            {"primaryLight":"#ffffff","primaryDark":"#000000","heroLight":"#eae4ff","intensity":"strong",
+             "sections":{"canvas":{"dark":"#271f2d"},"navigation":{"light":"#dbeeff","dark":"#17303a"},
+             "cards":{"light":"#e5f1f6"},"promotions":{"light":"#c44a55"},"footer":{"dark":"#221c33"}}}
+            """);
+        draft["font"] = "noto-arabic";
+        draft["nav"]!.AsArray().Insert(0, new JsonObject { ["href"] = "/catalog?available=1", ["label"] = "کالاهای موجود" });
+        draft["hero"]!["actionHref"] = "/catalog?available=1";
         var input = new ContentInput(draft, document["version"]!.GetValue<string>());
         await NoContent(await editor.PutAsJsonAsync("/api/admin/content/site/fa", input));
-        Assert.Equal(originalFa.ToJsonString(), (await PublicSite(anonymous, "fa")).ToJsonString());
+        Assert.True(JsonNode.DeepEquals(originalFa, await PublicSite(anonymous, "fa")));
+        Assert.True(JsonNode.DeepEquals(originalEn, await PublicSite(anonymous, "en")));
         using (var stale = await editor.PutAsJsonAsync("/api/admin/content/site/fa", input))
             Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
 
@@ -43,10 +52,17 @@ public sealed class CmsAppearanceSqlTests : IAsyncLifetime
             Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
         var published = await PublicSite(anonymous, "fa");
         Assert.Equal(draft["appearance"]!.ToJsonString(), published["appearance"]!.ToJsonString());
-        var originalWithoutAppearance = originalFa.DeepClone().AsObject(); originalWithoutAppearance.Remove("appearance");
-        var publishedWithoutAppearance = published.DeepClone().AsObject(); publishedWithoutAppearance.Remove("appearance");
-        Assert.Equal(originalWithoutAppearance.ToJsonString(), publishedWithoutAppearance.ToJsonString());
-        Assert.Equal(originalEn.ToJsonString(), (await PublicSite(anonymous, "en")).ToJsonString());
+        Assert.Equal("noto-arabic", published["font"]!.GetValue<string>());
+        var english = await PublicSite(anonymous, "en");
+        Assert.True(JsonNode.DeepEquals(published["appearance"], english["appearance"]));
+        Assert.True(JsonNode.DeepEquals(draft["palette"], published["palette"]));
+        Assert.True(JsonNode.DeepEquals(published["palette"], english["palette"]));
+        Assert.Equal("noto-arabic", (string?)english["font"]);
+        Assert.Equal("/catalog?available=1", (string?)english["nav"]![0]!["href"]);
+        Assert.Equal("/catalog?available=1", (string?)english["hero"]!["actionHref"]);
+        Assert.True(JsonNode.DeepEquals(originalEn["tagline"], english["tagline"]));
+        Assert.True(JsonNode.DeepEquals(originalEn["hero"]!["title"], english["hero"]!["title"]));
+        Assert.True(JsonNode.DeepEquals(originalEn["nav"]![0]!["label"], english["nav"]![1]!["label"]));
 
         document = Document(await Body(await editor.GetAsync("/api/admin/content")), "fa");
         await NoContent(await editor.PostAsJsonAsync("/api/admin/content/site/fa/publish", new {
@@ -67,6 +83,13 @@ public sealed class CmsAppearanceSqlTests : IAsyncLifetime
         anonymous.DefaultRequestHeaders.Add("X-Sayman-Admin", "1");
         var document = Document(await Body(await editor.GetAsync("/api/admin/content")), "fa");
         var content = JsonNode.Parse(document["draftJson"]!.GetValue<string>())!.AsObject();
+        content["palette"] = JsonNode.Parse("""{"sections":{"navigation":{"dark":"url(https://example.test)"}}}""");
+        using (var invalid = await editor.PutAsJsonAsync("/api/admin/content/site/fa", new ContentInput(content, document["version"]!.GetValue<string>())))
+        {
+            Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+            Assert.Equal("invalid_branding", (await invalid.Content.ReadFromJsonAsync<JsonNode>())!["title"]!.GetValue<string>());
+        }
+        content.Remove("palette");
         content["appearance"] = new JsonObject { ["surface"] = "glass", ["css"] = "body{display:none}" };
         var input = new ContentInput(content, document["version"]!.GetValue<string>());
         using (var denied = await support.PutAsJsonAsync("/api/admin/content/site/fa", input))
@@ -93,7 +116,7 @@ public sealed class CmsAppearanceSqlTests : IAsyncLifetime
             var db = scope.ServiceProvider.GetRequiredService<CmsDbContext>();
             var row = await db.Documents.SingleAsync(x => x.Key == "site" && x.Locale == "fa");
             var invalid = JsonNode.Parse(row.DraftJson)!.AsObject();
-            invalid["appearance"] = new JsonObject { ["motion"] = "infinite" };
+            invalid["appearance"] = new JsonObject { ["motion"] = "full", ["motionPreset"] = "url(https://example.test)" };
             row.DraftJson = invalid.ToJsonString();
             await db.SaveChangesAsync();
         }

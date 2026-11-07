@@ -56,23 +56,6 @@
   border-block-start: 1px solid var(--border);
 }
 
-.storefront-design .header .nav-row .nav-credit {
-  height: auto;
-  min-height: 34px;
-  padding-inline: 11px;
-  border-radius: var(--sf-radius-small);
-  background: var(--sf-tint);
-  font-weight: 700;
-}
-
-.storefront-design .header .nav-row .nav-credit:hover {
-  background: var(--sf-tint-strong);
-}
-
-.storefront-design .header .nav-row .nav-credit::after {
-  content: none;
-}
-
 .storefront-design .header .notifications-header {
   color: var(--foreground);
   border-radius: 11px;

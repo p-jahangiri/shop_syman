@@ -29,9 +29,9 @@ const fields = ['sku', 'axes', 'price', 'discount', 'warranty'].map((key, index)
   sortOrder: index,
   visibilityLocked: true,
 }));
-function setup(compact = false) {
+function setup(compact = false, firstPrice = '900719925474099.1') {
   let rows = [
-    { ...model.blankProductVariant('one'), sku: 'DEMO-1', price: '900719925474099.1' },
+    { ...model.blankProductVariant('one'), sku: 'DEMO-1', price: firstPrice },
     { ...model.blankProductVariant('two'), sku: 'DEMO-2', price: '10' },
   ];
   const h = digitalUiHarness(
@@ -111,6 +111,27 @@ test('bulk price preview is exact and cannot apply a negative fixed price', asyn
   assert.deepEqual(
     x.rows().map((r) => r.price),
     ['900719925474099.2', '900719925474099.2'],
+  );
+  x.h.unmount();
+});
+test('setting a bulk price fills empty variants while relative changes require an existing price', async () => {
+  const x = setup(false, '');
+  await x.select();
+  await x.value('۱۲۳٫۴');
+  const operation = x.node('ProductTextField', 'نوع تغییر');
+  const setOperation = operation.props.onChange as (event: unknown) => void;
+  setOperation({ target: { value: 'add' } });
+  await x.h.settle();
+  await x.click('پیش‌نمایش');
+  assert.ok(uiText(x.h.tree()).includes('ابتدا قیمت نامعتبر'));
+  assert.equal(x.rows()[0].price, '');
+  setOperation({ target: { value: 'set' } });
+  await x.h.settle();
+  await x.click('پیش‌نمایش');
+  await x.click('اعمال در فرم');
+  assert.deepEqual(
+    x.rows().map((row) => row.price),
+    ['123.4', '123.4'],
   );
   x.h.unmount();
 });

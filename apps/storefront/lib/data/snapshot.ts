@@ -1,6 +1,8 @@
 import { validProductVideoUrl } from '../catalog/product-video.ts';
 import { usedConditionSchema } from '@sayman/web-shared/lib/catalog/used-condition-contract.ts';
 import { storeIdentitySchema } from '@sayman/web-shared/lib/content/store-identity.ts';
+import { sitePaletteSchema } from '@sayman/web-shared/lib/content/site-palette.ts';
+import { motionPresets } from '@sayman/web-shared/lib/content/appearance.ts';
 import { publicImageUrlSchema } from '@sayman/web-shared/lib/media/public-image-url.ts';
 import { z } from '@sayman/web-shared/lib/config/schema-runtime.ts';
 import type { MenuItem, MoneyRial } from '@sayman/web-shared/lib/shared/types.ts';
@@ -29,7 +31,6 @@ const internalPath = z
   // eslint-disable-next-line no-control-regex -- Reject forbidden control characters at the trust boundary.
   .refine((v) => !v.startsWith('//') && !v.includes('\\') && !/[\x00-\x1f]/.test(v));
 const imagePath = publicImageUrlSchema;
-const color = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 export const homeBlockSchema = z
   .object({
     id: z.string().max(64),
@@ -127,27 +128,26 @@ export const snapshotSchema = z.object({
     nav: z.array(menu).max(50),
     homeBlocks: z.array(homeBlockSchema).max(20).optional(),
     logoUrl: imagePath.optional(),
-    font: z.enum(['vazirmatn', 'system']).optional(),
+    font: z.enum(['vazirmatn', 'noto-arabic', 'system']).optional(),
     appearance: z
       .object({
         surface: z.enum(['glass', 'solid']).optional(),
         density: z.enum(['comfortable', 'compact']).optional(),
         corners: z.enum(['soft', 'rounded']).optional(),
-        motion: z.enum(['subtle', 'none']).optional(),
+        motion: z.enum(['subtle', 'full', 'none']).optional(),
+        motionPreset: z.enum(motionPresets).optional(),
+        motionBanners: z.boolean().optional(),
+        motionCards: z.boolean().optional(),
+        motionSidebar: z.boolean().optional(),
+        cards: z.enum(['classic', 'outline', 'editorial']).optional(),
+        navigation: z.enum(['links', 'pills']).optional(),
         heroLayout: z.enum(['split', 'compact']).optional(),
         stickyHeader: z.boolean().optional(),
         showUsedProducts: z.boolean().optional(),
       })
       .strict()
       .optional(),
-    palette: z
-      .object({
-        primaryLight: color.optional(),
-        primaryDark: color.optional(),
-        heroLight: color.optional(),
-        heroDark: color.optional(),
-      })
-      .optional(),
+    palette: sitePaletteSchema.optional(),
     contact: z
       .object({
         phone: z.string().max(32).optional(),

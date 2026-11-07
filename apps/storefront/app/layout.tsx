@@ -10,6 +10,7 @@ import './globals.css';
 import '../components/catalog/filters.css';
 import '@sayman/web-shared/components/support/ticket-workspace.css';
 import './storefront-design.css';
+import './storefront-motion.css';
 import { PwaProvider } from '@/components/offline/pwa-provider';
 import { LocaleProvider } from '@/components/navigation/locale-provider';
 import { getLocale } from '@/lib/navigation/server-locale';
@@ -20,6 +21,7 @@ import { AuthProvider } from '@/components/auth/auth-provider';
 import { ShopProvider } from '@/components/providers/shop-provider';
 import { Header, Footer, MobileNav, CartDrawer, CompareTray } from '@/components/navigation/shell';
 import { resolveAppearance } from '@sayman/web-shared/lib/content/appearance.ts';
+import { storefrontColorVariables } from '@sayman/web-shared/lib/content/brand-colors.ts';
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const { site } = await getStorefront(locale);
@@ -57,11 +59,8 @@ export default async function RootLayout({
   const palette = snapshot.site.palette;
   const appearance = resolveAppearance(snapshot.site.appearance);
   const branding = {
-    '--shop-primary-light': palette?.primaryLight,
-    '--shop-primary-dark': palette?.primaryDark,
-    '--shop-hero-light': palette?.heroLight,
-    '--shop-hero-dark': palette?.heroDark,
-    '--shop-font': snapshot.site.font === 'system' ? 'system-ui, sans-serif' : undefined,
+    ...storefrontColorVariables('light', palette),
+    ...storefrontColorVariables('dark', palette),
   } as CSSProperties;
   return (
     <html
@@ -72,7 +71,14 @@ export default async function RootLayout({
       data-shop-surface={appearance.surface}
       data-shop-density={appearance.density}
       data-shop-corners={appearance.corners}
+      data-shop-font={snapshot.site.font ?? 'vazirmatn'}
+      data-shop-cards={appearance.cards}
+      data-shop-navigation={appearance.navigation}
       data-shop-motion={appearance.motion}
+      data-shop-motion-preset={appearance.motionPreset}
+      data-shop-motion-banners={String(appearance.motionBanners)}
+      data-shop-motion-cards={String(appearance.motionCards)}
+      data-shop-motion-sidebar={String(appearance.motionSidebar)}
       data-shop-hero={appearance.heroLayout}
       data-shop-sticky={String(appearance.stickyHeader)}
       suppressHydrationWarning
