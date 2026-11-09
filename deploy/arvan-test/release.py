@@ -39,7 +39,8 @@ def validate(payload):
     user, token = payload["registryUser"], payload["registryToken"]
     if not isinstance(user, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}(?:\[bot\])?", user):
         raise ValueError("Invalid registry login name.")
-    if not isinstance(token, str) or not re.fullmatch(r"[A-Za-z0-9_-]{16,1024}", token):
+    # GitHub issues both opaque and JWT-shaped installation tokens. Pass the value to Docker over stdin.
+    if not isinstance(token, str) or not re.fullmatch(r"[A-Za-z0-9_.-]{16,8192}", token):
         raise ValueError("Invalid registry login token.")
     return tag, sha, images, user, token
 
