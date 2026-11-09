@@ -13,6 +13,7 @@ import {
   type TicketCommand,
 } from '@sayman/web-shared/lib/support/ticket-contract.ts';
 import { publicOrigin } from '../seo/seo.ts';
+import { communityReplyInput } from '@sayman/web-shared/lib/support/product-questions.ts';
 import type { OrderProxyEnvironment } from '../orders/order-proxy.ts';
 const headers = {
   'Cache-Control': 'private, no-store',
@@ -70,6 +71,7 @@ export async function proxyTicket(
   const bearer = request.headers.get('Authorization');
   if (!bearer || !/^Bearer [A-Za-z0-9._-]{20,8185}$/.test(bearer))
     return Response.json({ title: 'invalid_credentials' }, { status: 401, headers });
+  const communityReply = path[0] === 'product-questions';
   let body: string | undefined, command: TicketCommand | undefined;
   if (method !== 'GET') {
     try {
@@ -78,25 +80,28 @@ export async function proxyTicket(
       if (Number(request.headers.get('Content-Length')) > 32768)
         return new Response(null, { status: 413, headers });
       const raw = JSON.parse(await bounded(request.body, 32768));
-      command =
-        path[1] === 'commands'
-          ? { id: path[2], kind: 'create', staff: false, body: ticketCreateSchema.parse(raw) }
-          : path[2] === 'replies'
-            ? {
-                id: path[3],
-                kind: 'reply',
-                staff: false,
-                ticketId: path[1],
-                body: ticketReplySchema.parse(raw),
-              }
-            : {
-                id: path[3],
-                kind: 'state',
-                staff: false,
-                ticketId: path[1],
-                body: ticketStateInputSchema.parse(raw),
-              };
-      body = JSON.stringify(command.body);
+      if (communityReply) body = JSON.stringify(communityReplyInput.parse(raw));
+      else {
+        command =
+          path[1] === 'commands'
+            ? { id: path[2], kind: 'create', staff: false, body: ticketCreateSchema.parse(raw) }
+            : path[2] === 'replies'
+              ? {
+                  id: path[3],
+                  kind: 'reply',
+                  staff: false,
+                  ticketId: path[1],
+                  body: ticketReplySchema.parse(raw),
+                }
+              : {
+                  id: path[3],
+                  kind: 'state',
+                  staff: false,
+                  ticketId: path[1],
+                  body: ticketStateInputSchema.parse(raw),
+                };
+        body = JSON.stringify(command.body);
+      }
     } catch {
       return Response.json({ title: 'invalid_ticket' }, { status: 400, headers });
     }
@@ -141,6 +146,8 @@ export async function proxyTicket(
         },
       );
     }
+    if (communityReply && response.status === 204)
+      return new Response(null, { status: 204, headers });
     if (
       response.status !== 200 ||
       !/^application\/json(?:\s*;|$)/i.test(response.headers.get('Content-Type') ?? '')

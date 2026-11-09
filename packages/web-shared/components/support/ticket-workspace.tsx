@@ -40,6 +40,7 @@ import {
   shoppingRequestContent,
   type ShoppingRequest,
 } from './shopping-request-fields';
+import { readProductQuestion } from '../../lib/support/product-questions.ts';
 import { normalizePersian } from '../../lib/shared/commerce';
 export type TicketProductSuggestion = { slug: string; label: string };
 type TicketReplyTools = {
@@ -983,7 +984,10 @@ function TicketConversation({
                             part
                           );
                         })
-                    : message.body}
+                    : message.id === messages.items[0]?.id &&
+                        ticket.subject.startsWith(shoppingMarker['product-question'] + ' ')
+                      ? (readProductQuestion(message.body)?.question ?? message.body)
+                      : message.body}
                 </p>
               </li>
             ))}
@@ -1075,7 +1079,6 @@ function TicketConversation({
           {staff &&
             writable &&
             !failed &&
-            ticket.state !== 'Closed' &&
             ticket.subject.startsWith(shoppingMarker['product-question'] + ' ') &&
             messages?.items[0] &&
             replyTools?.publishQuestion?.(ticket, messages.items[0], () =>

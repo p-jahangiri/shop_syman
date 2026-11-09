@@ -1,0 +1,87 @@
+.product-community-heading {
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin: 0 0 0.25rem;
+  padding-block-end: 0.55rem;
+  border-block-end: 3px solid var(--primary);
+  font-size: clamp(1.15rem, 2vw, 1.4rem);
+}
+.product-community-toolbar,
+.product-community-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
+}
+.product-community-toolbar {
+  justify-content: space-between;
+  padding-block: 0.25rem;
+  border-block-end: 1px solid var(--border);
+}
+.product-community-toolbar small {
+  color: var(--muted);
+}
+.product-community-options button,
+.product-community-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-block-size: 44px;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  color: var(--foreground);
+  background: transparent;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+.product-community-link {
+  padding-inline: 0.1rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.product-community-options button[aria-pressed='true'] {
+  border-color: var(--border);
+  background: var(--sf-panel, var(--surface));
+  box-shadow: inset 0 -2px var(--primary);
+}
+.community-dialog {
+  width: min(100% - 1.5rem, 37rem);
+  max-height: 90dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.community-dialog-context {
+  padding: 0.8rem;
+  margin-block: 0 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--sf-panel, var(--surface));
+  overflow-wrap: anywhere;
+}
+.community-dialog-context:has(.product-answer) {
+  max-height: min(28dvh, 14rem);
+  overflow-y: auto;
+}
+.community-dialog :is(textarea, input:not([type='radio'], [type='file'])) {
+  font-size: max(16px, 1em);
+}
+.community-dialog textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+@media (max-width: 600px) {
+  .modal-content.community-dialog {
+    inset-inline: 0;
+    inset-block: auto 0;
+    transform: none;
+    width: 100%;
+    max-height: 92dvh;
+    margin: 0;
+    border-radius: 1.1rem 1.1rem 0 0;
+    padding-block-end: max(1rem, env(safe-area-inset-bottom));
+  }
+}

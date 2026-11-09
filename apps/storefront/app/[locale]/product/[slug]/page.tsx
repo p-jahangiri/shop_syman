@@ -60,10 +60,16 @@ export default async function ProductPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ variant?: string | string[]; examples?: string | string[] }>;
+  searchParams: Promise<{
+    variant?: string | string[];
+    examples?: string | string[];
+    tab?: string;
+    compose?: string;
+    rating?: string;
+  }>;
 }) {
   const { slug } = await params;
-  const { variant, examples } = await searchParams;
+  const { variant, examples, tab, compose, rating } = await searchParams;
   const [snapshot, product] = await Promise.all([
     serverI18n(),
     getLocale().then((locale) => productBySlug(locale, slug)),
@@ -95,9 +101,19 @@ export default async function ProductPage({
         />
       )}
       <ProductDetail
-        key={`${product.id}:${variant ?? 'default'}`}
+        key={`${product.id}:${variant ?? 'default'}:${tab ?? 'specs'}:${compose ?? 'read'}`}
         product={product}
         initialVariantId={typeof variant === 'string' ? variant : undefined}
+        initialTab={tab === 'reviews' || tab === 'questions' ? tab : undefined}
+        composeReview={tab === 'reviews' && compose === '1'}
+        initialReviewRating={
+          tab === 'reviews' &&
+          compose === '1' &&
+          typeof rating === 'string' &&
+          /^[1-5]$/.test(rating)
+            ? Number(rating)
+            : 0
+        }
         questions={
           <Suspense fallback={null}>
             <ProductQuestions product={product} snapshot={snapshot} examples={examples === '1'} />

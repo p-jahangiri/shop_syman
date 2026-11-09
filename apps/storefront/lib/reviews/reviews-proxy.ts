@@ -4,6 +4,15 @@ import {
   reviewProductId,
   reviewId,
   reviewCursor,
+  helpfulReviewCursor,
+  contributionCursor,
+  contributionSchemas,
+  voteState,
+  voteRevisions,
+  voteInput,
+  voteResult,
+  withdrawInput,
+  withdrawResult,
   reviewResult,
   saveReviewInput,
   reportReviewInput,
@@ -72,6 +81,27 @@ export async function proxyReviews(
 ) {
   const product = path[0] === 'products' && reviewProductId.safeParse(path[1]).success;
   const page = product && path.length === 2 && request.method === 'GET',
+    watch = product && path.length === 3 && path[2] === 'watch' && request.method === 'GET',
+    votes = product && path.length === 3 && path[2] === 'vote-state' && request.method === 'GET',
+    account =
+      path[0] === 'account' &&
+      path.length === 2 &&
+      request.method === 'GET' &&
+      (path[1] === 'pending' || path[1] === 'reviews' || path[1] === 'questions')
+        ? path[1]
+        : null,
+    vote =
+      path.length === 3 &&
+      path[1] === 'votes' &&
+      reviewId.safeParse(path[0]).success &&
+      reviewId.safeParse(path[2]).success &&
+      request.method === 'PUT',
+    withdraw =
+      path.length === 3 &&
+      path[1] === 'withdraw' &&
+      reviewId.safeParse(path[0]).success &&
+      reviewId.safeParse(path[2]).success &&
+      request.method === 'PUT',
     mine = product && path.length === 3 && path[2] === 'mine' && request.method === 'GET',
     photo =
       product &&
@@ -92,9 +122,9 @@ export async function proxyReviews(
       path[1] === 'reports' &&
       reviewId.safeParse(path[2]).success &&
       request.method === 'POST';
-  if (!(page || mine || save || report || photo))
+  if (!(page || watch || mine || save || report || photo || votes || account || vote || withdraw))
     return new Response(null, { status: 404, headers });
-  const anonymous = page || (photo && path.length === 5);
+  const anonymous = page || watch || (photo && path.length === 5);
   const origin = publicOrigin(environment);
   if (environment.SHOP_DATA_MODE !== 'api' || !environment.SHOP_API_URL || !origin)
     return Response.json({ title: 'reviews_unconfigured' }, { status: 503, headers });
@@ -102,23 +132,44 @@ export async function proxyReviews(
   if ((request.method !== 'GET' || supplied) && supplied !== origin)
     return new Response(null, { status: 403, headers });
   try {
-    const params = new URL(request.url).searchParams,
-      cursor = params.get('cursor');
+    const params = new URL(request.url).searchParams;
+    const names = [...params.keys()];
+    const allowed = page
+      ? ['sort', 'cursor']
+      : votes
+        ? ['revisions']
+        : account
+          ? ['locale', 'cursor']
+          : [];
+    if (new Set(names).size !== names.length || names.some((key) => !allowed.includes(key)))
+      throw new Failure(400);
+    const sort = params.get('sort');
+    const cursor = params.get('cursor');
+    const locale = params.get('locale');
+    const revisions = params.get('revisions');
+    if (sort !== null && sort !== 'newest' && sort !== 'helpful') throw new Failure(400);
     if (
-      params.size &&
+      cursor !== null &&
       !(
-        page &&
-        params.size === 1 &&
-        params.getAll('cursor').length === 1 &&
-        reviewCursor.safeParse(cursor).success
-      )
+        sort === 'helpful'
+          ? helpfulReviewCursor
+          : account === 'questions'
+            ? contributionCursor
+            : reviewCursor
+      ).safeParse(cursor).success
     )
       throw new Failure(400);
+    if (
+      account &&
+      ((locale !== 'fa' && locale !== 'en') || (account === 'pending' && cursor !== null))
+    )
+      throw new Failure(400);
+    if (votes && !voteRevisions.safeParse(revisions).success) throw new Failure(400);
     const token = request.headers.get('Authorization');
     if (!anonymous && (!token || !/^Bearer [A-Za-z0-9._-]{20,8185}$/.test(token)))
       return Response.json({ title: 'invalid_credentials' }, { status: 401, headers });
     let body: string | undefined;
-    if (save || report) {
+    if (save || report || vote || withdraw) {
       if (!/^application\/json(?:\s*;|$)/i.test(request.headers.get('Content-Type') ?? ''))
         throw new Failure(400);
       const textLimit = 16_384;
@@ -137,7 +188,9 @@ export async function proxyReviews(
         if (e instanceof Failure) throw e;
         throw new Failure(400);
       }
-      const parsed = (save ? saveReviewInput : reportReviewInput).safeParse(value);
+      const parsed = (
+        save ? saveReviewInput : vote ? voteInput : withdraw ? withdrawInput : reportReviewInput
+      ).safeParse(value);
       if (!parsed.success) throw new Failure(400);
       body = JSON.stringify(parsed.data);
     }
@@ -148,7 +201,7 @@ export async function proxyReviews(
     if (supplied) forwarded.set('Origin', supplied);
     if (token && !anonymous) forwarded.set('Authorization', token);
     const response = await fetcher(
-      `${environment.SHOP_API_URL.replace(/\/$/, '')}/api/reviews/${path.map(encodeURIComponent).join('/')}${cursor ? '?cursor=' + encodeURIComponent(cursor) : ''}`,
+      `${environment.SHOP_API_URL.replace(/\/$/, '')}/api/reviews/${path.map(encodeURIComponent).join('/')}${params.size ? '?' + params.toString() : ''}`,
       {
         method: request.method,
         headers: forwarded,
@@ -156,9 +209,23 @@ export async function proxyReviews(
         credentials: 'omit',
         cache: 'no-store',
         redirect: 'error',
-        signal: AbortSignal.any([request.signal, AbortSignal.timeout(save ? 45_000 : 12_000)]),
+        signal: AbortSignal.any([
+          request.signal,
+          AbortSignal.timeout(save ? 45_000 : watch ? 35_000 : 12_000),
+        ]),
       },
     );
+    if (watch && response.ok) {
+      if (
+        !response.body ||
+        response.status !== 200 ||
+        !/^text\/event-stream(?:;|$)/i.test(response.headers.get('Content-Type') ?? '')
+      )
+        throw new Failure(503);
+      return new Response(response.body, {
+        headers: { ...headers, 'Content-Type': 'text/event-stream', 'X-Accel-Buffering': 'no' },
+      });
+    }
     if (photo && response.ok) {
       const max = 2 * 1024 * 1024;
       if (
@@ -224,6 +291,15 @@ export async function proxyReviews(
         throw new Failure(503);
       return Response.json(v, { headers });
     }
+    if (votes) {
+      const selections = voteState.parse(value);
+      if (Object.keys(selections).some((id) => !revisions?.split(',').includes(id)))
+        throw new Failure(503);
+      return Response.json(selections, { headers });
+    }
+    if (vote) return Response.json(voteResult.parse(value), { headers });
+    if (withdraw) return Response.json(withdrawResult.parse(value), { headers });
+    if (account) return Response.json(contributionSchemas[account].parse(value), { headers });
     const v = reviewResult.parse(value);
     if (
       (save &&

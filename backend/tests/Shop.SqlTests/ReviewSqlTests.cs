@@ -33,7 +33,60 @@ public sealed class ReviewSqlTests(SqlFixture fixture):IClassFixture<SqlFixture>
     private static async Task<JsonNode> Moderate(HttpClient admin,JsonNode review,string action,string? commandId=null,string? reply=null)=>await Body(await admin.PutAsJsonAsync($"/api/admin/reviews/{review["id"]}/commands/{commandId??Id()}",new ModerateReviewInput(review["version"]!.GetValue<string>(),review["content"]!["revisionId"]!.GetValue<string>(),action,"دلیل نمونهٔ بررسی",reply)));
 
     [Fact]
-    public async Task PhotoRequiresApprovalForCurrentRevisionAndRemainsPrivateForItsOwnerAndModerators()
+    public async Task HelpfulVotesRankCurrentRevisionsAndWithdrawalIsOwnerOnlyAndReplaySafe()
+    {
+        var author = await Customer();
+        var other = await Customer();
+        var reader = await Customer();
+        using var a = author.Client;
+        using var b = other.Client;
+        using var c = reader.Client;
+        using var guest = fixture.Factory.CreateClient();
+        var path = "/api/reviews/products/" + await Product();
+        var first = (await Body(await a.PutAsJsonAsync(path + "/commands/" + Id(), Input())))["review"]!;
+        var second = (await Body(await b.PutAsJsonAsync(path + "/commands/" + Id(), Input())))["review"]!;
+        var id = first["id"]!.GetValue<string>();
+        var revision = first["content"]!["revisionId"]!.GetValue<string>();
+        var vote = $"/api/reviews/{id}/votes/";
+        using (var denied = await a.PutAsJsonAsync(vote + Id(), new ReviewVoteInput(revision, 1)))
+            Assert.Equal(HttpStatusCode.BadRequest, denied.StatusCode);
+        var command = Id();
+        var pair = await Task.WhenAll(b.PutAsJsonAsync(vote + Id(), new ReviewVoteInput(revision, 1)),
+            c.PutAsJsonAsync(vote + command, new ReviewVoteInput(revision, 1)));
+        foreach (var response in pair) await Body(response);
+        Assert.True((await Body(await c.PutAsJsonAsync(vote + command, new ReviewVoteInput(revision, 1))))["replayed"]!.GetValue<bool>());
+        var changed = await Body(await c.PutAsJsonAsync(vote + Id(), new ReviewVoteInput(revision, -1)));
+        Assert.Equal(1, changed["likes"]!.GetValue<int>());
+        Assert.Equal(1, changed["dislikes"]!.GetValue<int>());
+        var cleared = await Body(await c.PutAsJsonAsync(vote + Id(), new ReviewVoteInput(revision, 0)));
+        Assert.Equal(0, cleared["dislikes"]!.GetValue<int>());
+        Assert.Equal(1, (await Body(await b.GetAsync(path + "/vote-state?revisions=" + revision)))[revision]!.GetValue<int>());
+        var newest = (await Body(await guest.GetAsync(path)))["items"]!;
+        var helpful = (await Body(await guest.GetAsync(path + "?sort=helpful")))["items"]!;
+        Assert.Equal(second["id"]!.GetValue<string>(), newest[0]!["id"]!.GetValue<string>());
+        Assert.Equal(id, helpful[0]!["id"]!.GetValue<string>());
+        Assert.DoesNotContain(other.Owner, helpful.ToJsonString(), StringComparison.Ordinal);
+        var account = await Body(await a.GetAsync("/api/reviews/account/reviews?locale=fa"));
+        Assert.Equal(1, Assert.Single(account["items"]!.AsArray())!["likes"]!.GetValue<int>());
+        var withdraw = $"/api/reviews/{id}/withdraw/";
+        var version = first["version"]!.GetValue<string>();
+        using (var foreign = await b.PutAsJsonAsync(withdraw + Id(), new WithdrawReviewInput(version)))
+            Assert.Equal(HttpStatusCode.NotFound, foreign.StatusCode);
+        var removed = withdraw + Id();
+        await Body(await a.PutAsJsonAsync(removed, new WithdrawReviewInput(version)));
+        Assert.True((await Body(await a.PutAsJsonAsync(removed, new WithdrawReviewInput(version))))["replayed"]!.GetValue<bool>());
+        Assert.Empty((await Body(await a.GetAsync("/api/reviews/account/reviews?locale=fa")))["items"]!.AsArray());
+        Assert.Single((await Body(await guest.GetAsync(path + "?sort=helpful")))["items"]!.AsArray());
+        var savedAgain = (await Body(await a.PutAsJsonAsync(path + "/commands/" + Id(), Input())))["review"]!;
+        Assert.NotEqual(revision, savedAgain["content"]!["revisionId"]!.GetValue<string>());
+        using var staleVote = await c.PutAsJsonAsync(vote + Id(), new ReviewVoteInput(revision, 1));
+        Assert.Equal(HttpStatusCode.Conflict, staleVote.StatusCode);
+        await using var scope = fixture.Factory.Services.CreateAsyncScope();
+        Assert.False(scope.ServiceProvider.GetRequiredService<ReviewsDbContext>().Database.HasPendingModelChanges());
+    }
+
+    [Fact]
+    public async Task CleanPhotoPublishesWithCurrentRevisionAndHidingRevokesPublicAccess()
     {
         var person=await Customer();using var account=person.Client;
         var other=await Customer();using var otherClient=other.Client;
@@ -60,25 +113,22 @@ public sealed class ReviewSqlTests(SqlFixture fixture):IClassFixture<SqlFixture>
         Assert.True(replay["replayed"]!.GetValue<bool>());
         Assert.Equal(1,scanner.Calls);
         var photoPath=PhotoPath(saved);
-        await AssertNotFound(anonymous,photoPath);
+        Assert.Equal("Approved", saved["state"]!.GetValue<string>());
         await AssertNotFound(otherClient,$"{photoPath}/mine");
         var ownerBytes=await AssertImage(customer,$"{photoPath}/mine");
         var staffPath=$"/api/admin/reviews/{saved["id"]}/photos/{saved["content"]!["revisionId"]}";
         Assert.Equal(ownerBytes,await AssertImage(admin,staffPath));
         using(var forbidden=await account.GetAsync(staffPath))Assert.Equal(HttpStatusCode.Forbidden,forbidden.StatusCode);
-        var published=(await Moderate(admin,saved,"Approve"))["review"]!;
         Assert.Equal(ownerBytes,await AssertImage(anonymous,photoPath));
         var page=await Body(await anonymous.GetAsync(basePath));
         Assert.True(Assert.Single(page["items"]!.AsArray())!["hasPhoto"]!.GetValue<bool>());
-        var kept=(await Body(await customer.PutAsJsonAsync($"{basePath}/commands/{Id()}",Input(published["version"]!.GetValue<string>()) with{Photo=new("keep")})))["review"]!;
+        var kept=(await Body(await customer.PutAsJsonAsync($"{basePath}/commands/{Id()}",Input(saved["version"]!.GetValue<string>()) with{Photo=new("keep")})))["review"]!;
         var newPhotoPath=PhotoPath(kept);
         await AssertNotFound(anonymous,photoPath);
         await AssertNotFound(customer,$"{photoPath}/mine");
-        await AssertNotFound(anonymous,newPhotoPath);
         Assert.Equal(ownerBytes,await AssertImage(customer,$"{newPhotoPath}/mine"));
-        var republished=(await Moderate(admin,kept,"Approve"))["review"]!;
         Assert.Equal(ownerBytes,await AssertImage(anonymous,newPhotoPath));
-        var hidden=(await Moderate(admin,republished,"Hide"))["review"]!;
+        var hidden=(await Moderate(admin,kept,"Hide"))["review"]!;
         await AssertNotFound(anonymous,newPhotoPath);
         var removed=(await Body(await customer.PutAsJsonAsync($"{basePath}/commands/{Id()}",Input(hidden["version"]!.GetValue<string>()) with{Photo=new("remove")})))["review"]!;
         Assert.Null(removed["hasPhoto"]);
@@ -95,15 +145,13 @@ public sealed class ReviewSqlTests(SqlFixture fixture):IClassFixture<SqlFixture>
     [Fact]
     public async Task DevelopmentReviewsNeverCountAsVerifiedAndAreHiddenOutsideDevelopment()
     {
-        var product=await Product();using var admin=await Administrator();
+        var product=await Product();
         await using var scope=fixture.Factory.Services.CreateAsyncScope();
         var services=scope.ServiceProvider;
         var db=services.GetRequiredService<ReviewsDbContext>();
         var demoOwner=ReviewService.DemoOwnerPrefix+Id();
         var saved=await services.GetRequiredService<ReviewService>().SaveAsync(demoOwner,product,Id(),Input(),CancellationToken.None);
         Assert.True(saved.Review!.IsDemo);
-        var row=System.Text.Json.JsonSerializer.SerializeToNode(saved.Review,new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
-        await Moderate(admin,row,"Approve");
         var development=await services.GetRequiredService<ReviewService>().PublicAsync(product,null,CancellationToken.None);
         Assert.True(Assert.Single(development.Items).IsDemo);
         Assert.False(development.Items[0].VerifiedBuyer);
@@ -146,6 +194,9 @@ public sealed class ReviewSqlTests(SqlFixture fixture):IClassFixture<SqlFixture>
 
     private sealed class ReviewTestScanner:IImageScanner
     {
+        // Explicit opt-in for exercising the real local scanner with the same API/SQL scenario.
+        private readonly IImageScanner? actual = Environment.GetEnvironmentVariable("SHOP_REVIEW_SCAN_LOCAL") == "1"
+            ? new ClamAvScanner(new("127.0.0.1", 13310)) : null;
         public bool Configured=>true;
         public int Calls {get;private set;}
         public Task ScanAsync(ReadOnlyMemory<byte> input,CancellationToken ct)
@@ -153,24 +204,24 @@ public sealed class ReviewSqlTests(SqlFixture fixture):IClassFixture<SqlFixture>
             ct.ThrowIfCancellationRequested();
             Assert.NotEmpty(input.ToArray());
             Calls++;
-            return Task.CompletedTask;
+            return actual?.ScanAsync(input,ct) ?? Task.CompletedTask;
         }
     }
     [Fact]
-    public async Task PendingApprovalReplyReportEditAndHideRespectRevisionAndDoNotExposeOwner()
+    public async Task ImmediatePublicationReplyReportEditAndHideRespectRevisionAndDoNotExposeOwner()
     {
         var person=await Customer();using var c=person.Client;using var admin=await Administrator();using var anonymous=fixture.Factory.CreateClient();var product=await Product();var command=Id();var input=Input();
         var empty=await Body(await c.GetAsync($"/api/reviews/products/{product}/mine"),"own-empty");Assert.True(empty.AsObject().ContainsKey("review"));Assert.Null(empty["review"]);
-        var saved=await Body(await c.PutAsJsonAsync($"/api/reviews/products/{product}/commands/{command}",input),"save-pending");var row=saved["review"]!;Assert.Equal("Pending",row["state"]!.GetValue<string>());
+        var saved=await Body(await c.PutAsJsonAsync($"/api/reviews/products/{product}/commands/{command}",input),"save-published");var row=saved["review"]!;Assert.Equal("Approved",row["state"]!.GetValue<string>());
         var replay=await Body(await c.PutAsJsonAsync($"/api/reviews/products/{product}/commands/{command}",input),"save-replay");Assert.True(replay["replayed"]!.GetValue<bool>());Assert.Equal(row.ToJsonString(),replay["review"]!.ToJsonString());
         using(var mismatch=await c.PutAsJsonAsync($"/api/reviews/products/{product}/commands/{command}",input with{Rating=1}))Assert.Equal(HttpStatusCode.Conflict,mismatch.StatusCode);
-        var pending=await Body(await anonymous.GetAsync($"/api/reviews/products/{product}"),"public-empty");Assert.Empty(pending["items"]!.AsArray());Assert.All(pending["ratingCounts"]!.AsArray(),v=>Assert.Equal(0,v!.GetValue<int>()));Assert.True(pending.AsObject().ContainsKey("nextCursor"));
-        row=(await Moderate(admin,row,"Approve"))["review"]!;Assert.Equal("Approved",row["state"]!.GetValue<string>());row=(await Moderate(admin,row,"Reply",reply:"پاسخ عمومی فروشگاه"))["review"]!;
+        var initial=await Body(await anonymous.GetAsync($"/api/reviews/products/{product}"),"public-first");Assert.Single(initial["items"]!.AsArray());Assert.Equal(1,initial["ratingCounts"]![3]!.GetValue<int>());Assert.True(initial.AsObject().ContainsKey("nextCursor"));
+        row=(await Moderate(admin,row,"Reply",reply:"پاسخ عمومی فروشگاه"))["review"]!;
         var published=await Body(await anonymous.GetAsync($"/api/reviews/products/{product}"),"public-approved");var shown=Assert.Single(published["items"]!.AsArray())!;Assert.False(shown["verifiedBuyer"]!.GetValue<bool>());Assert.Equal(input.Body,shown["content"]!["body"]!.GetValue<string>());Assert.DoesNotContain(person.Owner,published.ToJsonString(),StringComparison.Ordinal);Assert.DoesNotContain("Private account name",published.ToJsonString(),StringComparison.Ordinal);Assert.Equal("پاسخ عمومی فروشگاه",shown["reply"]!.GetValue<string>());
         var reportCommand=Id();var report=new ReportReviewInput(shown["content"]!["revisionId"]!.GetValue<string>(),"personal_data");await Body(await c.PostAsJsonAsync($"/api/reviews/{row["id"]}/reports/{reportCommand}",report));var reportReplay=await Body(await c.PostAsJsonAsync($"/api/reviews/{row["id"]}/reports/{reportCommand}",report),"report-replay");Assert.True(reportReplay["replayed"]!.GetValue<bool>());Assert.Null(reportReplay["review"]);
         row=(await Body(await c.GetAsync($"/api/reviews/products/{product}/mine"),"own-reported"))["review"]!;Assert.Equal(1,row["reportCount"]!.GetValue<int>());var old=row.DeepClone();row=(await Body(await c.PutAsJsonAsync($"/api/reviews/products/{product}/commands/{Id()}",Input(row["version"]!.GetValue<string>()) with{Locale="en",Body="Edited original English review."})))["review"]!;
-        var afterEdit=await Body(await anonymous.GetAsync($"/api/reviews/products/{product}"),"public-after-edit");Assert.Empty(afterEdit["items"]!.AsArray());Assert.Null(row["reply"]);using(var stale=await admin.PutAsJsonAsync($"/api/admin/reviews/{row["id"]}/commands/{Id()}",new ModerateReviewInput(old["version"]!.GetValue<string>(),old["content"]!["revisionId"]!.GetValue<string>(),"Approve","",null)))Assert.Equal(HttpStatusCode.Conflict,stale.StatusCode);
-        row=(await Moderate(admin,row,"Approve"))["review"]!;row=(await Moderate(admin,row,"Hide"))["review"]!;Assert.Equal("Hidden",row["state"]!.GetValue<string>());Assert.Empty((await Body(await anonymous.GetAsync($"/api/reviews/products/{product}")))["items"]!.AsArray());
+        var afterEdit=await Body(await anonymous.GetAsync($"/api/reviews/products/{product}"),"public-after-edit");Assert.Equal("Edited original English review.",Assert.Single(afterEdit["items"]!.AsArray())!["content"]!["body"]!.GetValue<string>());Assert.Null(row["reply"]);using(var stale=await admin.PutAsJsonAsync($"/api/admin/reviews/{row["id"]}/commands/{Id()}",new ModerateReviewInput(old["version"]!.GetValue<string>(),old["content"]!["revisionId"]!.GetValue<string>(),"Approve","",null)))Assert.Equal(HttpStatusCode.Conflict,stale.StatusCode);
+        row=(await Moderate(admin,row,"Hide"))["review"]!;Assert.Equal("Hidden",row["state"]!.GetValue<string>());Assert.Empty((await Body(await anonymous.GetAsync($"/api/reviews/products/{product}")))["items"]!.AsArray());
         await using var final=fixture.Factory.Services.CreateAsyncScope();var db=final.ServiceProvider.GetRequiredService<ReviewsDbContext>();Assert.Equal(2,await db.Revisions.CountAsync(r=>r.ReviewId==row["id"]!.GetValue<string>()));Assert.Equal(1,await db.Reports.CountAsync(r=>r.ReviewId==row["id"]!.GetValue<string>()));Assert.True(await final.ServiceProvider.GetRequiredService<Shop.Modules.Identity.IdentityDbContext>().Audit.AnyAsync(a=>a.Resource.StartsWith("/api/admin/reviews/")));
     }
     [Fact]
@@ -202,11 +253,37 @@ public sealed class ReviewSqlTests(SqlFixture fixture):IClassFixture<SqlFixture>
             if(scenario.Item3 is null)order.Lines.Add(new(){VariantId=Id(),ProductId=product,Quantity=1,UnitPriceRial=1,LineTotalRial=1});else order.LinesV2.Add(new(){LineId=Id(),LineKind="ordinary",VariantId=Id(),ProductId=product,Quantity=1,UnitPriceRial=1,LineTotalRial=1,PriceVersion="AAAAAAAAAAE="});db.Orders.Add(order);
         }
         await db.SaveChangesAsync();var facts=await sp.GetRequiredService<IReviewPurchaseReader>().VerifiedAsync(keys.ToArray(),CancellationToken.None);Assert.Equal(2,facts.Count);Assert.Contains(keys[0],facts);Assert.Contains(keys[1],facts);Assert.DoesNotContain(keys[2],facts);Assert.DoesNotContain(keys[3],facts);Assert.DoesNotContain(keys[4],facts);
+        var purchases = sp.GetRequiredService<IReviewPurchaseReader>();
+        Assert.Empty(await purchases.RecentDeliveredProductsAsync(keys[0].OwnerId, CancellationToken.None));
+        Assert.Equal(new[] { keys[1].ProductId }, await purchases.RecentDeliveredProductsAsync(keys[1].OwnerId, CancellationToken.None));
+        Assert.Empty(await purchases.RecentDeliveredProductsAsync(keys[3].OwnerId, CancellationToken.None));
+
     }
     [Fact]
-    public async Task AuditFailureRollsBackApprovalReceiptAndEventBeforeSameCommandRetry()
+    public async Task ReviewWatchEmitsNewStampWhenAnotherClientPublishes()
     {
-        var person=await Customer();using var c=person.Client;using var admin=await Administrator();var product=await Product();var saved=await Body(await c.PutAsJsonAsync($"/api/reviews/products/{product}/commands/{Id()}",Input()));var row=saved["review"]!;var reviewId=row["id"]!.GetValue<string>();var command=Id();var path=$"/api/admin/reviews/{reviewId}/commands/{command}";var input=new ModerateReviewInput(row["version"]!.GetValue<string>(),row["content"]!["revisionId"]!.GetValue<string>(),"Approve","",null);
+        var person = await Customer();
+        using var customer = person.Client;
+        using var visitor = fixture.Factory.CreateClient();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        var path = $"/api/reviews/products/{await Product()}";
+        using var watch = await visitor.GetAsync($"{path}/watch", HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+        Assert.Equal("text/event-stream", watch.Content.Headers.ContentType!.MediaType);
+        Assert.True(watch.Headers.CacheControl!.NoStore);
+        using var lines = new StreamReader(await watch.Content.ReadAsStreamAsync(timeout.Token));
+        Assert.Equal("retry: 3000", await lines.ReadLineAsync(timeout.Token));
+        var before = await lines.ReadLineAsync(timeout.Token);
+        Assert.Equal("", await lines.ReadLineAsync(timeout.Token));
+        await Body(await customer.PutAsJsonAsync($"{path}/commands/{Id()}", Input(), timeout.Token));
+        var after = await lines.ReadLineAsync(timeout.Token);
+        Assert.StartsWith("data: ", after);
+        Assert.NotEqual(before, after);
+    }
+
+    [Fact]
+    public async Task AuditFailureRollsBackHideReceiptAndEventBeforeSameCommandRetry()
+    {
+        var person=await Customer();using var c=person.Client;using var admin=await Administrator();var product=await Product();var saved=await Body(await c.PutAsJsonAsync($"/api/reviews/products/{product}/commands/{Id()}",Input()));var row=saved["review"]!;var reviewId=row["id"]!.GetValue<string>();var command=Id();var path=$"/api/admin/reviews/{reviewId}/commands/{command}";var input=new ModerateReviewInput(row["version"]!.GetValue<string>(),row["content"]!["revisionId"]!.GetValue<string>(),"Hide","Test moderation reason",null);
         await using(var scope=fixture.Factory.Services.CreateAsyncScope()){
             var identity=scope.ServiceProvider.GetRequiredService<Shop.Modules.Identity.IdentityDbContext>();Assert.StartsWith("SaymanTest_",identity.Database.GetDbConnection().Database);Assert.Matches("^/api/admin/reviews/[a-f0-9]{32}/commands/[a-f0-9]{32}$",path);
             var guardedSql="ALTER TABLE [identity].[Audit] WITH NOCHECK ADD CONSTRAINT [CK_ReviewAuditFailure] CHECK ([Resource]<>N'"+path+"')";await identity.Database.ExecuteSqlRawAsync(guardedSql);
@@ -214,8 +291,8 @@ public sealed class ReviewSqlTests(SqlFixture fixture):IClassFixture<SqlFixture>
         try{using var failure=await admin.PutAsJsonAsync(path,input);Assert.Equal(HttpStatusCode.Conflict,failure.StatusCode);}
         finally{await using var scope=fixture.Factory.Services.CreateAsyncScope();await scope.ServiceProvider.GetRequiredService<Shop.Modules.Identity.IdentityDbContext>().Database.ExecuteSqlRawAsync("ALTER TABLE [identity].[Audit] DROP CONSTRAINT [CK_ReviewAuditFailure]");}
         await using(var scope=fixture.Factory.Services.CreateAsyncScope()){
-            var db=scope.ServiceProvider.GetRequiredService<ReviewsDbContext>();Assert.Equal("Pending",(await db.Reviews.AsNoTracking().SingleAsync(r=>r.Id==reviewId)).State);Assert.False(await db.Commands.AnyAsync(r=>r.CommandId==command));Assert.Single(await db.Events.Where(r=>r.ReviewId==reviewId).ToArrayAsync());
+            var db=scope.ServiceProvider.GetRequiredService<ReviewsDbContext>();Assert.Equal("Approved",(await db.Reviews.AsNoTracking().SingleAsync(r=>r.Id==reviewId)).State);Assert.False(await db.Commands.AnyAsync(r=>r.CommandId==command));Assert.Single(await db.Events.Where(r=>r.ReviewId==reviewId).ToArrayAsync());
         }
-        var success=await Body(await admin.PutAsJsonAsync(path,input));Assert.False(success["replayed"]!.GetValue<bool>());Assert.Equal("Approved",success["review"]!["state"]!.GetValue<string>());
+        var success=await Body(await admin.PutAsJsonAsync(path,input));Assert.False(success["replayed"]!.GetValue<bool>());Assert.Equal("Hidden",success["review"]!["state"]!.GetValue<string>());
     }
 }

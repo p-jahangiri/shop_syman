@@ -283,6 +283,7 @@ builder.Services.AddRateLimiter(o => {
     o.AddPolicy("private_file_upload",context=>RateLimitPartition.GetFixedWindowLimiter(context.User.FindFirstValue("sub")??"unknown",_=>new(){PermitLimit=10,Window=TimeSpan.FromMinutes(1),QueueLimit=0}));
     o.AddPolicy("support", context => RateLimitPartition.GetFixedWindowLimiter(context.User.FindFirstValue("sub") ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new() { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     o.AddPolicy("reviews",context=>RateLimitPartition.GetFixedWindowLimiter(context.User.FindFirstValue("sub")??context.Connection.RemoteIpAddress?.ToString()??"unknown",_=>new(){PermitLimit=60,Window=TimeSpan.FromMinutes(1),QueueLimit=0}));
+    o.AddPolicy("review-watch", _ => RateLimitPartition.GetConcurrencyLimiter("public-review-streams", _ => new() { PermitLimit = 64, QueueLimit = 0 }));
     o.AddPolicy("orders", context => RateLimitPartition.GetFixedWindowLimiter(context.User.FindFirstValue("sub") ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new() { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     o.AddPolicy("cart", context => RateLimitPartition.GetFixedWindowLimiter(context.User.FindFirstValue("sub") ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new() { PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     o.AddPolicy("media-upload",context=>RateLimitPartition.GetFixedWindowLimiter(context.User.FindFirstValue("sub")??context.Connection.RemoteIpAddress?.ToString()??"unknown",_=>new(){PermitLimit=10,Window=TimeSpan.FromMinutes(1),QueueLimit=0}));
@@ -422,6 +423,22 @@ if (args.Contains("--migrate-review-photos")) {
     Console.WriteLine("Review photos migration verified. No seed or catalog repair was performed.");
     return;
 }
+if (args.Contains("--migrate-review-participation")) {
+    if (!app.Environment.IsDevelopment() || args.Length != 1)
+        throw new InvalidOperationException("The scoped local review participation migration requires Development and no other command.");
+    await using var scope = app.Services.CreateAsyncScope();
+    var database = scope.ServiceProvider.GetRequiredService<ReviewsDbContext>().Database;
+    string[] expected = ["20261024214419_ProductReviews", "20261103173000_ReviewPhotos", "20261110090000_ReviewParticipation"];
+    var applied = (await database.GetAppliedMigrationsAsync()).ToArray();
+    if (!database.GetMigrations().SequenceEqual(expected, StringComparer.Ordinal)
+        || !applied.SequenceEqual(expected.Take(2), StringComparer.Ordinal))
+        throw new InvalidOperationException("The review participation migration requires the exact supported local Reviews history.");
+    await database.MigrateAsync();
+    if (!(await database.GetAppliedMigrationsAsync()).SequenceEqual(expected, StringComparer.Ordinal))
+        throw new InvalidOperationException("The Reviews migration history could not be verified.");
+    Console.WriteLine("Review participation migration verified. No seed or catalog repair was performed.");
+    return;
+}
 if (args.Contains("--migrate") || args.Contains("--seed-dev")) {
     if (args.Contains("--seed-dev") && !app.Environment.IsDevelopment()) throw new InvalidOperationException("Development seed is unavailable outside Development.");
     await using var scope = app.Services.CreateAsyncScope();
@@ -504,7 +521,7 @@ app.MapAddressBook(origins);
 app.MapWishlist(origins);
 app.MapReviews(origins);
 app.MapPublicSupportContent();
-app.MapProductHelp();
+app.MapProductHelp(origins);
 app.MapNews();
 app.MapCmsPages(adminOrigins);
 app.MapCmsBlogPosts(adminOrigins);

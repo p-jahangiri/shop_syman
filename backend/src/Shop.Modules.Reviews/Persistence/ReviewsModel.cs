@@ -12,6 +12,7 @@ public sealed class ProductReview
     public string? Reply{get;set;}
     public DateTimeOffset CreatedAt{get;set;}
     public DateTimeOffset ChangedAt{get;set;}
+    public bool IsWithdrawn{get;set;}
     public byte[] Version{get;set;}=[];
 }
 public sealed class ReviewRevision
@@ -57,6 +58,14 @@ public sealed class ReviewReport
     public string Reason{get;set;}="";
     public DateTimeOffset At{get;set;}
 }
+public sealed class ReviewVote
+{
+    public string ReviewId { get; set; } = "";
+    public string RevisionId { get; set; } = "";
+    public string VoterId { get; set; } = "";
+    public int Value { get; set; }
+    public byte[] Version { get; set; } = [];
+}
 public sealed class ReviewsDbContext(DbContextOptions<ReviewsDbContext> options):DbContext(options)
 {
     public DbSet<ProductReview> Reviews=>Set<ProductReview>();
@@ -65,6 +74,7 @@ public sealed class ReviewsDbContext(DbContextOptions<ReviewsDbContext> options)
     public DbSet<ReviewCommand> Commands=>Set<ReviewCommand>();
     public DbSet<ReviewEvent> Events=>Set<ReviewEvent>();
     public DbSet<ReviewReport> Reports=>Set<ReviewReport>();
+    public DbSet<ReviewVote> Votes => Set<ReviewVote>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.HasDefaultSchema("reviews");
@@ -73,6 +83,7 @@ public sealed class ReviewsDbContext(DbContextOptions<ReviewsDbContext> options)
             e.HasKey(x=>x.Id);e.Property(x=>x.Id).HasMaxLength(32);e.Property(x=>x.Sequence).UseIdentityColumn();e.HasIndex(x=>x.Sequence).IsUnique();
             e.Property(x=>x.ProductId).HasMaxLength(64);e.Property(x=>x.OwnerId).HasMaxLength(64);e.HasIndex(x=>new{x.OwnerId,x.ProductId}).IsUnique();
             e.Property(x=>x.State).HasMaxLength(16);e.Property(x=>x.CurrentRevisionId).HasMaxLength(32);e.Property(x=>x.Reply).HasMaxLength(2000);e.Property(x=>x.Version).IsRowVersion();
+            e.Property(x => x.IsWithdrawn).HasDefaultValue(false);
             e.HasIndex(x=>new{x.ProductId,x.State,x.Sequence});e.HasIndex(x=>new{x.State,x.Sequence});
         });
         b.Entity<ReviewRevision>(e=>{
@@ -88,6 +99,18 @@ public sealed class ReviewsDbContext(DbContextOptions<ReviewsDbContext> options)
         });
         b.Entity<ReviewCommand>(e=>{e.ToTable("Commands",t=>t.HasCheckConstraint("CK_Review_CommandJson","ISJSON([ResultJson])=1"));e.HasKey(x=>new{x.ActorId,x.CommandId});e.Property(x=>x.ActorId).HasMaxLength(64);e.Property(x=>x.CommandId).HasMaxLength(32);e.Property(x=>x.PayloadHash).HasMaxLength(64).IsUnicode(false);e.Property(x=>x.ResultJson).HasMaxLength(16000);});
         b.Entity<ReviewEvent>(e=>{e.ToTable("Events");e.HasKey(x=>x.Id);e.Property(x=>x.Id).UseIdentityColumn();e.Property(x=>x.ReviewId).HasMaxLength(32);e.Property(x=>x.RevisionId).HasMaxLength(32);e.Property(x=>x.ActorId).HasMaxLength(64);e.Property(x=>x.Action).HasMaxLength(16);e.Property(x=>x.Reason).HasMaxLength(400);e.HasOne<ProductReview>().WithMany().HasForeignKey(x=>x.ReviewId).OnDelete(DeleteBehavior.Restrict);e.HasIndex(x=>new{x.ReviewId,x.Id});});
+        b.Entity<ReviewVote>(e =>
+        {
+            e.ToTable("Votes", t => t.HasCheckConstraint("CK_Review_VoteValue", "[Value] IN (-1,0,1)"));
+            e.HasKey(x => new { x.ReviewId, x.RevisionId, x.VoterId });
+            e.Property(x => x.ReviewId).HasMaxLength(32);
+            e.Property(x => x.RevisionId).HasMaxLength(32);
+            e.Property(x => x.VoterId).HasMaxLength(64);
+            e.Property(x => x.Version).IsRowVersion();
+            e.HasIndex(x => new { x.ReviewId, x.RevisionId, x.Value });
+            e.HasOne<ReviewRevision>().WithMany().HasForeignKey(x => new { x.ReviewId, x.RevisionId })
+                .HasPrincipalKey(x => new { x.ReviewId, x.Id }).OnDelete(DeleteBehavior.Restrict);
+        });
         b.Entity<ReviewReport>(e=>{e.ToTable("Reports",t=>t.HasCheckConstraint("CK_Review_ReportReason","[Reason] IN ('spam','abuse','personal_data','unrelated')"));e.HasKey(x=>new{x.ReviewId,x.RevisionId,x.OwnerId});e.Property(x=>x.ReviewId).HasMaxLength(32);e.Property(x=>x.RevisionId).HasMaxLength(32);e.Property(x=>x.OwnerId).HasMaxLength(64);e.Property(x=>x.Reason).HasMaxLength(16);e.HasOne<ReviewRevision>().WithMany().HasForeignKey(x=>new{x.ReviewId,x.RevisionId}).HasPrincipalKey(x=>new{x.ReviewId,x.Id}).OnDelete(DeleteBehavior.Restrict);});
     }
 }

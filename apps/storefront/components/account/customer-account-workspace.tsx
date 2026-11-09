@@ -178,6 +178,11 @@ export function CustomerAccountWorkspace({
     { href: '/orders', icon: Package, title: text('سفارش‌های من', 'My orders') },
     { href: '/devices', icon: Smartphone, title: text('دستگاه‌های من', 'My devices') },
     {
+      href: '/account/contributions',
+      icon: CircleHelp,
+      title: text('دیدگاه‌ها و پرسش‌های من', 'My reviews and questions'),
+    },
+    {
       href: '/purchase-requests',
       icon: CircleHelp,
       title: text('درخواست‌های خرید', 'Purchase requests'),

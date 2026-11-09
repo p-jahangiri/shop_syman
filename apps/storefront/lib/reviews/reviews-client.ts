@@ -5,6 +5,16 @@ import {
   reviewProductId,
   reviewId,
   reviewResult,
+  voteResult,
+  voteState,
+  voteInput,
+  voteRevisions,
+  withdrawInput,
+  withdrawResult,
+  contributionSchemas,
+  type ContributionSection,
+  type ContributionPage,
+  type VoteValue,
   saveReviewInput,
   reportReviewInput,
   type SaveReviewInput,
@@ -23,12 +33,20 @@ async function json(fetcher: CartFetch, path: string, init: RequestInit) {
   }
   return r.json();
 }
-export async function listReviews(productId: string, cursor: string | null, signal?: AbortSignal) {
+export async function listReviews(
+  productId: string,
+  cursor: string | null,
+  signal?: AbortSignal,
+  sort: 'newest' | 'helpful' = 'newest',
+) {
   reviewProductId.parse(productId);
+  const query = new URLSearchParams();
+  if (cursor) query.set('cursor', cursor);
+  if (sort === 'helpful') query.set('sort', sort);
   const p = reviewPage.parse(
     await json(
       fetch,
-      `/api/reviews/products/${encodeURIComponent(productId)}${cursor ? '?cursor=' + encodeURIComponent(cursor) : ''}`,
+      `/api/reviews/products/${encodeURIComponent(productId)}${query.size ? '?' + query.toString() : ''}`,
       { cache: 'no-store', credentials: 'omit', signal },
     ),
   );
@@ -85,4 +103,67 @@ export async function reportReview(
   );
   if (!p.reported || p.review) throw new CartError('reviews_unavailable', 503);
   return p;
+}
+
+export async function readVotes(
+  fetcher: CartFetch,
+  productId: string,
+  revisions: string[],
+  signal?: AbortSignal,
+) {
+  const id = reviewProductId.parse(productId);
+  const query = new URLSearchParams({ revisions: voteRevisions.parse(revisions.join(',')) });
+  return voteState.parse(
+    await json(fetcher, `/api/reviews/products/${id}/vote-state?${query}`, { signal }),
+  );
+}
+
+export async function voteReview(
+  fetcher: CartFetch,
+  id: string,
+  command: string,
+  revisionId: string,
+  value: VoteValue,
+  signal?: AbortSignal,
+) {
+  return voteResult.parse(
+    await json(fetcher, `/api/reviews/${reviewId.parse(id)}/votes/${reviewId.parse(command)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(voteInput.parse({ revisionId, value })),
+      signal,
+    }),
+  );
+}
+
+export async function withdrawReview(
+  fetcher: CartFetch,
+  id: string,
+  command: string,
+  version: string,
+  signal?: AbortSignal,
+) {
+  return withdrawResult.parse(
+    await json(fetcher, `/api/reviews/${reviewId.parse(id)}/withdraw/${reviewId.parse(command)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(withdrawInput.parse({ version })),
+      signal,
+    }),
+  );
+}
+
+export async function listContributions<T extends ContributionSection>(
+  fetcher: CartFetch,
+  section: T,
+  locale: 'fa' | 'en',
+  cursor: string | null,
+  signal?: AbortSignal,
+): Promise<ContributionPage<T>> {
+  const query = new URLSearchParams({ locale });
+  if (cursor) query.set('cursor', cursor);
+  const schema = contributionSchemas[section];
+  return schema.parse(
+    await json(fetcher, `/api/reviews/account/${section}?${query}`, { signal }),
+  ) as ContributionPage<T>;
 }

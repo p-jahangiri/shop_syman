@@ -37,6 +37,7 @@ export function Button({
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   asChild?: boolean;
   variant?: 'primary' | 'outline' | 'ghost';
+  ref?: RefObject<HTMLButtonElement | null>;
 }) {
   useI18n();
   useStorefront();

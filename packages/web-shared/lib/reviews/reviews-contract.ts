@@ -1,4 +1,5 @@
 import { z } from '../config/schema-runtime.ts';
+import { productQuestionReply } from '../support/product-questions.ts';
 export const reviewId = z.string().regex(/^[a-f0-9]{32}$/);
 export const reviewProductId = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
 const version = z.string().regex(/^[A-Za-z0-9+/]{11}=$/);
@@ -30,6 +31,8 @@ export const publicReview = z
     productId: reviewProductId,
     content: reviewContent,
     verifiedBuyer: z.boolean(),
+    likes: z.number().int().nonnegative().optional(),
+    dislikes: z.number().int().nonnegative().optional(),
     reply: text(1, 2000).nullable(),
     hasPhoto: z.literal(true).optional(),
     isDemo: z.literal(true).optional(),
@@ -52,12 +55,19 @@ export const reviewCursor = z
   .string()
   .regex(/^[1-9][0-9]{0,18}$/)
   .refine((v) => BigInt(v) <= 9223372036854775807n);
+export const helpfulReviewCursor = z
+  .string()
+  .regex(/^(?:0|[1-9][0-9]{0,9})\.[1-9][0-9]{0,18}$/)
+  .refine((v) => {
+    const [likes, sequence] = v.split('.');
+    return Number(likes) <= 2147483647 && reviewCursor.safeParse(sequence).success;
+  });
 export const reviewPage = z
   .object({
     schemaVersion: z.literal(1),
     items: z.array(publicReview).max(20),
     ratingCounts: z.array(z.number().int().nonnegative()).length(5),
-    nextCursor: reviewCursor.nullable(),
+    nextCursor: z.union([reviewCursor, helpfulReviewCursor]).nullable(),
   })
   .strict()
   .refine((v) => new Set(v.items.map((r) => r.id)).size === v.items.length);
@@ -110,3 +120,80 @@ export type PrivateReview = z.infer<typeof privateReview>;
 export type ReviewPage = z.infer<typeof reviewPage>;
 export type SaveReviewInput = z.infer<typeof saveReviewInput>;
 export type ReviewResult = z.infer<typeof reviewResult>;
+
+export const voteValue = z.union([z.literal(-1), z.literal(0), z.literal(1)]);
+export const voteInput = z.strictObject({ revisionId: reviewId, value: voteValue });
+export const voteResult = z.strictObject({
+  value: voteValue,
+  likes: z.number().int().nonnegative(),
+  dislikes: z.number().int().nonnegative(),
+  replayed: z.boolean(),
+});
+export const voteState = z.record(reviewId, voteValue);
+export const voteRevisions = z
+  .string()
+  .regex(/^[a-f0-9]{32}(?:,[a-f0-9]{32}){0,19}$/)
+  .refine((raw) => {
+    const ids = raw.split(',');
+    return new Set(ids).size === ids.length;
+  });
+export const withdrawInput = z.strictObject({ version });
+export const withdrawResult = z.strictObject({ withdrawn: z.literal(true), replayed: z.boolean() });
+
+const accountProduct = z.object({
+  id: reviewProductId,
+  slug: z
+    .string()
+    .max(150)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  name: z.string().min(1).max(300),
+  image: z.string().max(2048),
+});
+export const contributionCursor = z
+  .string()
+  .max(180)
+  .regex(/^[A-Za-z0-9+/]+={0,2}$/);
+export const accountPendingReviews = z.object({ items: z.array(accountProduct).max(64) });
+export const accountReviews = z.object({
+  items: z
+    .array(
+      z.object({
+        review: privateReview,
+        likes: z.number().int().nonnegative(),
+        dislikes: z.number().int().nonnegative(),
+        product: accountProduct.nullish(),
+      }),
+    )
+    .max(12),
+  nextCursor: reviewCursor.nullish(),
+});
+export const accountQuestions = z.object({
+  items: z
+    .array(
+      z.object({
+        id: reviewId,
+        name: z.string().max(120),
+        createdAt: z.iso.datetime({ offset: true }),
+        state: z.enum(['Open', 'WaitingCustomer', 'Closed']),
+        question: z.string().max(4000),
+        product: accountProduct.nullish(),
+        published: z.boolean(),
+        replies: z.array(productQuestionReply).max(4),
+        replyCount: z.number().int().min(0).max(40),
+        privateReply: z.string().max(4000).nullish(),
+      }),
+    )
+    .max(12),
+  nextCursor: contributionCursor.nullish(),
+});
+export const contributionSchemas = {
+  pending: accountPendingReviews,
+  reviews: accountReviews,
+  questions: accountQuestions,
+};
+export type ContributionSection = keyof typeof contributionSchemas;
+export type ContributionPage<T extends ContributionSection> = ReturnType<
+  (typeof contributionSchemas)[T]['parse']
+>;
+export type AccountProduct = z.infer<typeof accountProduct>;
+export type VoteValue = z.infer<typeof voteValue>;

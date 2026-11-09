@@ -81,6 +81,7 @@ export function TicketsPage({
                   key={ticket.id}
                   ticket={ticket}
                   first={first}
+                  viewerId={viewerId}
                   refresh={refresh}
                 />
               )

@@ -14,7 +14,9 @@ export function isCustomerTicketPath(value: string, method = 'GET') {
     url.search ||
     !(
       (method === 'POST' &&
-        new RegExp(`^(tickets/commands/${id}|tickets/${id}/replies/${id})$`).test(path)) ||
+        new RegExp(
+          `^(tickets/commands/${id}|tickets/${id}/replies/${id}|product-questions/(fa|en)/[A-Za-z0-9_-]{1,64}/${id}/replies/${id})$`,
+        ).test(path)) ||
       (method === 'PUT' && new RegExp(`^tickets/${id}/state/${id}$`).test(path))
     )
   )

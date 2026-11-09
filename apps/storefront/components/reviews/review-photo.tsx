@@ -74,8 +74,8 @@ export function ReviewPhotoInput({ locale, file, path, fetcher, onFile, remove }
         <strong>{text('عکس کالا', 'Product photo')}</strong>
         <small id={id}>
           {text(
-            'اختیاری · یک تصویر JPG، PNG یا WebP تا ۲ مگابایت. عکس بعد از تأیید همراه دیدگاه منتشر می‌شود.',
-            'Optional · one JPG, PNG or WebP up to 2 MB. Photos appear with your review after moderation.',
+            'اختیاری · یک تصویر JPG، PNG یا WebP تا ۲ مگابایت. عکس پس از اسکن موفق همراه دیدگاه نمایش داده می‌شود.',
+            'Optional · one JPG, PNG or WebP up to 2 MB. Photos appear with your review after a successful safety scan.',
           )}
         </small>
       </div>

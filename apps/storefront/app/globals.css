@@ -4777,6 +4777,8 @@ textarea::placeholder {
   .product-gallery {
     grid-column: 1;
     grid-row: 1;
+    position: relative;
+    top: auto;
     padding-bottom: 15px;
   }
   .product-gallery .gallery-main {

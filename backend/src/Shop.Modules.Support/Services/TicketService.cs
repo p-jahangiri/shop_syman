@@ -11,7 +11,7 @@ public sealed partial class TicketService(SupportDbContext db, ITicketProtection
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { MaxDepth = 16 };
     private static BusinessException Missing() => new("not_found", "Support record not found.");
     private static BusinessException Conflict() => new("ticket_version_conflict", "Ticket changed or its current state does not allow this command.");
-    public async Task<TicketPage> PageAsync(string actor, bool staff, string? state, string? cursor, CancellationToken ct, string? ticketId = null)
+    public async Task<TicketPage> PageAsync(string actor, bool staff, string? state, string? cursor, CancellationToken ct, string? ticketId = null, int pageSize = 50)
     {
         actor = TicketRules.Actor(actor);
         state = TicketRules.State(state);
@@ -22,14 +22,15 @@ public sealed partial class TicketService(SupportDbContext db, ITicketProtection
             ticketId = TicketRules.Id(ticketId);
         }
 
-        var scope = $"tickets|{(staff ? "support" : actor)}|{state}";
+        if (pageSize != 50 && (staff || pageSize != 12 || state is not null)) throw TicketRules.Invalid();
+        var scope = $"tickets|{(staff ? "support" : actor)}|{state}" + (pageSize == 50 ? "" : "|product-questions");
         var before = TicketRules.Cursor(cursor, scope, false);
         var query = db.Tickets.AsNoTracking().Where(x => x.Sequence < before);
         if (!staff) query = query.Where(x => x.OwnerId == actor);
         if (state is not null) query = query.Where(x => x.State == state);
         if (ticketId is not null) query = query.Where(x => x.Id == ticketId);
-        var rows = await query.OrderByDescending(x => x.Sequence).Take(51).ToArrayAsync(ct);
-        var selected = rows.Take(50).ToArray();
+        var rows = await query.OrderByDescending(x => x.Sequence).Take(pageSize+1).ToArrayAsync(ct);
+        var selected = rows.Take(pageSize).ToArray();
 
         TicketQueueCounts? queueCounts = null;
         if (staff && cursor is null)
@@ -40,7 +41,7 @@ public sealed partial class TicketService(SupportDbContext db, ITicketProtection
             queueCounts = new(counts.GetValueOrDefault("Open"), counts.GetValueOrDefault("WaitingCustomer"), counts.GetValueOrDefault("Closed"));
         }
 
-        return new(1, state, selected.Select(Summary).ToArray(), rows.Length > 50 ? TicketRules.Cursor(selected[^1].Sequence, scope) : null, queueCounts);
+        return new(1, state, selected.Select(Summary).ToArray(), rows.Length > pageSize ? TicketRules.Cursor(selected[^1].Sequence, scope) : null, queueCounts);
     }
     public async Task<TicketDetail> DetailAsync(string actor, bool staff, string ticketId, CancellationToken ct) => new(1, Summary(await VisibleAsync(actor, staff, ticketId, false, ct)));
     public async Task<TicketMessagePage> MessagesAsync(string actor, bool staff, string ticketId, string? cursor, CancellationToken ct)
@@ -55,9 +56,27 @@ public sealed partial class TicketService(SupportDbContext db, ITicketProtection
         }).ToArray();
         return new(1, ticketId, items, rows.Length > 50 ? TicketRules.Cursor(selected[^1].Sequence, scope) : null);
     }
+    public async Task<(string Question, string? Reply)> ProductQuestionMessagesAsync(string actor, string id, CancellationToken ct)
+    {
+        await VisibleAsync(actor, false, id, false, ct);
+        var messages = db.Messages.AsNoTracking().Where(m => m.TicketId == id);
+        var first = await messages.Where(m => m.Author == "customer").OrderBy(m => m.Sequence).FirstAsync(ct);
+        var reply = await messages.Where(m => m.Author == "support").OrderByDescending(m => m.Sequence).FirstOrDefaultAsync(ct);
+        return (protection.Unprotect(id, "message", first.Id, first.ProtectedBody),
+            reply is null ? null : protection.Unprotect(id, "message", reply.Id, reply.ProtectedBody));
+    }
+
     public Task<TicketCommandResult> CreateAsync(string actor, string commandId, CreateTicketInput input, CancellationToken ct)
     {
         actor = TicketRules.Actor(actor); input = input with { Subject = TicketRules.Text(input.Subject, 1, 120, true), Body = TicketRules.Text(input.Body, 1, 4000), Locale = TicketRules.Locale(input.Locale) };
+        if (input.Subject.StartsWith("[product-question] ", StringComparison.Ordinal))
+        {
+            var parts = input.Body.Split("\n\n", 2, StringSplitOptions.None);
+            var question = parts.Length == 2 ? parts[1] : "";
+            if (question.StartsWith("[public-name] ", StringComparison.Ordinal))
+                question = question.Split("\n\n", 2, StringSplitOptions.None).ElementAtOrDefault(1) ?? "";
+            if (question.Trim().Length is < 10 or > 240) throw TicketRules.Invalid();
+        }
         return CommandAsync(actor, false, commandId, null, new { Operation = "create", Input = input }, async () => {
             await CapacityAsync(actor, ct); var now = time.GetUtcNow().ToUniversalTime(); var row = new SupportTicket { OwnerId = actor, Locale = input.Locale, MessageCount = 1, CreatedAt = now, ChangedAt = now };
             row.ProtectedSubject = protection.Protect(row.Id, "subject", row.Id, input.Subject); db.Tickets.Add(row); var message = Message(row, actor, false, input.Body, input.Locale, now); Event(row, actor, "Created", now);

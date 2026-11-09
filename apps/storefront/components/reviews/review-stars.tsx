@@ -18,7 +18,17 @@ export function ReviewStars({ rating, locale }: { rating: number; locale: 'fa' |
   );
 }
 
-export function ReviewStarInput({ initial, locale }: { initial: number; locale: 'fa' | 'en' }) {
+export function ReviewStarInput({
+  initial,
+  locale,
+  onChange,
+  name = 'rating',
+}: {
+  initial: number;
+  locale: 'fa' | 'en';
+  onChange?: (rating: number) => void;
+  name?: string;
+}) {
   const [rating, setRating] = useState(initial);
   const hint = useId();
   return (
@@ -31,11 +41,14 @@ export function ReviewStarInput({ initial, locale }: { initial: number; locale: 
             <label key={n} data-filled={n <= rating}>
               <input
                 type="radio"
-                name="rating"
+                name={name}
                 value={n}
                 required
                 checked={rating === n}
-                onChange={() => setRating(n)}
+                onChange={() => {
+                  setRating(n);
+                  onChange?.(n);
+                }}
                 aria-label={locale === 'fa' ? `${score} از ۵` : `${score} out of 5`}
               />
               <Star aria-hidden="true" size={23} />

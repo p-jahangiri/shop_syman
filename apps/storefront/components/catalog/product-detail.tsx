@@ -94,11 +94,17 @@ function ProductVideoItem({
 export function ProductDetail({
   product,
   initialVariantId,
+  initialTab,
+  composeReview,
+  initialReviewRating,
   relatedProducts,
   questions,
 }: {
   product: Product;
   initialVariantId?: string;
+  initialTab?: 'reviews' | 'questions';
+  composeReview?: boolean;
+  initialReviewRating?: number;
   relatedProducts?: ReactNode;
   questions?: ReactNode;
 }) {
@@ -120,7 +126,7 @@ export function ProductDetail({
         product.variants[0].id,
     ),
     [count, setCount] = useState(1),
-    [tab, setTab] = useState('specs'),
+    [tab, setTab] = useState<string>(initialTab ?? 'specs'),
     [gallery, setGallery] = useState({ key: '', view: 0, zoom: false });
   const { add, wishlist, toggleWish, compare, toggleCompare, notify, cartBusy, loadError, ready } =
     useShop();
@@ -675,7 +681,13 @@ export function ProductDetail({
             ) : tab === 'questions' ? (
               questions
             ) : (
-              <ProductReviews productId={product.id} />
+              <ProductReviews
+                productId={product.id}
+                productName={t(product.name)}
+                slug={product.slug}
+                compose={composeReview}
+                initialRating={initialReviewRating}
+              />
             ),
           )}
         </div>

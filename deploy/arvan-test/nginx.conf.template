@@ -17,6 +17,7 @@ map "$request_method:$uri" $shop_browse_allowed {
     ~^(GET|HEAD):/(?:webui/assets|products|media/catalog|media/videos|pwa|magazine)/[-a-zA-Z0-9_./]+$ 1;
     ~^(GET|HEAD):/(webui/image|favicon-32\.png|favicon-192\.png|favicon\.ico|robots\.txt)$ 1;
     ~^GET:/api/catalog/(fa|en)/filters$ 1;
+    ~^GET:/api/reviews/products/[-a-zA-Z0-9_]+(/watch|/photos/[0-9a-f]+/[0-9a-f]+)?$ 1;
     ~^POST:/api/catalog/(fa|en)/(search|lookup|facet-values)$ 1;
 }
 map "$request_method:$uri" $shop_browse_access_path {

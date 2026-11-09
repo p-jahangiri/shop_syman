@@ -40,6 +40,11 @@ namespace Shop.Api.Migrations.Reviews
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<bool>("IsWithdrawn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("OwnerId")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -268,6 +273,18 @@ namespace Shop.Api.Migrations.Reviews
                         });
                 });
 
+            modelBuilder.Entity("Shop.Modules.Reviews.ReviewVote", b =>
+                {
+                    b.Property<string>("ReviewId").HasMaxLength(32).HasColumnType("nvarchar(32)");
+                    b.Property<string>("RevisionId").HasMaxLength(32).HasColumnType("nvarchar(32)");
+                    b.Property<string>("VoterId").HasMaxLength(64).HasColumnType("nvarchar(64)");
+                    b.Property<int>("Value").HasColumnType("int");
+                    b.Property<byte[]>("Version").IsConcurrencyToken().IsRequired().ValueGeneratedOnAddOrUpdate().HasColumnType("rowversion");
+                    b.HasKey("ReviewId", "RevisionId", "VoterId");
+                    b.HasIndex("ReviewId", "RevisionId", "Value");
+                    b.ToTable("Votes", "reviews", t => t.HasCheckConstraint("CK_Review_VoteValue", "[Value] IN (-1,0,1)"));
+                });
+
             modelBuilder.Entity("Shop.Modules.Reviews.ReviewEvent", b =>
                 {
                     b.HasOne("Shop.Modules.Reviews.ProductReview", null)
@@ -299,6 +316,15 @@ namespace Shop.Api.Migrations.Reviews
                         .WithMany()
                         .HasForeignKey("PhotoId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+            modelBuilder.Entity("Shop.Modules.Reviews.ReviewVote", b =>
+                {
+                    b.HasOne("Shop.Modules.Reviews.ReviewRevision", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewId", "RevisionId")
+                        .HasPrincipalKey("ReviewId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

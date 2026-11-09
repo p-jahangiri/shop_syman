@@ -125,6 +125,7 @@ export async function ProductQuestions({
     ...(help?.publishedAnswers ?? []),
     ...questions.map((row) => ({ ...row, demo: Boolean(demo || help?.questionsIsDemo) })),
   ].filter((row) => {
+    if ('id' in row && row.id) return true;
     const key = normalizePersian(row.question);
     if (seen.has(key)) return false;
     seen.add(key);
@@ -133,6 +134,7 @@ export async function ProductQuestions({
   return (
     <ProductQuestionBoard
       answers={answers}
+      productId={product.id}
       name={product.name}
       slug={product.slug}
       connected={snapshot.dataSource === 'api'}

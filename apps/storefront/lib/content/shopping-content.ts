@@ -1,6 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import { z } from '@sayman/web-shared/lib/config/schema-runtime.ts';
+import { publishedProductQuestion } from '@sayman/web-shared/lib/support/product-questions.ts';
 
 const question = z.object({ question: z.string().max(240), answer: z.string().max(1200) });
 const help = z.object({
@@ -10,10 +11,7 @@ const help = z.object({
   accessoriesIsDemo: z.boolean(),
   accessoryIds: z.array(z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)).max(8),
   questions: z.array(question).max(10),
-  publishedAnswers: z
-    .array(question.extend({ publishedAt: z.iso.datetime({ offset: true }) }))
-    .max(50)
-    .default([]),
+  publishedAnswers: z.array(publishedProductQuestion).max(50).default([]),
 });
 const news = z.object({
   development: z.boolean(),

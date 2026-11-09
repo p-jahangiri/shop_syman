@@ -16,7 +16,7 @@ public sealed record ModerateReviewInput(string Version,string RevisionId,string
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ReportReviewInput(string RevisionId,string Reason);
 public sealed record ReviewText(string RevisionId,string Locale,int Rating,string DisplayName,string Title,string Body,DateTimeOffset At);
-public sealed record PublicReview(string Id,string ProductId,ReviewText Content,bool VerifiedBuyer,[property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? Reply,[property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)]bool HasPhoto=false,[property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)]bool IsDemo=false);
+public sealed record PublicReview(string Id,string ProductId,ReviewText Content,bool VerifiedBuyer,[property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? Reply,[property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)]bool HasPhoto=false,[property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)]bool IsDemo=false,[property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)]int Likes=0,[property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)]int Dislikes=0);
 public sealed record PrivateReview(string Id,string ProductId,string State,string Version,ReviewText Content,[property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? Reply,int ReportCount,[property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)]bool HasPhoto=false,[property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)]bool IsDemo=false);
 public sealed record ReviewPage(int SchemaVersion,PublicReview[] Items,int[] RatingCounts,[property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? NextCursor);
 public sealed record AdminReviewPage(int SchemaVersion,PrivateReview[] Items,[property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? NextCursor);
@@ -34,25 +34,65 @@ public static class ReviewRules
     public static long Cursor(string? value){if(value is null)return long.MaxValue;if(value.Length>19||!long.TryParse(value,NumberStyles.None,CultureInfo.InvariantCulture,out var n)||n<=0||n.ToString(CultureInfo.InvariantCulture)!=value)throw Invalid();return n;}
 }
 
-public sealed class ReviewService(ReviewsDbContext db,IReviewProductReader catalog,IReviewPurchaseReader purchases,TimeProvider time,IReviewPhotoProcessor photoProcessor,ReviewOptions options)
+public sealed partial class ReviewService(ReviewsDbContext db,IReviewProductReader catalog,IReviewPurchaseReader purchases,TimeProvider time,IReviewPhotoProcessor photoProcessor,ReviewOptions options)
 {
     private static readonly JsonSerializerOptions Json=new(JsonSerializerDefaults.Web);
     public const string DemoOwnerPrefix="demo-review:";
     private static bool IsDemo(string owner)=>owner.StartsWith(DemoOwnerPrefix,StringComparison.Ordinal);
-    private IQueryable<ProductReview> VisibleReviews()=>options.IncludeDevelopmentExamples?db.Reviews:db.Reviews.Where(r=>!r.OwnerId.StartsWith(DemoOwnerPrefix));
-    public async Task<ReviewPage> PublicAsync(string productId,string? cursor,CancellationToken ct)
+    private IQueryable<ProductReview> VisibleReviews()=>db.Reviews.Where(r=>!r.IsWithdrawn && (options.IncludeDevelopmentExamples || !r.OwnerId.StartsWith(DemoOwnerPrefix)));
+    public async Task<string?> PublicChangeStampAsync(string productId, CancellationToken ct)
     {
-        productId=ReviewRules.ProductId(productId);var before=ReviewRules.Cursor(cursor);
-        if(!await catalog.IsPublishedAsync(productId,ct))throw new BusinessException("not_found","Product is not published.");
-        var q=VisibleReviews().AsNoTracking().Where(r=>r.ProductId==productId&&r.State=="Approved");
-        var rows=await q.Where(r=>r.Sequence<before).OrderByDescending(r=>r.Sequence).Take(21).ToArrayAsync(ct);var selected=rows.Take(20).ToArray();
-        var revisions=await RevisionsAsync(selected,ct);
-        var facts=await purchases.VerifiedAsync(selected.Where(r=>!IsDemo(r.OwnerId)).Select(r=>new ReviewPurchaseKey(r.OwnerId,r.ProductId)).Distinct().ToArray(),ct);
-        var counts=await (from r in q join v in db.Revisions.AsNoTracking() on new{ReviewId=r.Id,RevisionId=r.CurrentRevisionId} equals new{v.ReviewId,RevisionId=v.Id} group v by v.Rating into g select new{Rating=g.Key,Count=g.Count()}).ToArrayAsync(ct);
-        var ids=selected.Select(r=>r.Id).ToArray();var fresh=await db.Reviews.AsNoTracking().Where(r=>ids.Contains(r.Id)).ToArrayAsync(ct);
-        if(fresh.Length!=selected.Length||selected.Any(r=>!fresh.Any(f=>f.Id==r.Id&&f.State=="Approved"&&f.CurrentRevisionId==r.CurrentRevisionId&&f.Version.SequenceEqual(r.Version)))||!await catalog.IsPublishedAsync(productId,ct))throw new BusinessException("reviews_unavailable","Review publication changed while reading. Retry the read.");
-        var items=selected.Select(r=>new PublicReview(r.Id,r.ProductId,Content(revisions[r.CurrentRevisionId]),facts.Contains(new(r.OwnerId,r.ProductId)),r.Reply,revisions[r.CurrentRevisionId].PhotoId is not null,IsDemo(r.OwnerId))).ToArray();
-        return new(1,items,Enumerable.Range(1,5).Select(n=>counts.SingleOrDefault(x=>x.Rating==n)?.Count??0).ToArray(),rows.Length>20?selected[^1].Sequence.ToString(CultureInfo.InvariantCulture):null);
+        productId = ReviewRules.ProductId(productId);
+        if (!await catalog.IsPublishedAsync(productId, ct)) return null;
+        var q = db.Reviews.AsNoTracking().Where(r => r.ProductId == productId
+            && (options.IncludeDevelopmentExamples || !r.OwnerId.StartsWith(DemoOwnerPrefix)));
+        var latest = await q.Where(r => r.IsWithdrawn || r.State == "Approved" || r.State == "Hidden")
+            .OrderByDescending(r => r.Version).Select(r => r.Version).FirstOrDefaultAsync(ct);
+        var vote = await (from r in q
+            where !r.IsWithdrawn && r.State == "Approved"
+            join v in db.Votes.AsNoTracking() on new { ReviewId = r.Id, RevisionId = r.CurrentRevisionId }
+                equals new { v.ReviewId, v.RevisionId }
+            orderby v.Version descending select v.Version).FirstOrDefaultAsync(ct);
+        return latest is null ? "empty" : Convert.ToHexString(latest) + (vote is null ? "" : "-" + Convert.ToHexString(vote));
+    }
+
+    public async Task<ReviewPage> PublicAsync(string productId, string? cursor, CancellationToken ct, string? sort = null)
+    {
+        productId = ReviewRules.ProductId(productId);
+        var (before, likesBefore) = ReadPublicCursor(sort, cursor);
+        if (!await catalog.IsPublishedAsync(productId, ct))
+            throw new BusinessException("not_found", "Product is not published.");
+        var q = VisibleReviews().AsNoTracking().Where(r => r.ProductId == productId && r.State == "Approved");
+        var ranked = q.Select(r => new {
+            Row = r,
+            Likes = db.Votes.Count(v => v.ReviewId == r.Id && v.RevisionId == r.CurrentRevisionId && v.Value == 1),
+            Dislikes = db.Votes.Count(v => v.ReviewId == r.Id && v.RevisionId == r.CurrentRevisionId && v.Value == -1)
+        });
+        var rows = sort == "helpful"
+            ? await ranked.Where(x => x.Likes < likesBefore || x.Likes == likesBefore && x.Row.Sequence < before)
+                .OrderByDescending(x => x.Likes).ThenByDescending(x => x.Row.Sequence).Take(21).ToArrayAsync(ct)
+            : await ranked.Where(x => x.Row.Sequence < before).OrderByDescending(x => x.Row.Sequence).Take(21).ToArrayAsync(ct);
+        var selected = rows.Take(20).Select(x => x.Row).ToArray();
+        var revisions = await RevisionsAsync(selected, ct);
+        var facts = await purchases.VerifiedAsync(selected.Where(r => !IsDemo(r.OwnerId))
+            .Select(r => new ReviewPurchaseKey(r.OwnerId, r.ProductId)).Distinct().ToArray(), ct);
+        var counts = await (from r in q join v in db.Revisions.AsNoTracking()
+            on new { ReviewId = r.Id, RevisionId = r.CurrentRevisionId } equals new { v.ReviewId, RevisionId = v.Id }
+            group v by v.Rating into g select new { Rating = g.Key, Count = g.Count() }).ToArrayAsync(ct);
+        var ids = selected.Select(r => r.Id).ToArray();
+        var fresh = await q.Where(r => ids.Contains(r.Id)).ToArrayAsync(ct);
+        if (fresh.Length != selected.Length || selected.Any(r => !fresh.Any(f => f.Id == r.Id && f.CurrentRevisionId == r.CurrentRevisionId
+                && f.Version.SequenceEqual(r.Version))) || !await catalog.IsPublishedAsync(productId, ct))
+            throw new BusinessException("reviews_unavailable", "Review publication changed while reading. Retry the read.");
+        var items = rows.Take(20).Select(x => {
+            var r = x.Row;
+            return new PublicReview(r.Id, r.ProductId, Content(revisions[r.CurrentRevisionId]),
+                facts.Contains(new(r.OwnerId,r.ProductId)), r.Reply, revisions[r.CurrentRevisionId].PhotoId is not null,
+                IsDemo(r.OwnerId), x.Likes, x.Dislikes);
+        }).ToArray();
+        var next = rows.Length > 20 ? rows[19].Row.Sequence.ToString(CultureInfo.InvariantCulture) : null;
+        if (next is not null && sort == "helpful") next = $"{rows[19].Likes.ToString(CultureInfo.InvariantCulture)}.{next}";
+        return new(1, items, Enumerable.Range(1,5).Select(n => counts.SingleOrDefault(x => x.Rating == n)?.Count ?? 0).ToArray(), next);
     }
     public async Task<PrivateReview?> OwnAsync(string owner,string productId,CancellationToken ct)
     {
@@ -99,7 +139,10 @@ public sealed class ReviewService(ReviewsDbContext db,IReviewProductReader catal
         return CommandAsync(owner,commandId,new{Action="save",ProductId=productId,Input=input},async()=>{
             if(!await catalog.IsPublishedAsync(productId,ct))throw new BusinessException("not_found","Product is not published.");
             var row=await db.Reviews.SingleOrDefaultAsync(r=>r.OwnerId==owner&&r.ProductId==productId,ct);var now=time.GetUtcNow();
+            var publish = row is null || row.State == "Approved";
+            var retainPhoto = row?.IsWithdrawn != true;
             if(row is null){if(input.Version is not null)throw Conflict();row=new(){OwnerId=owner,ProductId=productId,CreatedAt=now};db.Reviews.Add(row);}
+            else if (row.IsWithdrawn) { if (input.Version is not null) throw Conflict(); row.IsWithdrawn = false; }
             else Match(row,input.Version);
             string? photoId=null;
             if(photoInput is not null)
@@ -108,10 +151,10 @@ public sealed class ReviewService(ReviewsDbContext db,IReviewProductReader catal
                 if(!ReviewPhotos.IsWebp(webp))throw new BusinessException("reviews_unavailable","Review photo is unavailable.");
                 var photo=new ReviewPhoto{Webp=webp};db.Photos.Add(photo);photoId=photo.Id;
             }
-            else if(input.Photo?.Action!="remove"&&row.CurrentRevisionId.Length>0)
+            else if(retainPhoto&&input.Photo?.Action!="remove"&&row.CurrentRevisionId.Length>0)
                 photoId=await db.Revisions.Where(v=>v.Id==row.CurrentRevisionId&&v.ReviewId==row.Id).Select(v=>v.PhotoId).SingleAsync(ct);
             var revision=new ReviewRevision{ReviewId=row.Id,Locale=input.Locale,Rating=input.Rating,DisplayName=input.DisplayName,Title=input.Title,Body=input.Body,At=now,PhotoId=photoId};db.Revisions.Add(revision);
-            row.CurrentRevisionId=revision.Id;row.State="Pending";row.Reply=null;row.ChangedAt=now;Event(row,owner,"Submitted","");
+            row.CurrentRevisionId=revision.Id;row.State=publish?"Approved":"Pending";row.Reply=null;row.ChangedAt=now;Event(row,owner,"Submitted","");
             await db.SaveChangesAsync(ct);return new(1,false,await PrivateAsync(row,ct),false);
         },ct);
     }
@@ -139,7 +182,10 @@ public sealed class ReviewService(ReviewsDbContext db,IReviewProductReader catal
             await db.SaveChangesAsync(ct);return new(1,false,null,true);
         },ct);
     }
-    private async Task<ReviewResult> CommandAsync(string actor,string commandId,object input,Func<Task<ReviewResult>> work,CancellationToken ct)
+    private Task<ReviewResult> CommandAsync(string actor,string commandId,object input,Func<Task<ReviewResult>> work,CancellationToken ct)
+        => CommandAsync(actor, commandId, input, work, result => result with { Replayed = true }, ct);
+
+    private async Task<T> CommandAsync<T>(string actor,string commandId,object input,Func<Task<T>> work,Func<T,T> replay,CancellationToken ct) where T : class
     {
         ReviewRules.Id(commandId);if(string.IsNullOrEmpty(actor)||actor.Length>64)throw ReviewRules.Invalid();
         var hash=Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(input,Json))));
@@ -150,7 +196,7 @@ public sealed class ReviewService(ReviewsDbContext db,IReviewProductReader catal
             if(Convert.ToInt32(await command.ExecuteScalarAsync(ct),CultureInfo.InvariantCulture)<0)throw Conflict();
         }
         var previous=await db.Commands.FromSqlInterpolated($"SELECT * FROM [reviews].[Commands] WITH (READCOMMITTEDLOCK) WHERE [ActorId]={actor} AND [CommandId]={commandId}").AsNoTracking().SingleOrDefaultAsync(ct);
-        if(previous is not null){if(previous.PayloadHash!=hash)throw new BusinessException("review_idempotency_conflict","This command id was already used with different details.");return (JsonSerializer.Deserialize<ReviewResult>(previous.ResultJson,Json)??throw new InvalidOperationException("Invalid review receipt.")) with{Replayed=true};}
+        if(previous is not null){if(previous.PayloadHash!=hash)throw new BusinessException("review_idempotency_conflict","This command id was already used with different details.");return replay(JsonSerializer.Deserialize<T>(previous.ResultJson,Json)??throw new InvalidOperationException("Invalid review receipt."));}
         var result=await work();db.Commands.Add(new(){ActorId=actor,CommandId=commandId,PayloadHash=hash,ResultJson=JsonSerializer.Serialize(result,Json),At=time.GetUtcNow()});await db.SaveChangesAsync(ct);if(owned is not null)await owned.CommitAsync(ct);return result;
     }
     private async Task<Dictionary<string,ReviewRevision>> RevisionsAsync(ProductReview[] rows,CancellationToken ct)

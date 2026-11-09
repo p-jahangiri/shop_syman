@@ -4,6 +4,17 @@ namespace Shop.Modules.Sales;
 
 public sealed class ReviewPurchaseReader(SalesDbContext db):IReviewPurchaseReader
 {
+    public async Task<string[]> RecentDeliveredProductsAsync(string owner, CancellationToken ct)
+    {
+        var orders = db.Orders.AsNoTracking().Where(o => o.OwnerId == owner && !o.ContainsDemo && o.State == OrderState.Fulfilled);
+        var v1 = orders.Where(o => o.SnapshotVersion == null).SelectMany(o => o.Lines.Select(l => new { o.Number, l.ProductId }));
+        var v2 = orders.Where(o => o.SnapshotVersion == 2).SelectMany(o => o.LinesV2.Select(l => new { o.Number, l.ProductId }));
+        return await v1.Concat(v2).GroupBy(x => x.ProductId)
+            .Select(g => new { ProductId = g.Key, Latest = g.Max(x => x.Number) })
+            .OrderByDescending(x => x.Latest).ThenBy(x => x.ProductId)
+            .Take(64).Select(x => x.ProductId).ToArrayAsync(ct);
+    }
+
     public async Task<IReadOnlySet<ReviewPurchaseKey>> VerifiedAsync(ReviewPurchaseKey[] keys,CancellationToken ct)
     {
         if(keys.Length>20||keys.Any(k=>string.IsNullOrEmpty(k.OwnerId)||string.IsNullOrEmpty(k.ProductId)))throw new ArgumentException("At most20 purchase facts may be requested.",nameof(keys));

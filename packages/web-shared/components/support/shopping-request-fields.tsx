@@ -22,13 +22,15 @@ export function shoppingRequestContent(
   const text = (fa: string, en: string) => (locale === 'fa' ? fa : en);
   const name = request.product ?? value('model');
   if (!name || /[\n\t]/.test(name)) return null;
-  if (request.kind === 'product-question')
-    return value('body')
+  if (request.kind === 'product-question') {
+    const body = value('body');
+    return body.length >= 10 && body.length <= 240
       ? {
           subject: shoppingMarker[request.kind] + ' ' + name.slice(0, 95),
-          body: [request.slug, value('body')].filter(Boolean).join('\n\n'),
+          body: [request.slug, body].filter(Boolean).join('\n\n'),
         }
       : null;
+  }
   const digits = normalizePersian(value('budget')).replace(/[٬,\s]/g, '');
   if (digits && !/^[1-9][0-9]{0,16}$/.test(digits)) return null;
   const rial = digits ? BigInt(digits) * 10n : null;
@@ -64,8 +66,8 @@ export function ShoppingRequestFields({
           <bdi>{request.product}</bdi>
         </p>
         <label className="ticket-field">
-          <span>{text('سؤال شما دربارهٔ این کالا', 'Your question about this product')}</span>
-          <textarea name="body" required rows={4} maxLength={1400} />
+          <span>{text('سؤال شما؛ ۱۰ تا ۲۴۰ نویسه', 'Your question; 10–240 characters')}</span>
+          <textarea name="body" required rows={4} minLength={10} maxLength={240} />
         </label>
       </>
     );

@@ -137,6 +137,75 @@ public sealed partial class TicketSqlTests(SqlFixture fixture) : IClassFixture<S
         Assert.Equal(input.Answer, Value(history["items"]![1]!, "body"));
     }
 
+    [Fact]
+    public async Task UnansweredQuestionAcceptsModeratedCommunityRepliesAndKeepsOneThread()
+    {
+        var author = await Customer();
+        var visitor = await Customer();
+        using var asker = author.Client;
+        using var member = visitor.Client;
+        using var editor = await Staff("Administrator");
+        using var guest = fixture.Factory.CreateClient(new() { HandleCookies = false });
+        var catalog = await Body(await guest.PostAsJsonAsync("/api/catalog/fa/lookup", new { Slugs = new[] { "iphone-16" } }));
+        var productId = Value(Assert.Single(catalog["products"]!.AsArray())!, "id");
+        var question = "آیا شارژر داخل جعبه است؟";
+        using (var shortQuestion = await asker.PostAsJsonAsync("/api/support/tickets/commands/" + Id(),
+            new CreateTicketInput("[product-question] iPhone 16", "iphone-16\n\nکم", "fa")))
+            Assert.Equal(HttpStatusCode.BadRequest, shortQuestion.StatusCode);
+        var created = await Body(await asker.PostAsJsonAsync("/api/support/tickets/commands/" + Id(),
+            new CreateTicketInput("[product-question] iPhone 16", "iphone-16\n\n[public-name] آوا\n\n" + question, "fa")));
+        var ticketId = Value(created["ticket"]!, "id");
+        var path = $"/api/admin/support/tickets/{ticketId}";
+        var publish = $"{path}/public-answer/{Id()}";
+        var input = new { Version = Version(created), Question = question, Answer = "", Confirmed = true };
+        await Body(await editor.PostAsJsonAsync(publish, input));
+        await Body(await editor.PostAsJsonAsync(publish, input));
+        var publicPath = $"/api/content/product-help/fa/{productId}";
+        async Task<JsonNode> Thread() => (await Body(await guest.GetAsync(publicPath)))["publishedAnswers"]!
+            .AsArray().Single(x => Value(x!, "question") == question)!;
+        var initial = await Thread();
+        var threadId = Value(initial, "id");
+        Assert.Equal("آوا", Value(initial, "displayName"));
+        Assert.Empty(initial["replies"]!.AsArray());
+        var replyBase = $"/api/support/product-questions/fa/{productId}/{threadId}/replies/";
+        var command = Id();
+        var reply = new { Body = "کابل هست، آداپتور را جدا تهیه کردم.", DisplayName = "نیما" };
+        using (var denied = await guest.PostAsJsonAsync(replyBase + command, reply))
+            Assert.Equal(HttpStatusCode.Unauthorized, denied.StatusCode);
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            using var posted = await member.PostAsJsonAsync(replyBase + command, reply);
+            Assert.Equal(HttpStatusCode.NoContent, posted.StatusCode);
+        }
+        Assert.Empty((await Thread())["replies"]!.AsArray());
+        var admin = await Body(await editor.GetAsync($"{path}/public-thread"));
+        var pending = Assert.Single(admin["thread"]!["replies"]!.AsArray())!;
+        Assert.Equal("Pending", Value(pending, "state"));
+        var replyId = Value(pending["reply"]!, "id");
+        await Body(await editor.PutAsJsonAsync($"{path}/public-thread/replies/{replyId}", new { Publish = true }));
+        using (var followUp = await asker.PostAsJsonAsync(replyBase + Id(), new { Body = "ممنون، آداپتور مناسب کدام است؟", DisplayName = "آوا" }))
+            Assert.Equal(HttpStatusCode.NoContent, followUp.StatusCode);
+        var storeAnswer = "آداپتور بیست وات سازگار است.";
+        await Body(await editor.PostAsJsonAsync($"{path}/public-answer/{Id()}", input with { Answer = storeAnswer }));
+        var updated = await Thread();
+        Assert.Equal(threadId, Value(updated, "id"));
+        var replies = updated["replies"]!.AsArray();
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("نیما", Value(replies[0]!, "displayName"));
+        Assert.True(replies[1]!["byStore"]!.GetValue<bool>());
+        Assert.Equal(storeAnswer, Value(replies[1]!, "body"));
+        Assert.Equal(3, (await Body(await editor.GetAsync($"{path}/public-thread")))["thread"]!["replies"]!.AsArray().Count);
+        Assert.DoesNotContain(ticketId, updated.ToJsonString());
+        Assert.DoesNotContain(visitor.Owner, updated.ToJsonString());
+        Assert.DoesNotContain(command, updated.ToJsonString());
+        var activity = Assert.Single((await Body(await asker.GetAsync("/api/reviews/account/questions?locale=fa")))["items"]!.AsArray())!;
+        Assert.Equal(ticketId, Value(activity, "id"));
+        Assert.True(activity["published"]!.GetValue<bool>());
+        Assert.Equal(2, activity["replies"]!.AsArray().Count);
+        Assert.Equal("iphone-16", Value(activity["product"]!, "slug"));
+        Assert.Empty((await Body(await member.GetAsync("/api/reviews/account/questions?locale=fa")))["items"]!.AsArray());
+    }
+
     [Fact]public async Task ForeignOwnersGuestsWrongRoleOriginsAndExtraInputCannotReadOrForgePrivateTickets()
     {
         var owner=await Customer();using var c=owner.Client;var created=await Body(await c.PostAsJsonAsync("/api/support/tickets/commands/"+Id(),Input()));var id=Value(created["ticket"]!,"id");var stranger=await Customer();using var other=stranger.Client;using var guest=fixture.Factory.CreateClient(new(){HandleCookies=false});using var sales=await Staff("SalesManager");

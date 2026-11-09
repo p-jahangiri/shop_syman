@@ -7,6 +7,7 @@ import {
   uiText,
 } from '@sayman/web-shared/testing/digital-ui.test-harness.ts';
 import * as contract from '@sayman/web-shared/lib/support/ticket-contract.ts';
+import * as questions from '@sayman/web-shared/lib/support/product-questions.ts';
 import * as fileContract from '@sayman/web-shared/lib/support/ticket-file-contract.ts';
 import * as requestGeneration from '@sayman/web-shared/lib/data/request-generation.ts';
 import { normalizePersian } from '@sayman/web-shared/lib/shared/commerce.ts';
@@ -30,6 +31,7 @@ test('support queues show server totals and a full tracking ID bypasses the sele
       '../../lib/support/ticket-file-contract': fileContract,
       '../notifications/private-realtime': { useRealtimeRefresh: () => {} },
       '../../lib/support/ticket-contract': contract,
+      '../../lib/support/product-questions.ts': questions,
       '../../lib/shared/commerce': { normalizePersian },
     },
     { URLSearchParams },
@@ -114,6 +116,7 @@ test('ticket conversation and text reply stay available while attachment storage
       '../../lib/support/ticket-file-contract': fileContract,
       '../notifications/private-realtime': {},
       '../../lib/support/ticket-contract': contract,
+      '../../lib/support/product-questions.ts': questions,
       '../../lib/shared/commerce': {},
     },
     {},
@@ -214,6 +217,7 @@ test('a support photo is read only on demand through the private attachment tran
       '../../lib/support/ticket-file-contract': fileContract,
       '../notifications/private-realtime': {},
       '../../lib/support/ticket-contract': contract,
+      '../../lib/support/product-questions.ts': questions,
       '../../lib/shared/commerce': {},
     },
     {},

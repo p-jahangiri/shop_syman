@@ -57,6 +57,12 @@ export function accountReturnTo(value: string | null, tab: string | null) {
           value === '/credit/purchases' ||
           value === '/phone-interests' ||
           value === '/devices' ||
+          value === '/account/contributions' ||
+          (value !== null &&
+            /^\/product\/[a-z0-9]+(?:-[a-z0-9]+)*\?tab=(?:reviews|questions)#product-tabs$/.test(
+              value,
+            ) &&
+            value.length <= 192) ||
           (value !== null &&
             /^\/purchase-requests(?:\/[a-f0-9]{32})?(?:\?(?:product|question)=[a-z0-9][a-z0-9-]{0,139}(?:&variant=[A-Za-z0-9_-]{1,64})?)?$/.test(
               value,
