@@ -6,7 +6,7 @@ namespace Shop.Modules.Cms;
 // supplies copy for matching parts of that configuration without overriding it.
 internal static class SharedSiteSettings
 {
-    private static readonly string[] RootFields = ["latinName", "logoUrl", "font", "palette", "appearance"];
+    private static readonly string[] RootFields = ["latinName", "logoUrl", "font", "palette", "appearance", "design"];
     private static readonly string[] HeroCopy = ["eyebrow", "title", "description", "action", "secondary", "visualTitle", "floatingTitle", "floatingDescription", "footnote"];
     private static readonly string[] BlockCopy = ["eyebrow", "title", "description", "action"];
     private static readonly string[] BannerCopy = ["eyebrow", "title", "action", "watermark"];

@@ -39,6 +39,13 @@ public sealed class CmsAppearanceSqlTests : IAsyncLifetime
             {"selected":"spring","alternatives":{"winter":{"primaryLight":"#123456","sections":{"cards":{"dark":"#325476"}}}}}
             """);
         draft["font"] = "noto-arabic";
+        draft["design"] = JsonNode.Parse("""
+            {"schemaVersion":1,"template":"technology","theme":"dark","overrides":{"layout":{"cards":"editorial"}}}
+            """);
+        draft["homeBlocks"] = JsonNode.Parse("""
+            [{"id":"layout-imported","kind":"products","enabled":true,"title":"انتخاب سایمان","limit":6}]
+            """);
+
         draft["nav"]!.AsArray().Insert(0, new JsonObject { ["href"] = "/catalog?available=1", ["label"] = "کالاهای موجود" });
         draft["hero"]!["actionHref"] = "/catalog?available=1";
         var input = new ContentInput(draft, document["version"]!.GetValue<string>());
@@ -60,6 +67,10 @@ public sealed class CmsAppearanceSqlTests : IAsyncLifetime
         Assert.Equal("noto-arabic", published["font"]!.GetValue<string>());
         var english = await PublicSite(anonymous, "en");
         Assert.True(JsonNode.DeepEquals(published["appearance"], english["appearance"]));
+        Assert.True(JsonNode.DeepEquals(draft["design"], published["design"]));
+        Assert.True(JsonNode.DeepEquals(published["design"], english["design"]));
+        Assert.Equal("layout-imported", (string?)english["homeBlocks"]![0]!["id"]);
+        Assert.Equal(6, (int?)english["homeBlocks"]![0]!["limit"]);
         Assert.True(JsonNode.DeepEquals(draft["palette"], published["palette"]));
         Assert.True(JsonNode.DeepEquals(published["palette"], english["palette"]));
         Assert.Null(published["paletteLibrary"]);

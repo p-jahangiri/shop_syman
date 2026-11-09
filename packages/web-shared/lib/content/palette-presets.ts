@@ -1,3 +1,4 @@
+import { generateDesignPalette } from './design-palette-generator.ts';
 import {
   paletteRegions,
   sectionColor,
@@ -148,6 +149,36 @@ export const palettePresets = [
         footer: '#3f5244',
       },
     ),
+  },
+  {
+    id: 'linen',
+    label: 'کتان روشن',
+    description: 'خاکستری کتان با زمینهٔ روشن',
+    colors: generateDesignPalette('#59645c', 'analogous', 'neutral'),
+  },
+  {
+    id: 'midnight',
+    label: 'شب آبی',
+    description: 'آبی فناوری با سطوح سرد',
+    colors: generateDesignPalette('#2b56aa', 'complementary', 'cool'),
+  },
+  {
+    id: 'iris',
+    label: 'زنبق',
+    description: 'بنفش مجله‌ای و خنثی گرم',
+    colors: generateDesignPalette('#734b9c', 'triadic', 'warm'),
+  },
+  {
+    id: 'coastline',
+    label: 'ساحل سبزآبی',
+    description: 'سبزآبی فروشگاهی و زمینهٔ خنثی',
+    colors: generateDesignPalette('#16766c', 'analogous', 'neutral'),
+  },
+  {
+    id: 'copper',
+    label: 'مسی مخملی',
+    description: 'مسی عمیق با سطوح گرم',
+    colors: generateDesignPalette('#975544', 'complementary', 'warm'),
   },
 ] as const;
 

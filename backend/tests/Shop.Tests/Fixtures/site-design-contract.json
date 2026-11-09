@@ -1,0 +1,20 @@
+[
+  {"valid":true,"value":{"schemaVersion":1,"template":"signature"}},
+  {"valid":true,"value":{"schemaVersion":1,"template":"minimal","theme":"system"}},
+  {"valid":true,"value":{"schemaVersion":1,"template":"technology","theme":"dark","overrides":{"layout":{"cards":"editorial","stickyHeader":false},"motion":{"motion":"none","motionCards":false},"typography":{"font":"noto-arabic"}}}},
+  {"valid":true,"value":{"schemaVersion":1,"template":"warm"}},
+  {"valid":true,"value":{"schemaVersion":1,"template":"editorial"}},
+  {"valid":true,"value":{"schemaVersion":1,"template":"marketplace"}},
+  {"valid":true,"value":{"schemaVersion":1,"template":"luxury","theme":"light","overrides":{}}},
+  {"valid":false,"value":null},
+  {"valid":false,"value":{"schemaVersion":"1","template":"signature"}},
+  {"valid":false,"value":{"schemaVersion":2,"template":"signature"}},
+  {"valid":false,"value":{"schemaVersion":1,"template":"other"}},
+  {"valid":false,"value":{"schemaVersion":1,"template":"signature","theme":null}},
+  {"valid":false,"value":{"schemaVersion":1,"template":"signature","overrides":{"layout":{"cards":"other"}}}},
+  {"valid":false,"value":{"schemaVersion":1,"template":"signature","overrides":{"layout":{"showUsedProducts":false}}}},
+  {"valid":false,"value":{"schemaVersion":1,"template":"signature","overrides":{"motion":{"motionCards":"false"}}}},
+  {"valid":false,"value":{"schemaVersion":1,"template":"signature","overrides":{"typography":null}}},
+  {"valid":false,"value":{"schemaVersion":1,"template":"signature","overrides":{"font":{"family":"system"}}}},
+  {"valid":false,"value":{"schemaVersion":1,"template":"signature","css":"body{display:none}"}}
+]

@@ -72,6 +72,25 @@ public sealed class CmsAppearanceTests
         Assert.Equal("invalid_appearance", error.Code);
     }
 
+    [Fact]
+    public void VersionedDesignAgreesWithTheSharedContractAndBelongsToTheCommonDocument()
+    {
+        using var resource = typeof(CmsAppearanceTests).Assembly.GetManifestResourceStream("Shop.Tests.Fixtures.site-design-contract.json")!;
+        var cases = JsonNode.Parse(resource)!.AsArray();
+        foreach (var example in cases)
+        {
+            var site = Site();
+            site["design"] = example!["value"]?.DeepClone();
+            if (example["valid"]!.GetValue<bool>())
+            {
+                ContentService.Validate("site", "fa", site);
+                Assert.Equal("invalid_site_design", Assert.Throws<BusinessException>(() => ContentService.Validate("site", "en", site)).Code);
+            }
+            else
+                Assert.Equal("invalid_site_design", Assert.Throws<BusinessException>(() => ContentService.Validate("site", "fa", site)).Code);
+        }
+    }
+
     private static JsonObject Site() => new()
     {
         ["name"] = "Sample", ["latinName"] = "Sample", ["tagline"] = "Sample", ["announcement"] = "Sample",

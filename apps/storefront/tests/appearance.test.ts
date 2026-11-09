@@ -96,9 +96,9 @@ test('identical or extreme CMS colors preserve page, card, and image boundaries 
   }
 });
 
-test('all seasonal presets save as editable colors in the existing CMS document', () => {
+test('all palette presets save as editable colors in the existing CMS document', () => {
   assert.equal(matchingPalettePreset(undefined), undefined);
-  assert.equal(palettePresets.length, 5);
+  assert.ok(palettePresets.length >= 10);
   for (const { id, colors } of palettePresets) {
     const editable = copyPalettePreset(id);
     assert.deepEqual(sitePaletteSchema.parse(JSON.parse(JSON.stringify(editable))), colors);
@@ -110,7 +110,7 @@ test('all seasonal presets save as editable colors in the existing CMS document'
   }
 });
 
-test('editorial roles and each seasonal palette retain variety, contrast and visible card edges', () => {
+test('editorial roles and each preset palette retain variety, contrast and visible card edges', () => {
   for (const theme of ['light', 'dark'] as const) {
     const seasonHeroColors = new Set<string>();
     const seasonButtonColors = new Set<string>();
@@ -142,8 +142,8 @@ test('editorial roles and each seasonal palette retain variety, contrast and vis
         seasonButtonColors.add(p.brand.fill);
       }
     }
-    assert.equal(seasonHeroColors.size, 5);
-    assert.equal(seasonButtonColors.size, 5);
+    assert.equal(seasonHeroColors.size, palettePresets.length);
+    assert.equal(seasonButtonColors.size, palettePresets.length);
   }
 });
 

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import type { CSSProperties } from 'react';
+import { headers } from 'next/headers';
 import '@fontsource/vazirmatn/400.css';
 import '@fontsource/vazirmatn/500.css';
 import '@fontsource/vazirmatn/600.css';
@@ -20,8 +21,19 @@ import { translate } from '@/lib/navigation/i18n';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { ShopProvider } from '@/components/providers/shop-provider';
 import { Header, Footer, MobileNav, CartDrawer, CompareTray } from '@/components/navigation/shell';
-import { resolveAppearance } from '@sayman/web-shared/lib/content/appearance.ts';
+import { resolveSiteDesign } from '@sayman/web-shared/lib/content/site-design.ts';
 import { storefrontColorVariables } from '@sayman/web-shared/lib/content/brand-colors.ts';
+// Constant application code. CMS values are read only from validated attributes.
+const storefrontThemeBootstrap = `(() => {
+  const root = document.documentElement;
+  let saved;
+  try { saved = localStorage.getItem('sayman:theme'); } catch {}
+  const preferred = root.dataset.shopTheme;
+  root.dataset.theme = saved === 'light' || saved === 'dark' ? saved :
+    preferred === 'light' || preferred === 'dark' ? preferred :
+      matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+})();`;
+
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const { site } = await getStorefront(locale);
@@ -57,7 +69,8 @@ export default async function RootLayout({
   const locale = segment === 'en' ? 'en' : segment === 'fa' ? 'fa' : await getLocale();
   const snapshot = await getStorefront(locale);
   const palette = snapshot.site.palette;
-  const appearance = resolveAppearance(snapshot.site.appearance);
+  const { appearance, font, theme } = resolveSiteDesign(snapshot.site);
+  const nonce = snapshot.site.design ? ((await headers()).get('x-nonce') ?? undefined) : undefined;
   const branding = {
     ...storefrontColorVariables('light', palette),
     ...storefrontColorVariables('dark', palette),
@@ -71,7 +84,9 @@ export default async function RootLayout({
       data-shop-surface={appearance.surface}
       data-shop-density={appearance.density}
       data-shop-corners={appearance.corners}
-      data-shop-font={snapshot.site.font ?? 'vazirmatn'}
+      data-shop-font={font}
+      data-shop-theme={snapshot.site.design ? theme : undefined}
+      data-theme={snapshot.site.design && theme !== 'system' ? theme : undefined}
       data-shop-cards={appearance.cards}
       data-shop-navigation={appearance.navigation}
       data-shop-motion={appearance.motion}
@@ -83,6 +98,11 @@ export default async function RootLayout({
       data-shop-sticky={String(appearance.stickyHeader)}
       suppressHydrationWarning
     >
+      {nonce && (
+        <head>
+          <script nonce={nonce} dangerouslySetInnerHTML={{ __html: storefrontThemeBootstrap }} />
+        </head>
+      )}
       <body className="storefront-design">
         <LocaleProvider key={locale} locale={locale} snapshot={snapshot}>
           <PwaProvider

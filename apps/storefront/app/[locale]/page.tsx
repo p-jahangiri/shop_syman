@@ -18,7 +18,7 @@ import { MagazineDiscovery } from '@/components/magazine/magazine-discovery';
 import { BudgetFinderLink } from '@/components/budget-finder/budget-finder-link';
 import { Button } from '@/components/shared/ui';
 import { Spotlight } from '@/components/catalog/spotlight';
-import { activeHomeBlocks, curatedProducts } from '@/lib/content/home-blocks';
+import { activeHomeBlocks, defaultHomeBlocks, curatedProducts } from '@/lib/content/home-blocks';
 import type { HomeBlock } from '@sayman/web-shared/lib/shared/types.ts';
 import { isPurchaseContentEnabled, isPurchaseHrefEnabled } from '@/lib/catalog/purchasing';
 import { isUsedCatalogHref } from '@sayman/web-shared/lib/content/appearance.ts';
@@ -41,10 +41,7 @@ export default async function HomePage() {
   const linkVisible = (href: string) =>
     isPurchaseHrefEnabled(href, purchaseMethods) && (showUsedProducts || !isUsedCatalogHref(href));
   const now = Date.now();
-  const blocks: HomeBlock[] = site.homeBlocks ?? [
-    { id: 'categories', kind: 'categories', enabled: true, title: t('دنیای دیجیتال تو') },
-    { id: 'collection', kind: 'collection', enabled: true },
-  ];
+  const blocks: HomeBlock[] = site.homeBlocks ?? defaultHomeBlocks(t('دنیای دیجیتال تو'));
   const active = activeHomeBlocks(blocks, now).filter(
     (block) =>
       isPurchaseContentEnabled(block, purchaseMethods) &&

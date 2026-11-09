@@ -126,6 +126,7 @@ public sealed class ContentService(CmsDbContext db, IPublicImageReferences image
         if (value["logoUrl"] is not null) ValidateImage(value["logoUrl"]);
         if (value["font"] is not null && value["font"]!.ToString() is not ("vazirmatn" or "noto-arabic" or "system")) throw new BusinessException("invalid_branding", "Select a supported local font.");
         SiteAppearanceRules.Validate(value);
+        SiteDesignRules.Validate(locale, value);
         StoreIdentityRules.Validate(value);
         SitePurchaseRules.Validate(value);
         SitePaletteRules.Validate(value["palette"]);

@@ -1,3 +1,6 @@
+import { homeBlockSchema } from '@sayman/web-shared/lib/content/home-blocks-contract.ts';
+export { homeBlockSchema };
+import { siteDesignSchema } from '@sayman/web-shared/lib/content/site-design.ts';
 import { validProductVideoUrl } from '../catalog/product-video.ts';
 import { usedConditionSchema } from '@sayman/web-shared/lib/catalog/used-condition-contract.ts';
 import { storeIdentitySchema } from '@sayman/web-shared/lib/content/store-identity.ts';
@@ -31,50 +34,6 @@ const internalPath = z
   // eslint-disable-next-line no-control-regex -- Reject forbidden control characters at the trust boundary.
   .refine((v) => !v.startsWith('//') && !v.includes('\\') && !/[\x00-\x1f]/.test(v));
 const imagePath = publicImageUrlSchema;
-export const homeBlockSchema = z
-  .object({
-    id: z.string().max(64),
-    kind: z.enum([
-      'categories',
-      'collection',
-      'promotions',
-      'products',
-      'spotlight',
-      'brands',
-      'cheque',
-    ]),
-    enabled: z.boolean(),
-    purchaseMethodKind: z.enum(['online', 'cheque', 'installment']).optional(),
-    eyebrow: z.string().optional(),
-    title: z.string().optional(),
-    description: z.string().optional(),
-    action: z.string().optional(),
-    href: internalPath.optional(),
-    categoryId: z.string().optional(),
-    limit: z.number().int().min(1).max(24).optional(),
-    productIds: z.array(z.string().max(64)).max(24).optional(),
-    startsAt: z.string().datetime().optional(),
-    endsAt: z.string().datetime().optional(),
-    items: z
-      .array(
-        z.object({
-          eyebrow: z.string(),
-          purchaseMethodKind: z.enum(['online', 'cheque', 'installment']).optional(),
-          title: z.string(),
-          action: z.string(),
-          href: internalPath,
-          image: imagePath,
-          watermark: z.string().optional(),
-        }),
-      )
-      .max(6)
-      .optional(),
-  })
-  .refine((b) => new Set(b.productIds).size === (b.productIds?.length ?? 0))
-  .refine((b) => !b.startsAt || !b.endsAt || Date.parse(b.startsAt) < Date.parse(b.endsAt))
-  .refine(
-    (b) => b.kind !== 'spotlight' || !b.enabled || Boolean(b.title?.trim() && b.productIds?.length),
-  );
 export const snapshotSchema = z.object({
   version: z.literal(1),
   isPreview: z.boolean(),
@@ -148,6 +107,7 @@ export const snapshotSchema = z.object({
       .strict()
       .optional(),
     palette: sitePaletteSchema.optional(),
+    design: siteDesignSchema.optional(),
     contact: z
       .object({
         phone: z.string().max(32).optional(),

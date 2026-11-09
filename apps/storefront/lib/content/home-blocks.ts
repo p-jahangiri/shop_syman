@@ -22,3 +22,5 @@ export function curatedProducts(block: HomeBlock, records: Product[], limit = 24
     })
     .slice(0, limit);
 }
+
+export { defaultHomeBlocks } from '@sayman/web-shared/lib/content/home-blocks-contract.ts';

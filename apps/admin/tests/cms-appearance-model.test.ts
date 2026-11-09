@@ -109,7 +109,7 @@ test('the actual editor uses shared defaults and every finite design option reac
   assert.equal(view.changes.at(-1)?.stickyHeader, false);
 });
 
-test('the actual preview follows persisted appearance and reset removes only the design override', () => {
+test('the actual preview follows persisted appearance and reports a patch for the edited option', () => {
   const value: SiteAppearance = {
     surface: 'solid',
     density: 'compact',
@@ -130,11 +130,7 @@ test('the actual preview follows persisted appearance and reset removes only the
   )!;
   assert.equal(checkbox.props.checked, false);
   (checkbox.props.onChange as (event: unknown) => void)({ target: { checked: true } });
-  assert.deepEqual(structuredClone(view.changes.at(-1)), { ...value, stickyHeader: true });
-  const reset = view.nodes.find((node) => node.type === 'button')!;
-  (reset.props.onClick as () => void)();
-  assert.equal(view.changes.at(-1), undefined);
-  assert.deepEqual(appearance.resolveAppearance(view.changes.at(-1)), appearance.defaultAppearance);
+  assert.deepEqual(structuredClone(view.changes.at(-1)), { stickyHeader: true });
   assert.equal(value.stickyHeader, false);
 });
 
@@ -155,8 +151,8 @@ test('motion preview starts on request and reflects independent scope switches',
 
   const sidebar = view.nodes.find((node) => node.props.label === 'پنل فیلتر')!;
   (sidebar.props.onChange as (event: unknown) => void)({ target: { checked: false } });
-  assert.deepEqual(structuredClone(view.changes.at(-1)), { ...draft, motionSidebar: false });
-  const switched = view.render(view.changes.at(-1));
+  assert.deepEqual(structuredClone(view.changes.at(-1)), { motionSidebar: false });
+  const switched = view.render({ ...draft, ...view.changes.at(-1) });
   assert.equal(canvas(switched)['data-motion-sidebar'], false);
   assert.equal(canvas(switched)['data-preview-motion'], false);
   const stopped = view.render({ ...draft, motion: 'none' });

@@ -156,18 +156,25 @@ export function Header() {
     document.addEventListener('keydown', focusSearch);
     return () => document.removeEventListener('keydown', focusSearch);
   }, []);
+  const defaultTheme = site.design?.theme ?? 'system';
   useEffect(() => {
-    try {
-      const value = localStorage.getItem('sayman:theme');
-      const initial = value
-        ? value === 'dark'
-        : window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setDark(initial);
-      document.documentElement.dataset.theme = initial ? 'dark' : 'light';
-    } catch {
-      /* Storage can be unavailable; the current tab still uses the selected theme. */
-    }
-  }, []);
+    const preference = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = () => {
+      let saved: string | null = null;
+      try {
+        saved = localStorage.getItem('sayman:theme');
+      } catch {
+        saved = document.documentElement.dataset.theme ?? null;
+      }
+      const selected = saved === 'dark' || saved === 'light' ? saved : defaultTheme;
+      const dark = selected === 'system' ? preference.matches : selected === 'dark';
+      setDark(dark);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    };
+    apply();
+    if (defaultTheme === 'system') preference.addEventListener('change', apply);
+    return () => preference.removeEventListener('change', apply);
+  }, [defaultTheme]);
   useEffect(() => {
     setMenu(false);
     setSearchOpen(false);

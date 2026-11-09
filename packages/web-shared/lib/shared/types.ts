@@ -1,3 +1,4 @@
+import type { SiteDesign } from '../content/site-design.ts';
 import type { UsedCondition } from '../catalog/used-condition-contract';
 import type { StoreIdentity } from '../content/store-identity';
 import type { SitePalette } from '../content/site-palette';
@@ -170,6 +171,7 @@ export interface SiteContent {
   logoUrl?: string;
   font?: 'vazirmatn' | 'noto-arabic' | 'system';
   appearance?: SiteAppearance;
+  design?: SiteDesign;
   palette?: SitePalette;
   contact?: { phone?: string; email?: string; address?: string; hours?: string };
   storeIdentity?: StoreIdentity;

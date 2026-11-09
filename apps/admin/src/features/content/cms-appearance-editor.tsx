@@ -29,7 +29,7 @@ export function CmsAppearanceEditor({
   font,
 }: {
   value?: SiteAppearance;
-  onChange: (value: SiteAppearance | undefined) => void;
+  onChange: (patch: SiteAppearance) => void;
   name: string;
   font?: SiteContent['font'];
 }) {
@@ -45,7 +45,9 @@ export function CmsAppearanceEditor({
       <select
         value={appearance[choice.key]}
         disabled={choice.key === 'motionPreset' && motionOff}
-        onChange={(event) => onChange(setAppearanceChoice(value, choice.key, event.target.value))}
+        onChange={(event) =>
+          onChange(setAppearanceChoice(undefined, choice.key, event.target.value))
+        }
       >
         {choice.options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -76,7 +78,7 @@ export function CmsAppearanceEditor({
                   key={key}
                   label={label}
                   checked={appearance[key]}
-                  onChange={(event) => onChange({ ...value, [key]: event.target.checked })}
+                  onChange={(event) => onChange({ [key]: event.target.checked })}
                 />
               ))}
             </fieldset>
@@ -84,25 +86,13 @@ export function CmsAppearanceEditor({
           <Check
             label="هدر هنگام پیمایش در دسترس بماند"
             checked={appearance.stickyHeader}
-            onChange={(event) => onChange({ ...value, stickyHeader: event.target.checked })}
+            onChange={(event) => onChange({ stickyHeader: event.target.checked })}
           />
           <Check
             label="نمایش کالاهای کارکرده در فروشگاه"
             checked={appearance.showUsedProducts}
-            onChange={(event) => onChange({ ...value, showUsedProducts: event.target.checked })}
+            onChange={(event) => onChange({ showUsedProducts: event.target.checked })}
           />
-          <button
-            type="button"
-            onClick={() =>
-              onChange(
-                value?.showUsedProducts === undefined
-                  ? undefined
-                  : { showUsedProducts: value.showUsedProducts },
-              )
-            }
-          >
-            بازگشت طراحی به پیش‌فرض
-          </button>
         </div>
         <figure className="cms-appearance-preview">
           <div

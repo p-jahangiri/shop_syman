@@ -30,9 +30,8 @@ import {
 } from '../../types/types';
 import { CmsMenuEditor, type CmsMenuItem } from '../../features/content/cms-menu-editor';
 import { filterRetiredSourcingMenu } from '@sayman/web-shared/lib/market/retired-sourcing.ts';
-import { CmsAppearanceEditor } from '../../features/content/cms-appearance-editor';
-import type { PaletteSettings } from '../../features/content/cms-palette-library';
-import { CmsPaletteEditor } from '../../features/content/cms-palette-editor';
+import { CmsDesignStudio, homeBlockLabels } from '../../features/content/cms-design-studio';
+import { editableHomeBlocks, type DesignDraft } from '../../features/content/cms-design-draft';
 import {
   readPublishedIdentity,
   socialPublicationChanges,
@@ -46,17 +45,13 @@ import {
 import { CmsPurchaseDependencyField } from '../../features/content/cms-purchase-dependency-field';
 import { CustomerAuthSettingsEditor } from '../../features/content/customer-auth-settings-editor';
 import { hasSupportedCustomerLogin } from '../../features/content/customer-auth-settings';
-import type {
-  HomeBlock,
-  SiteAppearance,
-  SiteContent,
-} from '@sayman/web-shared/lib/shared/types.ts';
+import type { HomeBlock } from '@sayman/web-shared/lib/shared/types.ts';
 import {
   cmsWorkspaceSections,
   type CmsWorkspaceSection,
 } from '../../features/content/cms-workspace-sections';
 import '../../styles/content/cms-workspace.css';
-interface SiteData extends PaletteSettings {
+interface SiteData extends DesignDraft {
   seo?: { title?: string; description?: string; shareImage?: string; allowIndexing?: boolean };
   name: string;
   latinName: string;
@@ -82,8 +77,6 @@ interface SiteData extends PaletteSettings {
   nav: CmsMenuItem[];
   homeBlocks?: HomeBlock[];
   logoUrl?: string;
-  font?: SiteContent['font'];
-  appearance?: SiteAppearance;
   contact?: { phone?: string; email?: string; address?: string; hours?: string };
   storeIdentity?: StoreIdentity;
 }
@@ -537,15 +530,6 @@ function ContentSettings({
   );
 }
 
-const blockLabels: Record<HomeBlock['kind'], string> = {
-  categories: 'دسته‌بندی‌ها',
-  collection: 'محصولات منتخب و تب‌ها',
-  promotions: 'بنرهای تبلیغاتی',
-  products: 'فهرست محصولات',
-  spotlight: 'لحظهٔ سایمان · انتخاب‌های ویژه',
-  brands: 'برندها',
-  cheque: 'معرفی خرید چکی',
-};
 function localTime(iso?: string) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -585,7 +569,7 @@ function HomeBlocksEditor({
         <details key={block.id} className="block-editor">
           <summary>
             <strong>
-              {(index + 1).toLocaleString('fa-IR')}. {blockLabels[block.kind]}
+              {(index + 1).toLocaleString('fa-IR')}. {homeBlockLabels[block.kind]}
             </strong>
             <small>
               {block.title || 'بدون عنوان'} · {block.enabled ? 'فعال' : 'غیرفعال'}
@@ -827,7 +811,7 @@ function HomeBlocksEditor({
           value={kind}
           onChange={(e) => setKind(e.target.value as HomeBlock['kind'])}
         >
-          {Object.entries(blockLabels).map(([key, label]) => (
+          {Object.entries(homeBlockLabels).map(([key, label]) => (
             <option key={key} value={key}>
               {label}
             </option>
@@ -931,7 +915,7 @@ function ContentForm({
             ) : (
               <nav className="row-buttons cms-form-sections" aria-label="بخش‌های سند فروشگاه">
                 <a href="#cms-site-brand">هویت بصری</a>
-                <a href="#cms-site-palette">رنگ فروشگاه</a>
+                <a href="#cms-site-design">طراحی فروشگاه</a>
                 <a href="#cms-site-contact">راه‌های ارتباطی و مجوزها</a>
                 <a href="#cms-site-home">صفحهٔ اصلی</a>
                 <a href="#cms-site-seo">جست‌وجو و اشتراک</a>
@@ -977,18 +961,6 @@ function ContentForm({
                         })
                       }
                     />
-                    <Field label="فونت فروشگاه" hint="وزیرمتن و Noto از خود سایت بارگیری می‌شوند.">
-                      <select
-                        value={site.font ?? 'vazirmatn'}
-                        onChange={(e) =>
-                          set({ ...site, font: e.target.value as SiteContent['font'] })
-                        }
-                      >
-                        <option value="vazirmatn">وزیرمتن</option>
-                        <option value="noto-arabic">Noto Sans Arabic</option>
-                        <option value="system">فونت دستگاه</option>
-                      </select>
-                    </Field>
                     {(
                       [
                         ['phone', 'تلفن (ارقام انگلیسی)'],
@@ -1008,18 +980,17 @@ function ContentForm({
                     ))}
                   </div>
                 </fieldset>
-                <CmsPaletteEditor
-                  settings={site}
-                  onChange={(settings) =>
-                    set((previous) => ({ ...previous, ...settings }) as SiteData)
-                  }
-                  disabled={mutation.isPending || uploads.busy}
-                />
-                <CmsAppearanceEditor
-                  value={site.appearance}
-                  font={site.font}
+                <CmsDesignStudio
+                  site={site}
                   name={site.name}
-                  onChange={(appearance) => set({ ...site, appearance })}
+                  categoryIds={catalog?.categories.map((category) => category.id)}
+                  disabled={mutation.isPending || uploads.busy}
+                  update={(apply) =>
+                    set((previous) => {
+                      const current = previous as SiteData;
+                      return { ...current, ...apply(current) };
+                    })
+                  }
                 />
                 <div id="cms-site-contact">
                   <StoreIdentityEditor
@@ -1225,7 +1196,7 @@ function ContentForm({
             ) : (
               <>
                 <HomeBlocksEditor
-                  value={site.homeBlocks ?? []}
+                  value={editableHomeBlocks(site.homeBlocks)}
                   onChange={(homeBlocks) =>
                     set((previous) => {
                       const current = previous as SiteData;
@@ -1233,7 +1204,7 @@ function ContentForm({
                         ...current,
                         homeBlocks:
                           typeof homeBlocks === 'function'
-                            ? homeBlocks(current.homeBlocks ?? [])
+                            ? homeBlocks(editableHomeBlocks(current.homeBlocks))
                             : homeBlocks,
                       };
                     })

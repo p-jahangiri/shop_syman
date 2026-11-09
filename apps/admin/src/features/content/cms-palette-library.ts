@@ -55,3 +55,15 @@ export function editPalette(settings: PaletteSettings, palette: SitePalette): Pa
     },
   };
 }
+
+export function replaceCustomPalette(
+  settings: PaletteSettings,
+  palette: SitePalette,
+): PaletteSettings {
+  const previous = selectedPalette(settings);
+  const alternatives = { ...settings.paletteLibrary?.alternatives };
+  if (previous !== 'default' && previous !== 'custom' && settings.palette)
+    alternatives[previous] = settings.palette;
+  delete alternatives.custom;
+  return { palette, paletteLibrary: { selected: 'custom', alternatives } };
+}

@@ -52,7 +52,7 @@ internal static class SitePaletteRules
     }
 
     private static bool EditablePalette(string? name) =>
-        name is "spring" or "summer" or "autumn" or "winter" or "sayman" or "custom";
+        name is "spring" or "summer" or "autumn" or "winter" or "sayman" or "linen" or "midnight" or "iris" or "coastline" or "copper" or "custom";
 
     private static void ValidateSections(JsonNode? node)
     {
