@@ -1,0 +1,41 @@
+set $shop_public_browse ${SHOP_HTTP_BROWSE};
+if ($shop_public_browse != true) { return 403; }
+absolute_redirect off;
+default_type text/plain;
+add_header X-Robots-Tag 'noindex, nofollow' always;
+if ($shop_browse_access_path != '') {
+    add_header X-Robots-Tag 'noindex, nofollow' always;
+    add_header Cache-Control 'no-store' always;
+    return 302 $shop_browse_access_path;
+}
+if ($shop_browse_allowed = 0) { return 403 'This route requires the authenticated storefront.'; }
+set $app http://storefront:3000;
+# Keep public assets reachable on networks that reset Next static/chunks requests.
+# Equal-length substitutions preserve length-prefixed React Flight records.
+rewrite ^/webui/assets/bundle/(.+)$ /_next/static/chunks/$1 break;
+rewrite ^/webui/assets/(.+)$ /_next/static/$1 break;
+rewrite ^/webui/image$ /_next/image break;
+proxy_pass $app$uri$is_args$args;
+proxy_http_version 1.1;
+proxy_set_header Host $shop_browse_authority;
+proxy_set_header X-Forwarded-Host $shop_browse_authority;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Forwarded-Port $shop_browse_forwarded_port;
+proxy_set_header X-Forwarded-For $remote_addr;
+proxy_set_header X-Sayman-Public-Browse 1;
+proxy_set_header Cookie "";
+proxy_set_header Authorization "";
+proxy_set_header Origin "";
+proxy_set_header Accept-Encoding "";
+proxy_hide_header Link;
+proxy_hide_header Set-Cookie;
+sub_filter_types text/css application/javascript text/javascript text/x-component;
+sub_filter_once off;
+sub_filter '/_next/static/chunks/' '/webui/assets/bundle/';
+sub_filter '/_next/static/' '/webui/assets/';
+sub_filter 'static/chunks/' 'assets/bundle/';
+sub_filter '/_next/' '/webui/';
+gzip on;
+gzip_types text/css application/javascript text/javascript text/x-component;
+proxy_buffering off;
+proxy_read_timeout 30s;

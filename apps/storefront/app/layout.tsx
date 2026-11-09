@@ -73,7 +73,8 @@ export default async function RootLayout({
   const requestHeaders = await headers();
   const nonce = snapshot.site.design ? (requestHeaders.get('x-nonce') ?? undefined) : undefined;
   const publicBrowse = requestHeaders.get('x-sayman-public-browse') === '1';
-  const secureOrigin = publicBrowse ? publicOrigin() : undefined;
+  const secureOrigin =
+    publicBrowse && requestHeaders.get('x-forwarded-proto') === 'http' ? publicOrigin() : undefined;
   const branding = {
     ...storefrontColorVariables('light', palette),
     ...storefrontColorVariables('dark', palette),

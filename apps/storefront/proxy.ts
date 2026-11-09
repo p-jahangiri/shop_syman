@@ -11,10 +11,13 @@ import {
 } from '@sayman/web-shared/lib/market/retired-sourcing.ts';
 export async function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const forwardedProtocol = request.headers.get('x-forwarded-proto');
   const publicBrowse =
     request.headers.get('x-sayman-public-browse') === '1' &&
-    request.headers.get('x-forwarded-proto') === 'http';
-  const https = !publicBrowse && publicOrigin()?.startsWith('https:') === true;
+    (forwardedProtocol === 'http' || forwardedProtocol === 'https');
+  const https = publicBrowse
+    ? forwardedProtocol === 'https'
+    : publicOrigin()?.startsWith('https:') === true;
   const policy = storefrontSecurityPolicy(nonce, {
     development: process.env.NODE_ENV === 'development',
     https,

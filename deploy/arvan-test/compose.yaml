@@ -107,6 +107,7 @@ services:
       NGINX_ENVSUBST_FILTER: '^(SHOP_DOMAIN|SHOP_ORIGIN|SHOP_TLS_PORT|SHOP_LEGACY_DOMAIN|SHOP_HTTP_BROWSE|ADMIN_DOMAIN|TESTER_IP)$$'
     volumes:
       - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./sayman-public-browse.inc.template:/etc/nginx/templates/sayman-public-browse.inc.template:ro
       - ${SAYMAN_TLS_DIR:?Set the TLS certificate directory}:/etc/nginx/sayman-tls:ro
       - ${SAYMAN_SHARED}/acme-webroot:/var/www/acme:ro
     depends_on:
