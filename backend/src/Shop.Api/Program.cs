@@ -293,6 +293,7 @@ builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 512000);
 builder.Services.AddPhoneInbox();
 builder.Services.AddPhoneDiscovery(builder.Configuration,builder.Environment.IsDevelopment());
 var app = builder.Build();
+var developmentAuthCookies = app.Environment.IsDevelopment() && !app.Configuration.GetValue<bool>("Authentication:RequireSecureCookies");
 _ = app.Services.GetRequiredService<AuthConfiguration>();
 app.ValidatePublicMedia();
 _ = app.Services.GetRequiredService<IPrivateFileStore>();
@@ -498,7 +499,7 @@ app.MapOrders(origins);
 app.MapOrderParcels(origins,adminOrigins);
 app.MapDigitalDeliveries(origins,adminOrigins);
 app.MapReturns(origins,adminOrigins);
-app.MapCustomerAccount(origins,app.Environment.IsDevelopment());
+app.MapCustomerAccount(origins,developmentAuthCookies);
 app.MapAddressBook(origins);
 app.MapWishlist(origins);
 app.MapReviews(origins);
@@ -529,18 +530,18 @@ authRoutes.MapPost("/password", async (PasswordLogin input, AuthService service,
     var adminEntry = context.Request.Headers["X-Sayman-Admin"] == "1";
     if (adminEntry || IsAdminClient(context)) CheckOrigin(context, adminOrigins);
     var result = await service.PasswordAsync(input, adminEntry || settings["emailPassword"]?.GetValue<bool>() == true, adminEntry || settings["usernamePassword"]?.GetValue<bool>() == true, adminEntry, ct);
-    return AuthResponse(result, context, app.Environment.IsDevelopment());
+    return AuthResponse(result, context, developmentAuthCookies);
 }).AllowAnonymous();
 authRoutes.MapPost("/staff/password", async (ChangeInitialStaffPasswordInput input, ClaimsPrincipal user, AuthService service, HttpContext context, CancellationToken ct) => {
     CheckOrigin(context, adminOrigins);
-    return AuthResponse(await service.ChangeInitialStaffPasswordAsync(UserId(user), user.FindFirstValue("sst") ?? "", input, context.TraceIdentifier, ct), context, app.Environment.IsDevelopment());
+    return AuthResponse(await service.ChangeInitialStaffPasswordAsync(UserId(user), user.FindFirstValue("sst") ?? "", input, context.TraceIdentifier, ct), context, developmentAuthCookies);
 }).RequireAuthorization("staff_password_change");
 authRoutes.MapPost("/mfa/setup", async (ClaimsPrincipal user, AuthService service, HttpContext context, CancellationToken ct) => { CheckOrigin(context, adminOrigins); return Results.Ok(await service.SetupMfaAsync(UserId(user), user.FindFirstValue("sst") ?? "", user.HasClaim("mfa_recovery", "verified"), RecoveryDeadline(user), ct)); }).RequireAuthorization("mfa_pending");
-authRoutes.MapPost("/mfa/verify", async (MfaVerification input, ClaimsPrincipal user, AuthService service, HttpContext context, CancellationToken ct) => { if (IsAdminClient(context)) CheckOrigin(context, adminOrigins); return AuthResponse(await service.VerifyMfaAsync(UserId(user), user.FindFirstValue("sst") ?? "", user.HasClaim("mfa_recovery", "verified"), input.Code, context.TraceIdentifier, ct), context, app.Environment.IsDevelopment()); }).RequireAuthorization("mfa_pending");
-authRoutes.MapMfaRecovery(adminOrigins, app.Environment.IsDevelopment());
-authRoutes.MapStaffPassword(adminOrigins, app.Environment.IsDevelopment());
-authRoutes.MapPost("/refresh", async (AuthService service, HttpContext context, CancellationToken ct) => { CheckOrigin(context, IsAdminClient(context) ? adminOrigins : origins); return AuthResponse(await service.RefreshAsync(AuthHttpSecurity.ReadCookie(context, app.Environment.IsDevelopment()) ?? "", ct, IsAdminClient(context)), context, app.Environment.IsDevelopment()); }).AllowAnonymous();
-authRoutes.MapPost("/logout", async (AuthService service, HttpContext context, CancellationToken ct) => { CheckOrigin(context, IsAdminClient(context) ? adminOrigins : origins); await service.LogoutAsync(AuthHttpSecurity.ReadCookie(context, app.Environment.IsDevelopment()), ct); AuthHttpSecurity.Clear(context, app.Environment.IsDevelopment()); return Results.NoContent(); }).AllowAnonymous();
+authRoutes.MapPost("/mfa/verify", async (MfaVerification input, ClaimsPrincipal user, AuthService service, HttpContext context, CancellationToken ct) => { if (IsAdminClient(context)) CheckOrigin(context, adminOrigins); return AuthResponse(await service.VerifyMfaAsync(UserId(user), user.FindFirstValue("sst") ?? "", user.HasClaim("mfa_recovery", "verified"), input.Code, context.TraceIdentifier, ct), context, developmentAuthCookies); }).RequireAuthorization("mfa_pending");
+authRoutes.MapMfaRecovery(adminOrigins, developmentAuthCookies);
+authRoutes.MapStaffPassword(adminOrigins, developmentAuthCookies);
+authRoutes.MapPost("/refresh", async (AuthService service, HttpContext context, CancellationToken ct) => { CheckOrigin(context, IsAdminClient(context) ? adminOrigins : origins); return AuthResponse(await service.RefreshAsync(AuthHttpSecurity.ReadCookie(context, developmentAuthCookies) ?? "", ct, IsAdminClient(context)), context, developmentAuthCookies); }).AllowAnonymous();
+authRoutes.MapPost("/logout", async (AuthService service, HttpContext context, CancellationToken ct) => { CheckOrigin(context, IsAdminClient(context) ? adminOrigins : origins); await service.LogoutAsync(AuthHttpSecurity.ReadCookie(context, developmentAuthCookies), ct); AuthHttpSecurity.Clear(context, developmentAuthCookies); return Results.NoContent(); }).AllowAnonymous();
 authRoutes.MapGet("/me", (ClaimsPrincipal user) => Results.Ok(new { Id = UserId(user), Name = user.FindFirstValue("name"), DisplayName = user.FindFirstValue("display_name"), Permissions = user.FindAll("permission").Select(c => c.Value).ToArray(), Roles = user.FindAll("role").Select(c => c.Value).ToArray() })).RequireAuthorization("customer");
 authRoutes.MapPost("/otp", async (CustomerOtpStartInput input, ICustomerOtpService service, HttpContext http, CancellationToken ct) => {
     if (IsAdminClient(http) || http.Request.Headers["X-Sayman-Admin"] == "1" || http.Request.Query.Count != 0) return Results.BadRequest();
@@ -548,7 +549,7 @@ authRoutes.MapPost("/otp", async (CustomerOtpStartInput input, ICustomerOtpServi
 }).AllowAnonymous();
 authRoutes.MapPost("/otp/verify", async (CustomerOtpVerifyInput input, ICustomerOtpService service, HttpContext http, CancellationToken ct) => {
     if (IsAdminClient(http) || http.Request.Headers["X-Sayman-Admin"] == "1" || http.Request.Query.Count != 0) return Results.BadRequest();
-    return AuthResponse(await service.VerifyAsync(input, http.TraceIdentifier, ct), http, app.Environment.IsDevelopment());
+    return AuthResponse(await service.VerifyAsync(input, http.TraceIdentifier, ct), http, developmentAuthCookies);
 }).AllowAnonymous();
 authRoutes.MapPost("/register", () => Results.Problem(statusCode: 503, title: "verification_unconfigured", detail: "Account verification provider is not configured.")).AllowAnonymous();
 authRoutes.MapPost("/password-reset", () => Results.Problem(statusCode: 503, title: "verification_unconfigured", detail: "Verified recovery provider is not configured.")).AllowAnonymous();

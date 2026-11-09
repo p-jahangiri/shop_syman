@@ -46,6 +46,7 @@ services:
       Cors__Origins__0: ${SHOP_ORIGIN:?Set the storefront origin}
       Cors__Origins__1: ${ADMIN_ORIGIN:?Set the admin origin}
       Cors__AdminOrigins__0: ${ADMIN_ORIGIN}
+      Authentication__RequireSecureCookies: ${SAYMAN_SECURE_AUTH_COOKIES:-false}
       Media__Storage: Disabled
       Files__Storage: Disabled
     volumes:
@@ -90,12 +91,15 @@ services:
     image: ${NGINX_IMAGE:?Set the approved Nginx image}
     platform: linux/amd64
     mem_limit: 64m
-    ports: ['80:80', '443:443']
+    ports: ['80:80', '443:443', '${SHOP_TLS_PORT:-8443}:8443']
     environment:
       SHOP_DOMAIN: ${SHOP_DOMAIN:?Set the storefront hostname}
+      SHOP_ORIGIN: ${SHOP_ORIGIN}
+      SHOP_TLS_PORT: ${SHOP_TLS_PORT:-8443}
+      SHOP_LEGACY_DOMAIN: ${SHOP_LEGACY_DOMAIN:-disabled.invalid}
       ADMIN_DOMAIN: ${ADMIN_DOMAIN:?Set the admin hostname or IP}
       TESTER_IP: ${TESTER_IP:?Set the authorized tester IP}
-      NGINX_ENVSUBST_FILTER: '^(SHOP_DOMAIN|ADMIN_DOMAIN|TESTER_IP)$$'
+      NGINX_ENVSUBST_FILTER: '^(SHOP_DOMAIN|SHOP_ORIGIN|SHOP_TLS_PORT|SHOP_LEGACY_DOMAIN|ADMIN_DOMAIN|TESTER_IP)$$'
     volumes:
       - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ${SAYMAN_TLS_DIR:?Set the TLS certificate directory}:/etc/nginx/sayman-tls:ro
