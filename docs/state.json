@@ -137,10 +137,14 @@
     "tls": "self-signed-test-leaf-ip-and-hostname",
     "ci": {
       "branch": "codex/arvan-test-deploy",
-      "tag": "test-v0.1.0",
+      "tag": "test-v0.1.1",
       "runner": "sayman-arvan-test",
-      "autoDeployEnabled": false,
-      "run": "https://github.com/p-jahangiri/shop_syman/actions/runs/42592370983"
+      "autoDeployEnabled": true,
+      "run": "https://github.com/p-jahangiri/shop_syman/actions/runs/42597831107",
+      "runAttempt": 2,
+      "deployedCommit": "8be3bdf42bf0d6346906ba471b94173bc398909a",
+      "permissionDecision": "D118",
+      "sudoProvider": "/usr/bin/sudo.ws"
     }
   }
 }
