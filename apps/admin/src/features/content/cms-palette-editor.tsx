@@ -12,6 +12,13 @@ import {
   type PaletteTheme,
   type SitePalette,
 } from '@sayman/web-shared/lib/content/site-palette.ts';
+import {
+  editPalette,
+  paletteFor,
+  selectPalette,
+  selectedPalette,
+  type PaletteSettings,
+} from './cms-palette-library';
 import { Text } from '../../components/forms/forms';
 import { Field } from '../../components/ui';
 
@@ -53,19 +60,23 @@ function changeSection(
 }
 
 export function CmsPaletteEditor({
-  value,
+  settings,
   onChange,
   disabled,
 }: {
-  value: SitePalette | undefined;
-  onChange: (palette: SitePalette | undefined) => void;
+  settings: PaletteSettings;
+  onChange: (settings: PaletteSettings) => void;
   disabled: boolean;
 }) {
+  const value = settings.palette;
+  const selected = selectedPalette(settings);
+  const activePreset = palettePresets.find(({ id }) => id === selected);
+  const custom = paletteFor(settings, 'custom');
+  const edit = (palette: SitePalette) => onChange(editPalette(settings, palette));
   const previews = themes.map((theme) => ({
     ...theme,
     colors: resolveStorefrontColors(theme.theme, value),
   }));
-  const activePreset = matchingPalettePreset(value);
   return (
     <fieldset id="cms-site-palette" className="cms-palette-editor">
       <legend>رنگ فروشگاه</legend>
@@ -78,44 +89,72 @@ export function CmsPaletteEditor({
           <h4 id="cms-palette-library-label">پالت‌های آماده</h4>
           <small aria-live="polite">
             {activePreset
-              ? 'انتخاب فعلی: ' + palettePresets.find((preset) => preset.id === activePreset)?.label
-              : value
+              ? 'انتخاب فعلی: ' + activePreset.label
+              : selected === 'custom'
                 ? 'انتخاب فعلی: سفارشی'
                 : 'انتخاب فعلی: پیش‌فرض فروشگاه'}
           </small>
         </div>
         <div className="cms-palette-preset-grid">
-          {palettePresets.map(({ id, label, description, colors }) => (
+          {palettePresets.map(({ id, label, description, colors: original }) => {
+            const colors = paletteFor(settings, id) ?? original;
+            const modified = matchingPalettePreset(colors) !== id;
+            return (
+              <button
+                key={id}
+                type="button"
+                disabled={disabled}
+                aria-pressed={id === selected}
+                onClick={() => onChange(selectPalette(settings, id))}
+              >
+                <span className="cms-palette-swatch-pair" aria-hidden="true">
+                  {themes.map(({ theme, primary }) => {
+                    const fallback = resolveStorefrontColors(theme, colors);
+                    return (
+                      <span className="cms-palette-swatches" key={theme} data-swatch-theme={theme}>
+                        {[
+                          colors[primary] ?? fallback.brand.fill,
+                          ...(['navigation', 'hero', 'cards', 'promotions'] as const).map(
+                            (region) =>
+                              sectionColor(colors, region, theme) ?? fallback.regions[region],
+                          ),
+                        ].map((color, index) => (
+                          <span key={index} style={{ backgroundColor: color }} />
+                        ))}
+                      </span>
+                    );
+                  })}
+                </span>
+                <strong>{label}</strong>
+                <small>{modified ? 'ویرایش‌شده' : description}</small>
+              </button>
+            );
+          })}
+        </div>
+        <div className="row-buttons">
+          {custom && (
             <button
-              key={id}
               type="button"
               disabled={disabled}
-              aria-pressed={id === activePreset}
-              onClick={() => onChange(copyPalettePreset(id))}
+              aria-pressed={selected === 'custom'}
+              onClick={() => onChange(selectPalette(settings, 'custom'))}
             >
-              <span className="cms-palette-swatch-pair" aria-hidden="true">
-                {themes.map(({ theme, primary }) => (
-                  <span className="cms-palette-swatches" key={theme} data-swatch-theme={theme}>
-                    {[
-                      colors[primary],
-                      sectionColor(colors, 'navigation', theme),
-                      sectionColor(colors, 'hero', theme),
-                      sectionColor(colors, 'cards', theme),
-                      sectionColor(colors, 'promotions', theme),
-                    ].map((color, index) => (
-                      <span key={index} style={{ backgroundColor: color }} />
-                    ))}
-                  </span>
-                ))}
-              </span>
-              <strong>{label}</strong>
-              <small>{description}</small>
+              پالت سفارشی
             </button>
-          ))}
+          )}
+          {activePreset && matchingPalettePreset(value) !== activePreset.id && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => edit(copyPalettePreset(activePreset.id))}
+            >
+              بازنشانی فقط پالت فعلی
+            </button>
+          )}
         </div>
         <small>
-          نوار بالایی رنگ‌های تم روشن و نوار پایینی رنگ‌های تم تاریک است. انتخاب نمونه فقط پیش‌نویس
-          را تغییر می‌دهد؛ می‌توانید رنگ‌ها را ویرایش و سپس منتشر کنید.
+          ویرایش هر پالت با جابه‌جایی حفظ می‌شود. «ذخیرهٔ پیش‌نویس» همهٔ ویرایش‌ها را نگه می‌دارد و
+          «انتشار» فقط رنگ‌های پالت انتخاب‌شده را در فروشگاه اعمال می‌کند.
         </small>
       </div>
       <Field label="شدت تنوع رنگ" hint="میزان تفاوت طیف کارت‌ها، منو و بنرها در هر تم.">
@@ -124,7 +163,7 @@ export function CmsPaletteEditor({
           disabled={disabled}
           onChange={(event) => {
             const intensity = paletteIntensities.find((option) => option === event.target.value);
-            if (intensity) onChange({ ...value, intensity });
+            if (intensity) edit({ ...value, intensity });
           }}
         >
           {paletteIntensities.map((option) => (
@@ -143,7 +182,7 @@ export function CmsPaletteEditor({
               type="color"
               value={colors.brand.fill.toLowerCase()}
               disabled={disabled}
-              onChange={(color) => onChange({ ...value, [primary]: color })}
+              onChange={(color) => edit({ ...value, [primary]: color })}
             />
             <div
               className="cms-palette-preview"
@@ -247,7 +286,7 @@ export function CmsPaletteEditor({
                       type="color"
                       value={(custom ?? colors.regions[key]).toLowerCase()}
                       disabled={disabled}
-                      onChange={(color) => onChange(changeSection(value, key, theme, color))}
+                      onChange={(color) => edit(changeSection(value, key, theme, color))}
                     />
                     <small>{custom ? 'اختصاصی' : 'هماهنگ با رنگ اصلی'}</small>
                     {custom && (
@@ -255,7 +294,7 @@ export function CmsPaletteEditor({
                         type="button"
                         disabled={disabled}
                         aria-label={label + ' در ' + themeLabel + ' از رنگ اصلی پیروی کند'}
-                        onClick={() => onChange(changeSection(value, key, theme, undefined))}
+                        onClick={() => edit(changeSection(value, key, theme, undefined))}
                       >
                         پیروی از رنگ اصلی
                       </button>
@@ -267,8 +306,12 @@ export function CmsPaletteEditor({
           </fieldset>
         ))}
       </details>
-      <button type="button" disabled={disabled || !value} onClick={() => onChange(undefined)}>
-        بازگشت همهٔ رنگ‌ها به پیش‌فرض
+      <button
+        type="button"
+        disabled={disabled || selected === 'default'}
+        onClick={() => onChange(selectPalette(settings, 'default'))}
+      >
+        استفاده از پیش‌فرض فروشگاه
       </button>
     </fieldset>
   );

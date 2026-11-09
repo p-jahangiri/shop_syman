@@ -561,3 +561,16 @@
 .credit-scope-panel .credit-terms dd {
   overflow-wrap: anywhere;
 }
+
+.ticket-suggested-product {
+  display: inline-block;
+  padding: 0.4rem 0.75rem;
+  color: var(--primary);
+  border: 1px solid currentColor;
+  border-radius: 0.55rem;
+  font-weight: 650;
+}
+.ticket-suggested-product:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}

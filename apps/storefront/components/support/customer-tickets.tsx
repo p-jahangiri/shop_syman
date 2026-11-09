@@ -14,11 +14,19 @@ import {
   TicketRequestError,
 } from '@sayman/web-shared/components/support/ticket-workspace';
 import { customerTicketJournal } from '@sayman/web-shared/lib/support/ticket-journal.ts';
-export function CustomerTickets({ id }: { id?: string }) {
+import type { ShoppingRequest } from '@sayman/web-shared/components/support/shopping-request-fields';
+export function CustomerTickets({
+  id,
+  shoppingRequest,
+}: {
+  id?: string;
+  shoppingRequest?: ShoppingRequest;
+}) {
   const auth = useCustomerSession(),
     { locale } = useI18n(),
     { dataSource } = useStorefront(),
     router = useRouter(),
+    base = shoppingRequest ? '/purchase-requests' : '/support/tickets',
     text = (fa: string, en: string) => (locale === 'fa' ? fa : en);
   const transport = useCallback(
     async (path: string, init: RequestInit = {}) => {
@@ -83,7 +91,11 @@ export function CustomerTickets({ id }: { id?: string }) {
       <div className="page-top">
         <Link href="/support">{text('راهنما و پشتیبانی', 'Help and support')}</Link>
       </div>
-      <h1>{text('پیگیری پشتیبانی', 'Support requests')}</h1>
+      <h1>
+        {shoppingRequest
+          ? text('درخواست‌های خرید و پرسش‌های کالا', 'Purchase requests and product questions')
+          : text('پیگیری پشتیبانی', 'Support requests')}
+      </h1>
       {dataSource !== 'api' ? (
         <p>
           {text(
@@ -101,7 +113,8 @@ export function CustomerTickets({ id }: { id?: string }) {
           download={download}
           journal={customerTicketJournal}
           initialTicketId={id}
-          onSelect={(value) => router.push('/support/tickets' + (value ? '/' + value : ''))}
+          shoppingRequest={shoppingRequest}
+          onSelect={(value) => router.push(base + (value ? '/' + value : ''))}
         />
       ) : auth.status === 'restoring' ? (
         <p role="status">{text('در حال بررسی حساب…', 'Checking your account…')}</p>
@@ -118,7 +131,29 @@ export function CustomerTickets({ id }: { id?: string }) {
               {text('بررسی دوبارهٔ حساب', 'Recheck account')}
             </button>
           )}
-          <Link href="/account">{text('ورود به حساب', 'Sign in')}</Link>
+          <Link
+            href={
+              shoppingRequest
+                ? '/account?returnTo=' +
+                  encodeURIComponent(
+                    base +
+                      (id
+                        ? '/' + id
+                        : shoppingRequest.slug
+                          ? '?' +
+                            (shoppingRequest.kind === 'phone' ? 'product' : 'question') +
+                            '=' +
+                            shoppingRequest.slug +
+                            (shoppingRequest.variantId
+                              ? '&variant=' + shoppingRequest.variantId
+                              : '')
+                          : ''),
+                  )
+                : '/account'
+            }
+          >
+            {text('ورود به حساب', 'Sign in')}
+          </Link>
         </div>
       )}
     </div>

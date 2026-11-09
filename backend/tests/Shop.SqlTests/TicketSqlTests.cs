@@ -99,6 +99,44 @@ public sealed partial class TicketSqlTests(SqlFixture fixture) : IClassFixture<S
         await using var scope=fixture.Factory.Services.CreateAsyncScope();var db=scope.ServiceProvider.GetRequiredService<SupportDbContext>();Assert.Equal(5,await db.Events.CountAsync(x=>x.TicketId==id));Assert.Equal(5,await db.Commands.CountAsync(x=>x.TicketId==id));Assert.Equal(3,await db.Messages.CountAsync(x=>x.TicketId==id));Assert.True(await scope.ServiceProvider.GetRequiredService<Shop.Modules.Identity.IdentityDbContext>().Audit.CountAsync(x=>x.Resource.StartsWith("/api/admin/support/tickets/"+id))>=2);
         var row=await db.Tickets.AsNoTracking().SingleAsync(x=>x.Id==id);Assert.DoesNotContain(Input().Subject,Encoding.UTF8.GetString(row.ProtectedSubject));var stored=await db.Messages.AsNoTracking().Where(x=>x.TicketId==id).ToArrayAsync();Assert.All(stored,x=>Assert.DoesNotContain(Input().Body,Encoding.UTF8.GetString(x.ProtectedBody)));
     }
+    [Fact]
+    public async Task PublicAnswerPublishesOnlyReviewedTextAndRepliesOnce()
+    {
+        var owner = await Customer();
+        using var customer = owner.Client;
+        using var support = await Staff();
+        using var editor = await Staff("Administrator");
+        using var visitor = fixture.Factory.CreateClient(new() { HandleCookies = false });
+        var lookup = await Body(await visitor.PostAsJsonAsync("/api/catalog/fa/lookup", new { Slugs = new[] { "iphone-16" } }));
+        var product = Assert.Single(lookup["products"]!.AsArray())!;
+        var productId = Value(product, "id");
+        var created = await Body(await customer.PostAsJsonAsync("/api/support/tickets/commands/" + Id(),
+            new CreateTicketInput("[product-question] iPhone 16", "iphone-16\n\nPrivate note + warranty question", "fa")));
+        var id = Value(created["ticket"]!, "id");
+        var path = $"/api/admin/support/tickets/{id}/public-answer/{Id()}";
+        var input = new { Version = Version(created), Question = "What warranty is listed?", Answer = "See the selected variant's warranty.", Confirmed = true };
+        using (var denied = await support.PostAsJsonAsync(path, input))
+            Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+        var publicPath = "/api/content/product-help/fa/" + productId;
+        Assert.Empty((await Body(await visitor.GetAsync(publicPath)))["publishedAnswers"]!.AsArray());
+
+        var receipt = await Body(await editor.PostAsJsonAsync(path, input));
+        Assert.False(receipt["replayed"]!.GetValue<bool>());
+        Assert.True((await Body(await editor.PostAsJsonAsync(path, input)))["replayed"]!.GetValue<bool>());
+        using (var mismatch = await editor.PostAsJsonAsync(path, input with { Question = "Another question" }))
+            Assert.Equal(HttpStatusCode.Conflict, mismatch.StatusCode);
+        var projection = await Body(await visitor.GetAsync(publicPath));
+        var entry = Assert.Single(projection["publishedAnswers"]!.AsArray())!;
+        Assert.Equal(input.Question, Value(entry, "question"));
+        Assert.Equal(input.Answer, Value(entry, "answer"));
+        Assert.DoesNotContain("Private note", projection.ToJsonString());
+        Assert.DoesNotContain(id, projection.ToJsonString());
+        Assert.Empty((await Body(await visitor.GetAsync("/api/content/product-help/en/" + productId)))["publishedAnswers"]!.AsArray());
+        var history = await Body(await customer.GetAsync($"/api/support/tickets/{id}/messages"));
+        Assert.Equal(2, history["items"]!.AsArray().Count);
+        Assert.Equal(input.Answer, Value(history["items"]![1]!, "body"));
+    }
+
     [Fact]public async Task ForeignOwnersGuestsWrongRoleOriginsAndExtraInputCannotReadOrForgePrivateTickets()
     {
         var owner=await Customer();using var c=owner.Client;var created=await Body(await c.PostAsJsonAsync("/api/support/tickets/commands/"+Id(),Input()));var id=Value(created["ticket"]!,"id");var stranger=await Customer();using var other=stranger.Client;using var guest=fixture.Factory.CreateClient(new(){HandleCookies=false});using var sales=await Staff("SalesManager");

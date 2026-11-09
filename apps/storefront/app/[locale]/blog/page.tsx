@@ -57,6 +57,9 @@ export default async function BlogIndex({ searchParams }: { searchParams: Promis
             'Published articles and guides, with clear details and publication dates.',
           )}
         </p>
+        <NextLink href={localeHref('/mobile-news', locale)}>
+          {text('خبر و بررسی موبایل', 'Mobile news and reviews')}
+        </NextLink>
         {list.tag && (
           <NextLink href={href(null, null)}>
             {text('دیدن همهٔ مقاله‌ها', 'View all articles')}

@@ -22,6 +22,9 @@ test('support queues show server totals and a full tracking ID bypasses the sele
       ),
     ),
     {
+      './shopping-request-fields': {
+        shoppingMarker: { phone: '[phone]', 'product-question': '[product-question]' },
+      },
       '../../lib/data/request-generation': requestGeneration,
       '../../lib/support/ticket-command-request': {},
       '../../lib/support/ticket-file-contract': fileContract,
@@ -103,6 +106,9 @@ test('ticket conversation and text reply stay available while attachment storage
       ),
     ),
     {
+      './shopping-request-fields': {
+        shoppingMarker: { phone: '[phone]', 'product-question': '[product-question]' },
+      },
       '../../lib/data/request-generation': requestGeneration,
       '../../lib/support/ticket-command-request': {},
       '../../lib/support/ticket-file-contract': fileContract,
@@ -200,6 +206,9 @@ test('a support photo is read only on demand through the private attachment tran
       ),
     ),
     {
+      './shopping-request-fields': {
+        shoppingMarker: { phone: '[phone]', 'product-question': '[product-question]' },
+      },
       '../../lib/data/request-generation': requestGeneration,
       '../../lib/support/ticket-command-request': {},
       '../../lib/support/ticket-file-contract': fileContract,

@@ -30,6 +30,10 @@ export class ApiError extends Error {
   }
 }
 const messages: Record<string, string> = {
+  invalid_product_answer: 'سؤال و پاسخ عمومی را بازبینی کنید.',
+  product_not_published: 'این کالا دیگر در فروشگاه منتشر نیست.',
+  product_answer_conflict: 'این انتشار با متن دیگری ثبت شده است. گفت‌وگو را تازه‌سازی کنید.',
+  product_answers_full: 'تعداد پاسخ‌های عمومی این کالا به سقف رسیده است.',
   invalid_slug: 'نشانی یا کلید باید فقط از حروف کوچک انگلیسی، عدد و خط تیره ساخته شود.',
   invalid_brand: 'نام برند را با حداکثر ۱۲۰ نویسه وارد کنید.',
   invalid_category_tree: 'والد انتخاب‌شده وجود ندارد یا ساختار دسته‌ها را حلقه‌ای می‌کند.',

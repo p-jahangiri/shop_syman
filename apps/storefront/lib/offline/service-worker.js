@@ -27,6 +27,7 @@ const privatePath = (path) =>
     path,
   ) ||
   /^\/(?:fa\/|en\/)?support\/tickets(?:\/|$)/.test(path) ||
+  /^\/(?:fa\/|en\/)?(?:devices|purchase-requests)(?:\/|$)/.test(path) ||
   path.startsWith('/api/');
 let disabled = false;
 self.addEventListener('install', (event) =>

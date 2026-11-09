@@ -33,6 +33,27 @@ internal static class SitePaletteRules
         }
     }
 
+    public static void ValidateLibrary(JsonNode? node, JsonNode? activePalette)
+    {
+        if (node is null) return;
+        if (node is not JsonObject { Count: 2 } library
+            || library["selected"] is not JsonValue selection || !selection.TryGetValue<string>(out var selected)
+            || (selected != "default" && !EditablePalette(selected))
+            || (selected == "default" ? activePalette is not null : activePalette is not JsonObject)
+            || library["alternatives"] is not JsonObject alternatives)
+            throw Invalid("Select a valid palette and save its other variants separately.");
+
+        foreach (var (name, colors) in alternatives)
+        {
+            if (!EditablePalette(name) || name == selected || colors is not JsonObject)
+                throw Invalid("Each palette must have its own distinct saved colors.");
+            Validate(colors);
+        }
+    }
+
+    private static bool EditablePalette(string? name) =>
+        name is "spring" or "summer" or "autumn" or "winter" or "sayman" or "custom";
+
     private static void ValidateSections(JsonNode? node)
     {
         if (node is not JsonObject sections)

@@ -1,0 +1,192 @@
+.admin-shell .topbar .admin-finder-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding-inline: 11px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--admin-primary-soft);
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.admin-finder-trigger svg {
+  flex: none;
+  color: var(--primary);
+}
+.admin-finder-trigger kbd {
+  padding: 2px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 10px;
+}
+.admin-finder.MuiDialog-paper {
+  display: flex;
+  width: calc(100% - 28px);
+  max-height: calc(100dvh - 36px);
+  margin: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--foreground);
+}
+.admin-finder .admin-finder-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px 9px;
+  font-size: 18px;
+  font-weight: 800;
+}
+.admin-finder-title > span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.admin-finder-title > span svg {
+  color: var(--primary);
+}
+.admin-finder-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-inline: 18px;
+  padding-inline: 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+.admin-finder-search:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.admin-finder-search input {
+  min-width: 0;
+  width: 100%;
+  min-height: 46px;
+  padding-inline: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 16px;
+}
+.admin-finder-search input:focus-visible {
+  outline: none;
+}
+.admin-finder-results {
+  min-height: 0;
+  padding: 14px 18px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.admin-finder-results h2 {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 10px 0 5px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.admin-finder-results section + section {
+  margin-block-start: 9px;
+  padding-block-start: 4px;
+  border-block-start: 1px solid var(--border);
+}
+.admin-finder-results ul {
+  display: grid;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.admin-finder-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.admin-finder-open {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 52px;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--foreground);
+  text-align: start;
+}
+.admin-finder-open[aria-current='page'],
+.admin-finder-open:hover,
+.admin-finder-open:focus-visible {
+  border-color: var(--border);
+  background: var(--admin-primary-soft);
+}
+.admin-finder-open strong,
+.admin-finder-open small {
+  display: block;
+}
+.admin-finder-open small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.admin-finder-page-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--admin-primary-soft);
+  color: var(--primary);
+}
+.admin-finder-arrow {
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--muted);
+}
+.admin-finder .icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  color: var(--muted);
+}
+.admin-finder .admin-finder-pin[aria-pressed='true'] {
+  color: var(--admin-warning);
+}
+.admin-finder-empty,
+.admin-finder-hint {
+  padding: 12px 18px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.admin-finder-hint {
+  border-block-start: 1px solid var(--border);
+}
+@media (max-width: 1120px) {
+  .admin-shell .topbar .admin-finder-trigger kbd {
+    display: none;
+  }
+}
+@media (max-width: 650px) {
+  .admin-shell .topbar .admin-finder-trigger {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  .admin-shell .topbar .admin-finder-trigger span {
+    display: none;
+  }
+}

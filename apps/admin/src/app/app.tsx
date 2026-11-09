@@ -6,8 +6,16 @@ import type { CmsWorkspaceSection } from '../features/content/cms-workspace-sect
 import { navigation, type Page } from '../layout/admin-navigation';
 import { AdminModuleHeader } from '../layout/admin-module-header';
 import { AdminNavigation } from '../layout/admin-navigation-view';
+import { AdminQuickAccess } from '../layout/admin-quick-access';
 import { useAdminColorMode } from '../hooks/admin-color-mode';
-import { readCompactNavigation, writeCompactNavigation } from '../state/admin-ui-preferences';
+import {
+  readAdminDashboardPreferences,
+  readCompactNavigation,
+  rememberAdminPage,
+  writeAdminDashboardPreferences,
+  writeCompactNavigation,
+  type AdminDashboardPreferences,
+} from '../state/admin-ui-preferences';
 import { orderParcelJournal } from '../state/orders/order-parcel-journal';
 import { orderDigitalJournal } from '../state/orders/order-digital-journal';
 import { DigitalCommandGuard } from '../features/orders/order-digital-guard';
@@ -37,7 +45,7 @@ import {
   clearShipmentJournal,
   interruptShipmentCommand,
 } from '../state/orders/order-shipment-journal';
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowUpRight,
@@ -47,6 +55,7 @@ import {
   Sun,
   PanelRightClose,
   PanelRightOpen,
+  Search,
 } from 'lucide-react';
 import { clearMarketPhoneJournal } from '../state/market/market-phone-journal';
 import { clearMarketImportJournal } from '../state/market/market-import-journal';
@@ -166,6 +175,12 @@ export function App() {
   const [cmsSection, setCmsSection] = useState<CmsWorkspaceSection>('articles');
   const [unitSource, setUnitSource] = useState<HolooSource>();
   const [menu, setMenu] = useState(false);
+  const [finderOwner, setFinderOwner] = useState<string | null>(null);
+  const finderOpener = useRef<HTMLElement | null>(null);
+  const [savedPreferences, setSavedPreferences] = useState<{
+    ownerId: string;
+    value: AdminDashboardPreferences;
+  } | null>(null);
   const [compact, setCompact] = useState(readCompactNavigation);
   const { mode, toggle: toggleColorMode } = useAdminColorMode();
   const client = useQueryClient();
@@ -231,6 +246,7 @@ export function App() {
         setPage('dashboard');
       }
       setSession(null);
+      setFinderOwner(null);
       setVerificationUnavailable(kind === 'unavailable');
       setUseLogin(false);
       setRestoring(false);
@@ -400,6 +416,61 @@ export function App() {
   }
   const enabled = !!session;
   const visiblePage = allowedAdminPage(page, navigation, permissions, 'dashboard');
+  const ownerId = session?.user.id;
+  const storedPreferences = useMemo(
+    () => (ownerId ? readAdminDashboardPreferences(ownerId) : null),
+    [ownerId],
+  );
+  const preferences =
+    savedPreferences && savedPreferences.ownerId === ownerId
+      ? savedPreferences.value
+      : storedPreferences;
+  function savePreferences(value: AdminDashboardPreferences) {
+    if (!ownerId) return;
+    setSavedPreferences({ ownerId, value });
+    writeAdminDashboardPreferences(ownerId, value);
+  }
+  const openFinder = useCallback(() => {
+    if (!ownerId) return;
+    finderOpener.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setFinderOwner(ownerId);
+  }, [ownerId]);
+  const finderOpen = !!ownerId && finderOwner === ownerId;
+  function closeFinder() {
+    setFinderOwner(null);
+    requestAnimationFrame(() => finderOpener.current?.focus({ preventScroll: true }));
+  }
+  function navigate(next: Page) {
+    setUnitSource(undefined);
+    setPage(allowedAdminPage(next, navigation, permissions, visiblePage));
+    setMenu(false);
+  }
+  useEffect(() => {
+    if (!ownerId || visiblePage === 'dashboard') return;
+    rememberAdminPage(ownerId, visiblePage);
+  }, [ownerId, visiblePage]);
+  useEffect(() => {
+    if (!ownerId || menu || finderOpen) return;
+    function openWithShortcut(event: KeyboardEvent) {
+      if (
+        event.code !== 'KeyK' ||
+        !event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        event.repeat ||
+        event.isComposing ||
+        event.defaultPrevented ||
+        document.querySelector('[aria-modal="true"], dialog[open]')
+      )
+        return;
+      event.preventDefault();
+      openFinder();
+    }
+    window.addEventListener('keydown', openWithShortcut);
+    return () => window.removeEventListener('keydown', openWithShortcut);
+  }, [finderOpen, menu, openFinder, ownerId]);
   const previousPage = useRef(visiblePage);
   useEffect(() => {
     if (previousPage.current === visiblePage) return;
@@ -438,6 +509,7 @@ export function App() {
     enabled: enabled && can('cms.read') && viewingCmsSettings,
   });
   async function logout() {
+    setFinderOwner(null);
     logoutSync.current?.publish();
     adminChequeApprovalJournal.bind(null);
     adminCreditReminderJournal.bind(null);
@@ -541,7 +613,7 @@ export function App() {
         </main>
       </>
     );
-  if (!session)
+  if (!session || !preferences)
     return (
       <>
         {journalGuard}
@@ -613,12 +685,34 @@ export function App() {
         onClose={() => setMenu(false)}
         displayName={session.user.displayName ?? 'مدیر فروشگاه'}
         onLogout={() => void logout()}
-        onNavigate={(next) => {
-          setUnitSource(undefined);
-          setPage(next);
-          setMenu(false);
-        }}
+        onNavigate={navigate}
       />
+      {finderOpen && (
+        <AdminQuickAccess
+          key={session.user.id}
+          accountId={session.user.id}
+          permissions={permissions}
+          selected={visiblePage}
+          pins={preferences.shortcuts}
+          onTogglePin={(next) => {
+            if (allowedAdminPage(next, navigation, permissions, 'dashboard') !== next) return;
+            savePreferences({
+              ...preferences,
+              shortcuts: preferences.shortcuts.includes(next)
+                ? preferences.shortcuts.filter((item) => item !== next)
+                : [...preferences.shortcuts, next],
+            });
+          }}
+          onNavigate={(next) => {
+            setFinderOwner(null);
+            navigate(next);
+            requestAnimationFrame(() =>
+              document.getElementById('admin-main')?.focus({ preventScroll: true }),
+            );
+          }}
+          onClose={closeFinder}
+        />
+      )}
       <div className="workspace">
         <header className="topbar">
           <div className="admin-topbar-location">
@@ -654,6 +748,20 @@ export function App() {
             </nav>
           </div>
           <div className="admin-topbar-actions">
+            <button
+              type="button"
+              className="admin-finder-trigger"
+              aria-label="رفتن به بخش"
+              aria-haspopup="dialog"
+              aria-keyshortcuts="Alt+K"
+              onClick={openFinder}
+            >
+              <Search size={19} aria-hidden="true" />
+              <span>رفتن به بخش</span>
+              <kbd dir="ltr" aria-hidden="true">
+                Alt + K
+              </kbd>
+            </button>
             <span className="environment">محیط محلی</span>
             <button
               type="button"
@@ -689,10 +797,7 @@ export function App() {
               key={visiblePage}
               page={visiblePage}
               permissions={permissions}
-              onNavigate={(next) => {
-                setUnitSource(undefined);
-                setPage(next);
-              }}
+              onNavigate={navigate}
             />
           )}
           <PageBoundary key={`${visiblePage}:${session.user.id}:${permissionRevision}`}>
@@ -702,9 +807,10 @@ export function App() {
                   accountId={session.user.id}
                   displayName={session.user.displayName ?? 'مدیر فروشگاه'}
                   permissions={permissions}
-                  onNavigate={(next) => {
-                    setPage(next);
-                  }}
+                  preferences={preferences}
+                  onSavePreferences={savePreferences}
+                  onOpenFinder={openFinder}
+                  onNavigate={navigate}
                 />
               ) : visiblePage === 'used-items' ? (
                 <UsedItemsPage
@@ -775,7 +881,12 @@ export function App() {
               ) : visiblePage === 'credit-applications' ? (
                 <CreditApplicationsPage viewerId={session.user.id} />
               ) : visiblePage === 'tickets' ? (
-                <TicketsPage viewerId={session.user.id} writable={can('support.write')} />
+                <TicketsPage
+                  viewerId={session.user.id}
+                  writable={can('support.write')}
+                  canPickProduct={can('catalog.read')}
+                  canPublishQuestion={can('cms.write')}
+                />
               ) : visiblePage === 'payments' ? (
                 <PaymentsPage viewerId={session.user.id} />
               ) : visiblePage === 'charges' ? (
@@ -795,6 +906,7 @@ export function App() {
                 <ReviewsPage writable={can('cms.write')} viewerId={session.user.id} />
               ) : visiblePage === 'content' ? (
                 <ContentPage
+                  catalogReadable={can('catalog.read')}
                   viewerId={session.user.id}
                   data={content.data}
                   dataLoading={content.isPending}

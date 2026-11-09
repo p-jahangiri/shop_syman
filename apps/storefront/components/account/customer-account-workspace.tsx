@@ -15,6 +15,7 @@ import {
   Package,
   RefreshCw,
   Settings2,
+  Smartphone,
   ShieldCheck,
   UserRound,
 } from 'lucide-react';
@@ -175,6 +176,12 @@ export function CustomerAccountWorkspace({
     );
   const navigation = [
     { href: '/orders', icon: Package, title: text('سفارش‌های من', 'My orders') },
+    { href: '/devices', icon: Smartphone, title: text('دستگاه‌های من', 'My devices') },
+    {
+      href: '/purchase-requests',
+      icon: CircleHelp,
+      title: text('درخواست‌های خرید', 'Purchase requests'),
+    },
     { href: '/addresses', icon: MapPin, title: text('نشانی‌های من', 'My addresses') },
     { href: '/wishlist', icon: Heart, title: text('علاقه‌مندی‌ها', 'Wishlist') },
     { href: '/notifications', icon: Bell, title: text('اعلان‌ها و پیام‌ها', 'Notifications') },

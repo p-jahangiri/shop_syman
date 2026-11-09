@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { storefrontSnapshot } from '../lib/data/fixtures.ts';
 import type { StorefrontSnapshot } from '@sayman/web-shared/lib/shared/types.ts';
+import { findBuyingGuide, guidePath, guideSlugs } from '../lib/content/buying-guides.ts';
+import { guideStructuredData } from '../lib/seo/guide-seo.ts';
 import {
   canIndex,
   publicOrigin,
@@ -27,6 +29,30 @@ function live(locale: 'fa' | 'en' = 'fa'): StorefrontSnapshot {
     },
   };
 }
+test('public guide metadata matches the article, both languages and the sitemap path', () => {
+  for (const locale of ['fa', 'en'] as const) {
+    for (const slug of guideSlugs) {
+      const snapshot = live(locale);
+      const guide = findBuyingGuide(slug, locale)!;
+      const path = guidePath(slug);
+      const meta = pageMetadata(snapshot, locale, path, guide.title, guide.description, {}, env);
+      const [article, breadcrumb] = guideStructuredData(snapshot, locale, slug, env);
+      assert.equal(article.headline, guide.title);
+      assert.equal(article.mainEntityOfPage, meta.alternates?.canonical);
+      assert.equal(breadcrumb['@type'], 'BreadcrumbList');
+      assert.deepEqual(
+        guideStructuredData({ ...snapshot, isPreview: true }, locale, slug, env),
+        [],
+      );
+      assert.deepEqual(
+        guideStructuredData(snapshot, locale, slug, { ...env, SHOP_ENABLE_INDEXING: 'false' }),
+        [],
+      );
+    }
+  }
+  assert.equal(findBuyingGuide('not-a-guide', 'fa'), undefined);
+  assert.equal(findBuyingGuide('__proto__', 'en'), undefined);
+});
 test('indexing requires all independent deployment and published-content gates', () => {
   const s = live();
   assert.equal(canIndex(s, env), true);

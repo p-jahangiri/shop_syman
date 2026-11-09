@@ -35,6 +35,9 @@ public sealed class CmsAppearanceSqlTests : IAsyncLifetime
              "sections":{"canvas":{"dark":"#271f2d"},"navigation":{"light":"#dbeeff","dark":"#17303a"},
              "cards":{"light":"#e5f1f6"},"promotions":{"light":"#c44a55"},"footer":{"dark":"#221c33"}}}
             """);
+        draft["paletteLibrary"] = JsonNode.Parse("""
+            {"selected":"spring","alternatives":{"winter":{"primaryLight":"#123456","sections":{"cards":{"dark":"#325476"}}}}}
+            """);
         draft["font"] = "noto-arabic";
         draft["nav"]!.AsArray().Insert(0, new JsonObject { ["href"] = "/catalog?available=1", ["label"] = "کالاهای موجود" });
         draft["hero"]!["actionHref"] = "/catalog?available=1";
@@ -46,6 +49,8 @@ public sealed class CmsAppearanceSqlTests : IAsyncLifetime
             Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
 
         document = Document(await Body(await editor.GetAsync("/api/admin/content")), "fa");
+        var savedDraft = JsonNode.Parse(document["draftJson"]!.GetValue<string>())!;
+        Assert.True(JsonNode.DeepEquals(draft["paletteLibrary"], savedDraft["paletteLibrary"]));
         var publish = new { Version = document["version"]!.GetValue<string>(), RestoreRevisionId = (string?)null };
         await NoContent(await editor.PostAsJsonAsync("/api/admin/content/site/fa/publish", publish));
         using (var stale = await editor.PostAsJsonAsync("/api/admin/content/site/fa/publish", publish))
@@ -57,6 +62,11 @@ public sealed class CmsAppearanceSqlTests : IAsyncLifetime
         Assert.True(JsonNode.DeepEquals(published["appearance"], english["appearance"]));
         Assert.True(JsonNode.DeepEquals(draft["palette"], published["palette"]));
         Assert.True(JsonNode.DeepEquals(published["palette"], english["palette"]));
+        Assert.Null(published["paletteLibrary"]);
+        Assert.Null(english["paletteLibrary"]);
+        var savedPublication = Document(await Body(await editor.GetAsync("/api/admin/content")), "fa");
+        Assert.True(JsonNode.DeepEquals(draft["paletteLibrary"],
+            JsonNode.Parse(savedPublication["publishedJson"]!.GetValue<string>())!["paletteLibrary"]));
         Assert.Equal("noto-arabic", (string?)english["font"]);
         Assert.Equal("/catalog?available=1", (string?)english["nav"]![0]!["href"]);
         Assert.Equal("/catalog?available=1", (string?)english["hero"]!["actionHref"]);
@@ -89,6 +99,19 @@ public sealed class CmsAppearanceSqlTests : IAsyncLifetime
             Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
             Assert.Equal("invalid_branding", (await invalid.Content.ReadFromJsonAsync<JsonNode>())!["title"]!.GetValue<string>());
         }
+        content["palette"] = JsonNode.Parse("""{"primaryLight":"#123456"}""");
+        foreach (var invalidLibrary in new[]
+        {
+            """{"selected":"spring","alternatives":{"spring":{"primaryLight":"#ffffff"}}}""",
+            """{"selected":"spring","alternatives":{"winter":{"primaryLight":"url(https://example.test)"}}}""",
+            """{"selected":"default","alternatives":{}}"""
+        })
+        {
+            content["paletteLibrary"] = JsonNode.Parse(invalidLibrary);
+            using var invalid = await editor.PutAsJsonAsync("/api/admin/content/site/fa", new ContentInput(content, document["version"]!.GetValue<string>()));
+            Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        }
+        content.Remove("paletteLibrary");
         content.Remove("palette");
         content["appearance"] = new JsonObject { ["surface"] = "glass", ["css"] = "body{display:none}" };
         var input = new ContentInput(content, document["version"]!.GetValue<string>());

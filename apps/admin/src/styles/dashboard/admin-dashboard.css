@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 225px), 1fr));
   gap: 10px;
-  margin-block-start: 17px;
+  margin-block-start: 14px;
 }
 .dashboard-shortcut-grid button {
   display: flex;
@@ -13,7 +13,7 @@
   text-align: start;
   gap: 10px;
   padding: 10px;
-  background: var(--surface);
+  background: var(--surface-soft);
   border: 1px solid var(--border);
   border-radius: 12px;
 }
@@ -102,6 +102,12 @@
   flex-wrap: wrap;
   margin-block-start: 10px;
 }
+.dashboard-add-shortcut select {
+  min-height: 44px;
+  flex: 1 1 160px;
+  min-width: 0;
+  width: auto;
+}
 .dashboard-preferences-footer {
   flex-wrap: wrap;
 }
@@ -118,8 +124,21 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
-  padding-block: 4px 9px;
+  gap: 18px;
+  padding: clamp(16px, 3vw, 30px);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: linear-gradient(115deg, var(--surface) 35%, var(--admin-primary-soft));
+  box-shadow: var(--admin-shadow);
+}
+.dashboard-heading-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dashboard-heading-actions button {
+  min-height: 42px;
 }
 .dashboard-kicker {
   display: flex;
@@ -130,11 +149,12 @@
   color: var(--muted);
 }
 .dashboard-heading h1 {
-  margin: 3px 0;
-  font-size: clamp(24px, 2.8vw, 34px);
+  margin: 5px 0;
+  font-size: clamp(25px, 3.2vw, 39px);
   font-weight: 800;
 }
 .dashboard-heading p {
+  margin: 0;
   font-size: 13px;
   color: var(--muted);
   line-height: 1.8;

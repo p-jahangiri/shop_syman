@@ -95,10 +95,12 @@ export function ProductDetail({
   product,
   initialVariantId,
   relatedProducts,
+  questions,
 }: {
   product: Product;
   initialVariantId?: string;
   relatedProducts?: ReactNode;
+  questions?: ReactNode;
 }) {
   const { t, digits, toman, locale } = useI18n();
   const fa = locale === 'fa';
@@ -541,6 +543,19 @@ export function ProductDetail({
               </Button>
             </div>
           )}
+          {variant.stock === 0 && product.category === 'phones' && (
+            <Link
+              className="text-link"
+              href={
+                '/purchase-requests?product=' +
+                encodeURIComponent(product.slug) +
+                '&variant=' +
+                encodeURIComponent(variant.id)
+              }
+            >
+              {locale === 'fa' ? 'درخواست تهیهٔ این مدل' : 'Request this model'}
+            </Link>
+          )}
           <div className="purchase-method-list">
             <strong>{t('روش‌های خرید این کالا')}</strong>
             {methods.map((m) => (
@@ -590,6 +605,7 @@ export function ProductDetail({
               ['specs', t('مشخصات فنی')],
               ['description', t('دربارهٔ این محصول')],
               ['reviews', t('دیدگاه‌ها')],
+              ...(questions ? [['questions', fa ? 'پرسش‌وپاسخ' : 'Questions & answers']] : []),
             ].map(([key, label]) => (
               <button
                 key={key}
@@ -656,6 +672,8 @@ export function ProductDetail({
                   <ArrowLeft size={16} />
                 </Link>
               </>
+            ) : tab === 'questions' ? (
+              questions
             ) : (
               <ProductReviews productId={product.id} />
             ),

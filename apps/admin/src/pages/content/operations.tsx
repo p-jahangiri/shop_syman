@@ -1,3 +1,4 @@
+import { ProductHelpEditor } from '../../features/content/product-help-editor';
 import { CmsBlogPosts } from '../../features/content/cms-blog-posts';
 import { CmsRedirects } from '../../features/content/cms-redirects';
 import { CmsPages } from '../../features/content/cms-pages';
@@ -30,6 +31,7 @@ import {
 import { CmsMenuEditor, type CmsMenuItem } from '../../features/content/cms-menu-editor';
 import { filterRetiredSourcingMenu } from '@sayman/web-shared/lib/market/retired-sourcing.ts';
 import { CmsAppearanceEditor } from '../../features/content/cms-appearance-editor';
+import type { PaletteSettings } from '../../features/content/cms-palette-library';
 import { CmsPaletteEditor } from '../../features/content/cms-palette-editor';
 import {
   readPublishedIdentity,
@@ -54,7 +56,7 @@ import {
   type CmsWorkspaceSection,
 } from '../../features/content/cms-workspace-sections';
 import '../../styles/content/cms-workspace.css';
-interface SiteData {
+interface SiteData extends PaletteSettings {
   seo?: { title?: string; description?: string; shareImage?: string; allowIndexing?: boolean };
   name: string;
   latinName: string;
@@ -81,7 +83,6 @@ interface SiteData {
   homeBlocks?: HomeBlock[];
   logoUrl?: string;
   font?: SiteContent['font'];
-  palette?: SiteContent['palette'];
   appearance?: SiteAppearance;
   contact?: { phone?: string; email?: string; address?: string; hours?: string };
   storeIdentity?: StoreIdentity;
@@ -98,7 +99,9 @@ export function ContentPage({
   onSectionChange,
   catalog,
   viewerId,
+  catalogReadable,
 }: {
+  catalogReadable: boolean;
   data?: Content;
   dataLoading: boolean;
   dataError: unknown;
@@ -111,8 +114,10 @@ export function ContentPage({
   catalog?: Catalog;
   viewerId: string;
 }) {
-  const sections = (Object.keys(cmsWorkspaceSections) as CmsWorkspaceSection[]).filter(
-    (section) => settingsReadable || section === 'articles' || section === 'pages',
+  const sections = (Object.keys(cmsWorkspaceSections) as CmsWorkspaceSection[]).filter((section) =>
+    section === 'productHelp'
+      ? settingsReadable && catalogReadable
+      : settingsReadable || section === 'articles' || section === 'pages',
   );
   const visible = sections.includes(activeSection) ? activeSection : 'articles';
   return (
@@ -141,6 +146,7 @@ export function ContentPage({
           ))}
         </nav>
       </section>
+      {visible === 'productHelp' && <ProductHelpEditor viewerId={viewerId} writable={writable} />}
       <div hidden={visible !== 'articles'}>
         <CmsBlogPosts viewerId={viewerId} writable={draftWritable} publishable={writable} />
       </div>
@@ -1003,8 +1009,10 @@ function ContentForm({
                   </div>
                 </fieldset>
                 <CmsPaletteEditor
-                  value={site.palette}
-                  onChange={(palette) => set({ ...site, palette })}
+                  settings={site}
+                  onChange={(settings) =>
+                    set((previous) => ({ ...previous, ...settings }) as SiteData)
+                  }
                   disabled={mutation.isPending || uploads.busy}
                 />
                 <CmsAppearanceEditor

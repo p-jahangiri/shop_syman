@@ -85,3 +85,24 @@
   border: 1px dashed var(--border);
   border-radius: 0.75rem;
 }
+
+.ticket-product-tool {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-block: 1rem;
+}
+.ticket-product-tool :is(h3, p) {
+  margin: 0;
+}
+.ticket-product-tool > button {
+  justify-self: start;
+}
+
+.ticket-product-tool .product-picker {
+  border: 0;
+  padding: 0;
+  min-inline-size: 0;
+}

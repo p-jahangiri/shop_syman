@@ -152,20 +152,35 @@ export const navigationGroups = [
 
 export const normalizeNavigationQuery = normalizeAdminListText;
 
+const navigationAliases: Partial<Record<Page, string>> = {
+  dashboard: 'داشبورد میز کار',
+  products: 'محصول کاتالوگ قیمت SKU',
+  'used-items': 'دست دوم گزارش سلامت',
+  inventory: 'موجودی انبار کسری تامین',
+  orders: 'فروش ارسال تحویل سفارش',
+  returns: 'بازگشت کالا عودت',
+  tickets: 'صندوق پاسخ مشتری پشتیبانی',
+  'credit-schedules': 'سررسید اقساط چک',
+  content: 'ظاهر رنگ بنر منو مقاله صفحه سایت CMS',
+  sms: 'پیامک OTP',
+  staff: 'همکار نقش مجوز کارکنان',
+  security: 'رمز احراز دومرحله‌ای MFA',
+  audit: 'گزارش تاریخچه فعالیت',
+};
+
 export function filteredNavigationGroups(permissions: readonly string[], query: string) {
-  const normalized = normalizeNavigationQuery(query);
+  const terms = normalizeNavigationQuery(query).split(' ').filter(Boolean);
   const allowed = navigation.filter((item) => canAccessAdminPage(item, permissions));
   return navigationGroups
     .map((group) => ({
       ...group,
       items: group.pages.flatMap((id) => {
         const item = allowed.find((candidate) => candidate.id === id);
-        return item &&
-          (!normalized ||
-            normalizeNavigationQuery(item.label).includes(normalized) ||
-            normalizeNavigationQuery(group.label).includes(normalized))
-          ? [item]
-          : [];
+        if (!item) return [];
+        const searchable = normalizeNavigationQuery(
+          [item.label, group.label, navigationAliases[item.id]].filter(Boolean).join(' '),
+        );
+        return terms.every((term) => searchable.includes(term)) ? [item] : [];
       }),
     }))
     .filter((group) => group.items.length);

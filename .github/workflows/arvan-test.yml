@@ -1,0 +1,112 @@
+name: Deploy Arvan test tag
+on:
+  push:
+    tags: ['test-v*']
+permissions:
+  contents: read
+concurrency:
+  group: sayman-arvan-test
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - { name: api, dockerfile: backend/Dockerfile }
+          - { name: storefront, dockerfile: apps/storefront/Dockerfile }
+          - { name: admin, dockerfile: apps/admin/Dockerfile }
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: { persist-credentials: false, fetch-depth: 0 }
+      - name: Export the verified build context
+        env:
+          SHOP_ORIGIN: ${{ vars.ARVAN_TEST_STOREFRONT_URL }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF_NAME" =~ ^test-v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/codex/arvan-test-deploy
+          [[ "$SHOP_ORIGIN" =~ ^https://[a-zA-Z0-9.-]+$ ]]
+          python3 deploy/package-production.py --output "$RUNNER_TEMP/sayman-source"
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        id: image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: ${{ runner.temp }}/sayman-source
+          file: ${{ runner.temp }}/sayman-source/${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/${{ github.repository }}-arvan-test-${{ matrix.name }}:${{ github.ref_name }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.ref_name }}
+          build-args: |
+            ${{ matrix.name == 'admin' && format('VITE_STOREFRONT_URL={0}', vars.ARVAN_TEST_STOREFRONT_URL) || '' }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}-arvan-test-${{ matrix.name }}:build-cache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}-arvan-test-${{ matrix.name }}:build-cache,mode=max
+          provenance: mode=max
+          sbom: true
+      - name: Record image digest
+        env:
+          IMAGE_NAME: ${{ matrix.name }}
+          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          printf 'ghcr.io/%s-arvan-test-%s@%s\n' "${GITHUB_REPOSITORY,,}" "$IMAGE_NAME" "$IMAGE_DIGEST" > "$IMAGE_NAME.image"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: image-${{ matrix.name }}
+          path: ${{ matrix.name }}.image
+          if-no-files-found: error
+          retention-days: 14
+
+  deploy:
+    needs: build
+    runs-on: [arvan-test-deploy]
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: image-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/sayman-digests
+      - name: Confirm the three immutable digests reached Arvan
+        run: |
+          for app in api storefront admin; do
+            test -s "$RUNNER_TEMP/sayman-digests/$app.image"
+          done
+      - name: Apply the immutable release on Arvan
+        if: vars.ARVAN_TEST_AUTO_DEPLOY == 'true'
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' | sudo -n /usr/local/sbin/sayman-arvan-release
+          import json
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "sayman-digests"
+          print(json.dumps({
+              "tag": os.environ["GITHUB_REF_NAME"],
+              "sha": os.environ["GITHUB_SHA"],
+              "images": {name: (root / f"{name}.image").read_text().strip() for name in ("api", "storefront", "admin")},
+              "registryUser": os.environ["GITHUB_ACTOR"],
+              "registryToken": os.environ["REGISTRY_TOKEN"],
+          }))
+          PY

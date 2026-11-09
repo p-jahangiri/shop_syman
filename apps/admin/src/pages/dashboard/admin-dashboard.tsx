@@ -9,7 +9,9 @@ import {
   Globe2,
   LayoutGrid,
   Plus,
+  Search,
   SlidersHorizontal,
+  Star,
   Ticket,
   Warehouse,
 } from 'lucide-react';
@@ -26,15 +28,13 @@ import {
   readDashboardTickets,
 } from '../../features/dashboard/admin-dashboard-data';
 import { orderDashboardSummary, orderWindow } from '../../features/dashboard/admin-dashboard-model';
-import { navigation, type Page } from '../../layout/admin-navigation';
+import { navigation, navigationGroups, type Page } from '../../layout/admin-navigation';
 import { canAccessAdminPage } from '../../auth/admin-page-access';
 import {
   adminDashboardShortcuts,
   adminStockLimits,
   defaultAdminDashboardPreferences,
   moveAdminPreference,
-  readAdminDashboardPreferences,
-  writeAdminDashboardPreferences,
   type AdminDashboardPreferences,
   type AdminDashboardShortcut,
   type AdminDashboardWidget,
@@ -48,6 +48,9 @@ type Props = {
   accountId: string;
   displayName: string;
   permissions: readonly string[];
+  preferences: AdminDashboardPreferences;
+  onSavePreferences: (value: AdminDashboardPreferences) => void;
+  onOpenFinder: () => void;
   onNavigate: (page: Page) => void;
 };
 
@@ -62,10 +65,10 @@ const widgetInfo = {
     tone: 'olive',
   },
   traffic: { label: 'بازدید فروشگاه', page: null, icon: Globe2, tone: 'blue' },
-  shortcuts: { label: 'دسترسی سریع', page: null, icon: LayoutGrid, tone: 'olive' },
+  shortcuts: { label: 'منتخب‌های من', page: null, icon: Star, tone: 'olive' },
 } as const;
 const destinations = new Map(navigation.map((item) => [item.id, item]));
-const shortcutDescription = {
+const shortcutDescription: Partial<Record<AdminDashboardShortcut, string>> = {
   orders: 'سفارش، رزرو و تحویل',
   products: 'کالا، تنوع و قیمت',
   inventory: 'مانده و گردش کالا',
@@ -76,7 +79,7 @@ const shortcutDescription = {
   payments: 'پرداخت و تطبیق مالی',
   customers: 'سوابق مشتریان',
   content: 'محتوای فروشگاه',
-} satisfies Record<AdminDashboardShortcut, string>;
+};
 
 const fa = new Intl.NumberFormat('fa-IR');
 const date = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'long', timeZone: 'Asia/Tehran' });
@@ -99,8 +102,15 @@ function canOpen(page: Page, permissions: readonly string[]) {
   return !!destination && canAccessAdminPage(destination, permissions);
 }
 
-export function AdminDashboard({ accountId, displayName, permissions, onNavigate }: Props) {
-  const [preferences, setPreferences] = useState(() => readAdminDashboardPreferences(accountId));
+export function AdminDashboard({
+  accountId,
+  displayName,
+  permissions,
+  preferences,
+  onSavePreferences,
+  onOpenFinder,
+  onNavigate,
+}: Props) {
   const [editing, setEditing] = useState(false);
   const allowedWidgets = preferences.order.filter((widget) => {
     const page = widgetInfo[widget].page;
@@ -123,14 +133,55 @@ export function AdminDashboard({ accountId, displayName, permissions, onNavigate
           <h1>میز کار</h1>
           <p>{displayName}، وضعیت امروز فروشگاه و کارهای نیازمند پیگیری را یکجا ببینید.</p>
         </div>
-        <Button
-          variant="outlined"
-          startIcon={<SlidersHorizontal size={17} />}
-          onClick={() => setEditing(true)}
-        >
-          شخصی‌سازی داشبورد
-        </Button>
+        <div className="dashboard-heading-actions">
+          <Button variant="contained" startIcon={<Search size={17} />} onClick={onOpenFinder}>
+            رفتن به بخش
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<SlidersHorizontal size={17} />}
+            onClick={() => setEditing(true)}
+          >
+            شخصی‌سازی داشبورد
+          </Button>
+        </div>
       </header>
+      {showShortcuts && (
+        <section
+          className="panel dashboard-widget dashboard-shortcut-widget"
+          aria-label="منتخب‌های من"
+        >
+          <WidgetHeading widget="shortcuts" />
+          {visibleShortcuts.length ? (
+            <div className="dashboard-shortcut-grid">
+              {visibleShortcuts.map((page) => {
+                const item = destinations.get(page)!;
+                return (
+                  <button type="button" key={page} onClick={() => onNavigate(page)}>
+                    <span className="dashboard-shortcut-icon">
+                      <item.icon size={19} aria-hidden="true" />
+                    </span>
+                    <span className="dashboard-shortcut-text">
+                      <strong>{item.label}</strong>
+                      <small>
+                        {shortcutDescription[page] ??
+                          navigationGroups.find((group) => group.pages.some((id) => id === page))
+                            ?.label}
+                      </small>
+                    </span>
+                    <ArrowUpRight size={16} aria-hidden="true" />
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="dashboard-no-shortcuts">
+              <p>میان‌بری انتخاب نشده است.</p>
+              <Button onClick={onOpenFinder}>انتخاب بخش‌های پرکاربرد</Button>
+            </div>
+          )}
+        </section>
+      )}
       {visibleWidgets.length ? (
         <div className="dashboard-widget-grid">
           {visibleWidgets.map((widget) => (
@@ -150,38 +201,6 @@ export function AdminDashboard({ accountId, displayName, permissions, onNavigate
           <p>نمایشگرها را از شخصی‌سازی داشبورد فعال کنید.</p>
         </section>
       )}
-      {showShortcuts && (
-        <section
-          className="panel dashboard-widget dashboard-shortcut-widget"
-          aria-label="دسترسی سریع"
-        >
-          <WidgetHeading widget="shortcuts" />
-          {visibleShortcuts.length ? (
-            <div className="dashboard-shortcut-grid">
-              {visibleShortcuts.map((page) => {
-                const item = destinations.get(page)!;
-                return (
-                  <button type="button" key={page} onClick={() => onNavigate(page)}>
-                    <span className="dashboard-shortcut-icon">
-                      <item.icon size={19} aria-hidden="true" />
-                    </span>
-                    <span className="dashboard-shortcut-text">
-                      <strong>{item.label}</strong>
-                      <small>{shortcutDescription[page]}</small>
-                    </span>
-                    <ArrowUpRight size={16} aria-hidden="true" />
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="dashboard-no-shortcuts">
-              <p>میان‌بری انتخاب نشده است.</p>
-              <Button onClick={() => setEditing(true)}>افزودن میان‌بر</Button>
-            </div>
-          )}
-        </section>
-      )}
       {editing && (
         <DashboardPreferencesDialog
           preferences={preferences}
@@ -189,8 +208,7 @@ export function AdminDashboard({ accountId, displayName, permissions, onNavigate
           allowedShortcuts={allowedShortcuts}
           onClose={() => setEditing(false)}
           onSave={(next) => {
-            setPreferences(next);
-            writeAdminDashboardPreferences(accountId, next);
+            onSavePreferences(next);
             setEditing(false);
           }}
         />
@@ -561,6 +579,7 @@ function DashboardPreferencesDialog({
 }) {
   const title = useId();
   const [draft, setDraft] = useState(preferences);
+  const [nextShortcut, setNextShortcut] = useState<AdminDashboardShortcut | ''>('');
   const order = draft.order.filter(
     (widget) => widget !== 'shortcuts' && allowedWidgets.includes(widget),
   );
@@ -633,7 +652,7 @@ function DashboardPreferencesDialog({
         )}
         {allowedShortcuts.length > 0 && (
           <fieldset>
-            <legend>دسترسی سریع</legend>
+            <legend>منتخب‌ها</legend>
             <label className="dashboard-shortcut-setting">
               <input
                 type="checkbox"
@@ -648,7 +667,7 @@ function DashboardPreferencesDialog({
                   }));
                 }}
               />
-              نمایش دسترسی سریع در پایین داشبورد
+              نمایش منتخب‌ها بالای داشبورد
             </label>
             <ol>
               {selected.map((page, index) => (
@@ -686,19 +705,32 @@ function DashboardPreferencesDialog({
             </ol>
             {available.length > 0 && (
               <div className="dashboard-add-shortcut">
-                {available.map((page) => (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<Plus size={14} />}
-                    key={page}
-                    onClick={() =>
-                      setDraft((old) => ({ ...old, shortcuts: [...old.shortcuts, page] }))
-                    }
-                  >
-                    {destinations.get(page)!.label}
-                  </Button>
-                ))}
+                <select
+                  aria-label="انتخاب بخش برای افزودن به منتخب‌ها"
+                  value={nextShortcut}
+                  onChange={(event) =>
+                    setNextShortcut(available.find((item) => item === event.target.value) ?? '')
+                  }
+                >
+                  <option value="">یک بخش را انتخاب کنید</option>
+                  {available.map((page) => (
+                    <option key={page} value={page}>
+                      {destinations.get(page)!.label}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  variant="outlined"
+                  startIcon={<Plus size={14} />}
+                  disabled={!nextShortcut || !available.includes(nextShortcut)}
+                  onClick={() => {
+                    if (!nextShortcut || !available.includes(nextShortcut)) return;
+                    setDraft((old) => ({ ...old, shortcuts: [...old.shortcuts, nextShortcut] }));
+                    setNextShortcut('');
+                  }}
+                >
+                  افزودن
+                </Button>
               </div>
             )}
           </fieldset>

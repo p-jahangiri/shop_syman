@@ -56,6 +56,11 @@ export function accountReturnTo(value: string | null, tab: string | null) {
       : value === '/addresses' ||
           value === '/credit/purchases' ||
           value === '/phone-interests' ||
+          value === '/devices' ||
+          (value !== null &&
+            /^\/purchase-requests(?:\/[a-f0-9]{32})?(?:\?(?:product|question)=[a-z0-9][a-z0-9-]{0,139}(?:&variant=[A-Za-z0-9_-]{1,64})?)?$/.test(
+              value,
+            )) ||
           (value !== null &&
             /^\/market\/[A-Za-z0-9_-]{1,64}\?configuration=[a-f0-9]{32}$/.test(value))
         ? value

@@ -10,12 +10,25 @@ import {
   productLookupPath,
   readProductLookup,
   toggleProductSelection,
+  type ProductSummary,
 } from '../../api/contracts/catalog/products-contract';
 const names = { Draft: 'پیش‌نویس', Published: 'منتشرشده', Hidden: 'پنهان' };
 export function ProductPicker({
   value,
   onChange,
+  maximum = 24,
+  excluded,
+  label,
+  publishedOnly = false,
+  onPickProduct,
+  disabled = false,
 }: {
+  publishedOnly?: boolean;
+  onPickProduct?: (product: ProductSummary) => void;
+  disabled?: boolean;
+  maximum?: number;
+  excluded?: string;
+  label?: string;
   value: string[];
   onChange: (ids: string[]) => void;
 }) {
@@ -26,9 +39,13 @@ export function ProductPicker({
   const [generation, setGeneration] = useState(0);
   const [error, setError] = useState<unknown>();
   const cursor = cursors.at(-1)!;
-  const filters = { ...emptyProductFilters, query: search };
+  const filters = {
+    ...emptyProductFilters,
+    query: search,
+    status: publishedOnly ? ('Published' as const) : ('all' as const),
+  };
   const query = useQuery({
-    queryKey: ['admin', 'product-picker', generation, search, cursor],
+    queryKey: ['admin', 'product-picker', publishedOnly, generation, search, cursor],
     queryFn: async ({ signal }) =>
       readProductsPage(await api<unknown>(productsPath(filters, cursor), { signal }), filters),
     enabled: choosing,
@@ -51,15 +68,15 @@ export function ProductPicker({
     onChange(next);
   }
   return (
-    <div className="product-picker">
-      <p>{value.length.toLocaleString('fa-IR')} کالای دستی انتخاب شده است.</p>
+    <fieldset className="product-picker" disabled={disabled}>
+      {!onPickProduct && <p>{value.length.toLocaleString('fa-IR')} کالای دستی انتخاب شده است.</p>}
       <button type="button" onClick={() => setChoosing((v) => !v)}>
-        {choosing ? 'بستن انتخاب‌گر کالا' : 'انتخاب و مرتب‌سازی کالاها'}
+        {choosing ? 'بستن انتخاب‌گر کالا' : (label ?? 'انتخاب و مرتب‌سازی کالاها')}
       </button>
       {choosing && (
         <>
           <div className="form-grid">
-            <Field label="جست‌وجوی کالای بلوک">
+            <Field label={onPickProduct ? 'جست‌وجوی کالای منتشرشده' : 'جست‌وجوی کالای بلوک'}>
               <input value={draft} maxLength={120} onChange={(e) => setDraft(e.target.value)} />
             </Field>
             <button
@@ -82,10 +99,12 @@ export function ProductPicker({
               جست‌وجو در همهٔ کالاها
             </button>
           </div>
-          <p className="muted">
-            {value.length.toLocaleString('fa-IR')} از ۲۴ کالا انتخاب شده؛ ترتیب زیر، ترتیب نمایش
-            است. انتخاب‌های خارج از صفحه حفظ می‌شوند.
-          </p>
+          {!onPickProduct && (
+            <p className="muted">
+              {value.length.toLocaleString('fa-IR')} از {maximum.toLocaleString('fa-IR')} کالا
+              انتخاب شده؛ ترتیب زیر، ترتیب نمایش است. انتخاب‌های خارج از صفحه حفظ می‌شوند.
+            </p>
+          )}
           <ErrorBox error={error ?? selected.error} />
           {selected.error && (
             <button type="button" onClick={() => void selected.refetch()}>
@@ -144,18 +163,33 @@ export function ProductPicker({
             query.data && (
               <>
                 <div className="product-picker-results">
-                  {query.data.items.map((p) => {
-                    const checked = value.some((v) => v.toLowerCase() === p.id.toLowerCase());
-                    return (
-                      <Check
-                        key={p.id}
-                        label={`${p.nameFa || p.nameEn || p.slug} · ${names[p.status]}`}
-                        checked={checked}
-                        disabled={!checked && value.length >= 24}
-                        onChange={() => onChange(toggleProductSelection(value, p.id))}
-                      />
-                    );
-                  })}
+                  {query.data.items
+                    .filter((p) => p.id !== excluded)
+                    .map((p) => {
+                      if (onPickProduct)
+                        return (
+                          <button
+                            type="button"
+                            key={p.id}
+                            onClick={() => {
+                              onPickProduct(p);
+                              setChoosing(false);
+                            }}
+                          >
+                            {p.nameFa || p.nameEn || p.slug}
+                          </button>
+                        );
+                      const checked = value.some((v) => v.toLowerCase() === p.id.toLowerCase());
+                      return (
+                        <Check
+                          key={p.id}
+                          label={`${p.nameFa || p.nameEn || p.slug} · ${names[p.status]}`}
+                          checked={checked}
+                          disabled={!checked && value.length >= maximum}
+                          onChange={() => onChange(toggleProductSelection(value, p.id))}
+                        />
+                      );
+                    })}
                   {!query.data.items.length && (
                     <p className="empty">کالایی در نتیجهٔ جست‌وجو نیست.</p>
                   )}
@@ -184,6 +218,6 @@ export function ProductPicker({
           )}
         </>
       )}
-    </div>
+    </fieldset>
   );
 }

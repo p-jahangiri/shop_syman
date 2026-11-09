@@ -13,12 +13,16 @@ import { ArrowLeft, ArrowUpLeft, Sparkles, Check, CreditCard, PackageSearch } fr
 import { ProductGrid } from '@/components/catalog/product-card';
 import { RecentlyViewed } from '@/components/catalog/recently-viewed';
 import { HomeCollection } from '@/components/content/home-collection';
+import { GuideDiscovery } from '@/components/guides/guide-discovery';
+import { MagazineDiscovery } from '@/components/magazine/magazine-discovery';
+import { BudgetFinderLink } from '@/components/budget-finder/budget-finder-link';
 import { Button } from '@/components/shared/ui';
 import { Spotlight } from '@/components/catalog/spotlight';
 import { activeHomeBlocks, curatedProducts } from '@/lib/content/home-blocks';
 import type { HomeBlock } from '@sayman/web-shared/lib/shared/types.ts';
 import { isPurchaseContentEnabled, isPurchaseHrefEnabled } from '@/lib/catalog/purchasing';
 import { isUsedCatalogHref } from '@sayman/web-shared/lib/content/appearance.ts';
+import '@/components/shopping/shopping.css';
 import './home-page.css';
 const lines = (text: string) =>
   text.split('\n').map((line, i) => (
@@ -194,6 +198,16 @@ export default async function HomePage() {
           ) : (
             <h1 className="sr-only">{site.name}</h1>
           )}
+          <MagazineDiscovery locale={locale} />
+          <BudgetFinderLink locale={locale} />
+          <nav
+            className="shopping-links"
+            aria-label={locale === 'fa' ? 'راهنما و درخواست خرید' : 'Buying help'}
+          >
+            <Link className="button button-outline" href="/purchase-requests">
+              {locale === 'fa' ? 'درخواست گوشی دلخواه' : 'Request a phone'}
+            </Link>
+          </nav>
           {active.map((block) => {
             if (block.kind === 'categories')
               return (
@@ -370,6 +384,7 @@ export default async function HomePage() {
               );
             return null;
           })}
+          <GuideDiscovery locale={locale} />
           <RecentlyViewed />
         </div>
       </div>

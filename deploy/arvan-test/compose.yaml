@@ -1,0 +1,108 @@
+name: sayman-arvan-test
+
+x-service: &service
+  init: true
+  restart: unless-stopped
+  security_opt: ['no-new-privileges:true']
+  logging:
+    driver: json-file
+    options:
+      max-size: 5m
+      max-file: '3'
+
+services:
+  sql:
+    <<: *service
+    image: ${SQL_IMAGE:?Set the approved SQL Server image}
+    platform: linux/amd64
+    mem_limit: 2200m
+    env_file: ['${SAYMAN_SHARED:?Set the shared directory}/sql.env']
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_PID: Express
+      MSSQL_MEMORY_LIMIT_MB: '1450'
+    volumes: ['sql-data:/var/opt/mssql']
+    healthcheck:
+      test: [CMD-SHELL, 'SQLCMDPASSWORD="$$MSSQL_SA_PASSWORD" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -Q "SET NOCOUNT ON; SELECT 1" >/dev/null']
+      interval: 15s
+      timeout: 8s
+      start_period: 45s
+      retries: 12
+
+  api:
+    <<: *service
+    image: ${API_IMAGE:?Set the tested API image}
+    platform: linux/amd64
+    mem_limit: 650m
+    cap_drop: [ALL]
+    env_file: ['${SAYMAN_SHARED}/runtime.env']
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      DOTNET_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: '8080'
+      DataProtection__KeyDirectory: /var/lib/sayman/keys
+      DataProtection__CertificatePath: /run/secrets/identity.pfx
+      AllowedHosts: api;localhost;127.0.0.1
+      Cors__Origins__0: ${SHOP_ORIGIN:?Set the storefront origin}
+      Cors__Origins__1: ${ADMIN_ORIGIN:?Set the admin origin}
+      Cors__AdminOrigins__0: ${ADMIN_ORIGIN}
+      Media__Storage: Disabled
+      Files__Storage: Disabled
+    volumes:
+      - ${SAYMAN_SHARED}/identity-keys:/var/lib/sayman/keys
+      - ${SAYMAN_SHARED}/identity.pfx:/run/secrets/identity.pfx:ro
+      - ${SAYMAN_SHARED}/development.json:/app/Seed/development.json:ro
+    depends_on:
+      sql: { condition: service_healthy }
+
+  storefront:
+    <<: *service
+    image: ${STOREFRONT_IMAGE:?Set the tested storefront image}
+    platform: linux/amd64
+    mem_limit: 420m
+    cap_drop: [ALL]
+    environment:
+      SHOP_DATA_MODE: api
+      SHOP_ENABLE_PREVIEW: 'false'
+      SHOP_ENABLE_INDEXING: 'false'
+      SHOP_PUBLIC_URL: ${SHOP_ORIGIN}
+      SHOP_API_URL: http://api:8080
+    ports: ['127.0.0.1:13000:3000']
+    depends_on:
+      api: { condition: service_healthy }
+
+  admin:
+    <<: *service
+    image: ${ADMIN_IMAGE:?Set the tested admin image}
+    platform: linux/amd64
+    mem_limit: 160m
+    cap_drop: [ALL]
+    environment:
+      ADMIN_PUBLIC_URL: ${ADMIN_ORIGIN}
+      ADMIN_API_URL: http://api:8080
+    ports: ['127.0.0.1:13173:8080']
+    depends_on:
+      api: { condition: service_healthy }
+
+  nginx:
+    <<: *service
+    profiles: [edge]
+    image: ${NGINX_IMAGE:?Set the approved Nginx image}
+    platform: linux/amd64
+    mem_limit: 64m
+    ports: ['80:80', '443:443']
+    environment:
+      SHOP_DOMAIN: ${SHOP_DOMAIN:?Set the storefront hostname}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?Set the admin hostname or IP}
+      TESTER_IP: ${TESTER_IP:?Set the authorized tester IP}
+      NGINX_ENVSUBST_FILTER: '^(SHOP_DOMAIN|ADMIN_DOMAIN|TESTER_IP)$$'
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ${SAYMAN_TLS_DIR:?Set the TLS certificate directory}:/etc/nginx/sayman-tls:ro
+      - ${SAYMAN_SHARED}/acme-webroot:/var/www/acme:ro
+    depends_on:
+      storefront: { condition: service_healthy }
+      admin: { condition: service_healthy }
+
+volumes:
+  sql-data:

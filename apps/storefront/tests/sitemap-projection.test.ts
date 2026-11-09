@@ -179,6 +179,15 @@ test('XML URLs use only the trusted origin, escape category queries and omit mad
   );
   const xml = await response.text();
   assert.match(xml, /https:\/\/shop.example\/fa/);
+  for (const path of [
+    'guides',
+    'guides/used-device-checklist',
+    'guides/compare-products',
+    'budget-finder',
+  ]) {
+    assert.ok(xml.includes(`<loc>https://shop.example/fa/${path}</loc>`));
+    assert.ok(xml.includes(`hreflang="en" href="https://shop.example/en/${path}"`));
+  }
   assert.doesNotMatch(xml, /evil\.example|lastmod|priority|changefreq/);
   assert.equal(response.headers.get('Content-Type'), 'application/xml; charset=utf-8');
   assert.equal(response.headers.get('Cache-Control'), 'no-store');

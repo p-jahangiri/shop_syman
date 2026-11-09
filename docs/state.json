@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-07",
+  "asOf": "2026-11-09",
   "scope": "canonical-local",
   "ownerDecision": "D44",
-  "latestProductSlice": "D109",
+  "latestProductSlice": "D116",
   "database": {
     "name": "Sayman",
     "engine": "SQL Server",
@@ -16,62 +16,74 @@
     "storefront": {
       "port": 3000,
       "descriptor": "tmp/storefront-runtime-current.json",
-      "artifactId": "5ca3f01d96ff4ed3845c40f43366f133",
-      "releaseEvidence": "artifacts/checks/frontend-quality-5ca3f01d96ff4ed3845c40f43366f133-main-release.json",
+      "artifactId": "065d0f1667a04019a7c77bef0e2453c4",
+      "releaseEvidence": "artifacts/checks/frontend-quality-065d0f1667a04019a7c77bef0e2453c4-main-release.json",
       "observedHttp": {
         "/fa": 200,
-        "/en": 200
+        "/en": 200,
+        "/fa/guides": 200,
+        "/en/guides": 200,
+        "/fa/guides/unknown-guide": 404,
+        "/fa/budget-finder": 200,
+        "/en/budget-finder": 200,
+        "/fa/mobile-news": 200,
+        "/en/devices": 200,
+        "/fa/purchase-requests": 200,
+        "/en/mobile-news": 200,
+        "/fa/mobile-news/used-phone-inspection": 200,
+        "/en/mobile-news/iphone-14-vs-15": 200,
+        "/fa/mobile-news/unknown-guide": 404
       }
     },
     "api": {
       "port": 5080,
       "descriptor": "tmp/api-runtime-current.json",
-      "artifactId": "c713ffaf19e043cf82a90519b49b703c",
-      "releaseEvidence": "artifacts/checks/d109-motion/api-c713ffaf19e043cf82a90519b49b703c-release.json",
+      "artifactId": "5d3ff6b3c3f243e0ac0034d187ee2f52",
+      "releaseEvidence": "artifacts/checks/d116-magazine/api-5d3ff6b3c3f243e0ac0034d187ee2f52-release.json",
       "observedHttp": {
-        "/health/ready": 200
+        "/health/ready": 200,
+        "/api/content/news": 200,
+        "/api/content/product-help/fa/p1": 200,
+        "/api/admin/content/product-help/fa/p1": 401,
+        "/api/content/news/fa": 200
       }
     },
     "admin": {
       "port": 3173,
       "descriptor": "tmp/admin-runtime-current.json",
-      "artifactId": "5ca3f01d96ff4ed3845c40f43366f133",
-      "releaseEvidence": "artifacts/checks/frontend-quality-5ca3f01d96ff4ed3845c40f43366f133-main-release.json",
+      "artifactId": "063e8dbb11944079be91ac0a7708cbe3",
+      "releaseEvidence": "artifacts/checks/frontend-quality-063e8dbb11944079be91ac0a7708cbe3-main-release.json",
       "observedHttp": {
         "/": 200
       }
     }
   },
   "acceptance": {
-    "slice": "D109",
+    "slice": "D116",
     "built": true,
     "unitTested": {
-      "storefront": 923,
-      "admin": 439,
-      "backend": 39
+      "storefront": 927,
+      "api": 4
     },
-    "sqlTested": {
-      "passed": 3,
-      "cleanupVerified": true,
-      "evidence": "artifacts/checks/d109-motion/sql.trx"
-    },
+    "sqlTested": 0,
     "activeOnMain": true,
-    "browserVerified": {
-      "adminPresets": 3,
-      "storefrontCases": 7,
-      "disabledCases": 6,
-      "publishedMotion": "none",
-      "evidence": "artifacts/checks/d109-motion/browser.json",
-      "previewGif": "artifacts/checks/d109-motion/motion-preview.gif"
-    },
     "ownerVerified": false,
     "production": false,
-    "notVerified": [
-      "authenticated CMS publication on main",
-      "physical devices",
-      "owner acceptance",
-      "production"
-    ]
+    "browserVerified": {
+      "fixtureAccounts": 0,
+      "viewportWidths": [
+        390,
+        1440
+      ],
+      "evidence": "artifacts/checks/d116-magazine/browser.json"
+    },
+    "liveNews": {
+      "publishers": 4,
+      "headlines": 14,
+      "teasers": 10,
+      "publisherThumbnails": 8,
+      "timedOutPublisher": "آی‌تی‌رسان"
+    }
   },
   "openDependencies": [
     "payment-contracts",
@@ -94,7 +106,7 @@
     "plan": "docs/PLAN.md",
     "decisionIndex": "docs/DECISIONS-INDEX.md",
     "changelog": "docs/changelog/README.md",
-    "latestProductChangelog": "docs/changelog/D109.md",
+    "latestProductChangelog": "docs/changelog/D116.md",
     "deploymentProcedure": "docs/DEPLOYMENT.md",
     "deploymentState": "docs/DEPLOYMENT-STATE.md"
   },

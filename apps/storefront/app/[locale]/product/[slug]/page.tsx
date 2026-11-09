@@ -1,3 +1,4 @@
+import { ProductAccessories, ProductQuestions } from '@/components/shopping/product-help';
 import { cache, Suspense } from 'react';
 import { headers } from 'next/headers';
 import { ProductsScope } from '@/components/navigation/locale-provider';
@@ -12,6 +13,8 @@ import type { Metadata } from 'next';
 import { getLocale, serverI18n } from '@/lib/navigation/server-locale';
 import { ProductDetail } from '@/components/catalog/product-detail';
 import { ProductGrid } from '@/components/catalog/product-card';
+import { CompareSimilar } from '@/components/catalog/compare-similar';
+import { GuideLink } from '@/components/guides/guide-discovery';
 import type { Product } from '@sayman/web-shared/lib/shared/types.ts';
 import { ArrowLeft } from 'lucide-react';
 import Link from '@/components/navigation/localized-link';
@@ -25,7 +28,7 @@ export async function generateMetadata({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ variant?: string | string[] }>;
+  searchParams: Promise<{ variant?: string | string[]; examples?: string | string[] }>;
 }): Promise<Metadata> {
   const { slug } = await params;
   const [snapshot, product] = await Promise.all([
@@ -33,14 +36,17 @@ export async function generateMetadata({
     getLocale().then((locale) => productBySlug(locale, slug)),
   ]);
   if (!product) notFound();
-  const { variant } = await searchParams;
+  const { variant, examples } = await searchParams;
   return pageMetadata(
     snapshot,
     snapshot.locale,
     `/product/${encodeURIComponent(product.slug)}`,
     product.name,
     product.description,
-    { image: product.image, noindex: unavailableVariant(product.variants, variant) },
+    {
+      image: product.image,
+      noindex: examples !== undefined || unavailableVariant(product.variants, variant),
+    },
   );
 }
 function unavailableVariant(variants: { id: string }[], variant: string | string[] | undefined) {
@@ -54,10 +60,10 @@ export default async function ProductPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ variant?: string | string[] }>;
+  searchParams: Promise<{ variant?: string | string[]; examples?: string | string[] }>;
 }) {
   const { slug } = await params;
-  const { variant } = await searchParams;
+  const { variant, examples } = await searchParams;
   const [snapshot, product] = await Promise.all([
     serverI18n(),
     getLocale().then((locale) => productBySlug(locale, slug)),
@@ -92,10 +98,35 @@ export default async function ProductPage({
         key={`${product.id}:${variant ?? 'default'}`}
         product={product}
         initialVariantId={typeof variant === 'string' ? variant : undefined}
-        relatedProducts={
+        questions={
           <Suspense fallback={null}>
-            <RelatedProducts product={product} snapshot={snapshot} />
+            <ProductQuestions product={product} snapshot={snapshot} examples={examples === '1'} />
           </Suspense>
+        }
+        relatedProducts={
+          <>
+            <Suspense fallback={null}>
+              <ProductAccessories
+                product={product}
+                snapshot={snapshot}
+                examples={examples === '1'}
+              />
+            </Suspense>
+            <div className="guide-product-link">
+              <GuideLink
+                locale={snapshot.locale}
+                slug={
+                  snapshot.site.appearance?.showUsedProducts !== false &&
+                  product.variants.some((item) => item.usedCondition)
+                    ? 'used-device-checklist'
+                    : 'compare-products'
+                }
+              />
+            </div>
+            <Suspense fallback={null}>
+              <RelatedProducts product={product} snapshot={snapshot} />
+            </Suspense>
+          </>
         }
       />
     </ProductsScope>
@@ -121,7 +152,9 @@ async function RelatedProducts({
       },
       AbortSignal.timeout(1500),
     );
-    related = page.products.filter((item) => item.id !== product.id).slice(0, 4);
+    related = page.products
+      .filter((item) => item.id !== product.id && item.category === product.category)
+      .slice(0, 4);
   } catch (error) {
     if (error instanceof CatalogServiceError) return null;
     throw error;
@@ -144,6 +177,14 @@ async function RelatedProducts({
           </Link>
         </div>
         <ProductGrid items={related} />
+        <div className="guide-product-link">
+          <CompareSimilar
+            locale={locale}
+            productId={product.id}
+            variantIds={product.variants.map((item) => item.id)}
+            similarIds={related.slice(0, 3).map((item) => item.id)}
+          />
+        </div>
       </section>
     </ProductsScope>
   );

@@ -38,6 +38,33 @@ public sealed class SupportContentSqlTests:IAsyncLifetime
         var all=await Body(await staff.GetAsync("/api/admin/content"));var revision=all["revisions"]!.AsArray().Single(x=>x!["key"]!.GetValue<string>()=="support"&&x["locale"]!.GetValue<string>()=="fa"&&x["revision"]!.GetValue<int>()==1)!;var historical=await Body(await staff.GetAsync("/api/admin/content/support/fa/revisions/"+revision["id"]!.GetValue<string>()),"historical-revision");Assert.Equal(original.ToJsonString(),historical["content"]!.ToJsonString());using(var wrongLocale=await staff.GetAsync("/api/admin/content/support/en/revisions/"+revision["id"]!.GetValue<string>()))Assert.Equal(HttpStatusCode.NotFound,wrongLocale.StatusCode);await Publish(staff,await Document(staff,"fa"),revision["id"]!.GetValue<string>());var restored=await Body(await publicClient.GetAsync("/api/content/support/fa"),"restored");Assert.Equal(3,restored["revision"]!.GetValue<int>());Assert.Equal(published["content"]!.ToJsonString(),restored["content"]!.ToJsonString());
         var foreign=all["revisions"]!.AsArray().Single(x=>x!["key"]!.GetValue<string>()=="support"&&x["locale"]!.GetValue<string>()=="en")!;doc=await Document(staff,"fa");using(var denied=await staff.PostAsJsonAsync("/api/admin/content/support/fa/publish",new{Version=doc["version"]!.GetValue<string>(),RestoreRevisionId=foreign["id"]!.GetValue<string>()}))Assert.Equal(HttpStatusCode.NotFound,denied.StatusCode);Assert.Equal(restored.ToJsonString(),(await Body(await publicClient.GetAsync("/api/content/support/fa"))).ToJsonString());
     }
+    [Fact]
+    public async Task ProductHelpDraftIsPrivateAndAccessoriesAreSharedOnlyAfterPublication()
+    {
+        using var editor = await Staff();
+        using var visitor = sql.Factory.CreateClient(new() { HandleCookies = false });
+        const string draftPath = "/api/admin/content/product-help/fa/p1";
+        const string publicPath = "/api/content/product-help/";
+        using var denied = await visitor.GetAsync(draftPath);
+        Assert.Equal(HttpStatusCode.Unauthorized, denied.StatusCode);
+        var content = JsonNode.Parse("""
+            {"accessoriesEnabled":true,"accessoryIds":["p12"],"questions":[{"question":"پرسش نمونه","answer":"پاسخ نمونه"}],"isDemo":false}
+            """)!.AsObject();
+        await Saved(await editor.PutAsJsonAsync("/api/admin/content/product-help-p1/fa", new ContentInput(content, null)));
+        Assert.False((await Body(await visitor.GetAsync(publicPath + "fa/p1")))["configured"]!.GetValue<bool>());
+        var draft = (await Body(await editor.GetAsync(draftPath)))["document"]!;
+        var version = draft["version"]!.GetValue<string>();
+        await Saved(await editor.PostAsJsonAsync("/api/admin/content/product-help-p1/fa/publish", new { Version = version }));
+        var fa = await Body(await visitor.GetAsync(publicPath + "fa/p1"));
+        var en = await Body(await visitor.GetAsync(publicPath + "en/p1"));
+        Assert.Single(fa["questions"]!.AsArray());
+        Assert.Empty(en["questions"]!.AsArray());
+        Assert.Equal("p12", Assert.Single(en["accessoryIds"]!.AsArray())!.GetValue<string>());
+        using var replay = await editor.PostAsJsonAsync("/api/admin/content/product-help-p1/fa/publish", new { Version = version });
+        Assert.Equal(HttpStatusCode.Conflict, replay.StatusCode);
+        Assert.Empty((await Body(await visitor.GetAsync(publicPath + "fa/p2")))["accessoryIds"]!.AsArray());
+    }
+
     [Fact]public async Task SupportAgentCannotManageEditorialContentAndPublicReadsRejectDraftQueries()
     {
         using var support=await Staff("SupportAgent");using(var denied=await support.GetAsync("/api/admin/content"))Assert.Equal(HttpStatusCode.Forbidden,denied.StatusCode);using(var denied=await support.PutAsJsonAsync("/api/admin/content/support/fa",new ContentInput(Content(),null)))Assert.Equal(HttpStatusCode.Forbidden,denied.StatusCode);using(var denied=await support.GetAsync("/api/admin/content/support/fa/revisions/1"))Assert.Equal(HttpStatusCode.Forbidden,denied.StatusCode);using var editor=await Staff();using(var denied=await editor.GetAsync("/api/admin/support/tickets"))Assert.Equal(HttpStatusCode.Forbidden,denied.StatusCode);

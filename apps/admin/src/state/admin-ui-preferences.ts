@@ -1,3 +1,5 @@
+import { navigationGroups, type Page } from '../layout/admin-navigation.ts';
+
 export type AdminColorMode = 'light' | 'dark';
 
 const themeKey = 'sayman.admin.color-mode.v1';
@@ -12,20 +14,11 @@ export const adminDashboardWidgets = [
   'shortcuts',
 ] as const;
 export const adminStockLimits = [1, 3, 5, 10] as const;
-export const adminDashboardShortcuts = [
-  'orders',
-  'products',
-  'inventory',
-  'returns',
-  'tickets',
-  'receiving',
-  'credit-schedules',
-  'payments',
-  'customers',
-  'content',
-] as const;
+export type AdminDashboardShortcut = Exclude<Page, 'dashboard'>;
+export const adminDashboardShortcuts = navigationGroups
+  .flatMap((group) => [...group.pages] as Page[])
+  .filter((page): page is AdminDashboardShortcut => page !== 'dashboard');
 export type AdminDashboardWidget = (typeof adminDashboardWidgets)[number];
-export type AdminDashboardShortcut = (typeof adminDashboardShortcuts)[number];
 export type AdminDashboardPreferences = {
   order: AdminDashboardWidget[];
   hidden: AdminDashboardWidget[];
@@ -121,6 +114,24 @@ export function writeAdminDashboardPreferences(
   prefs: AdminDashboardPreferences,
 ) {
   write('sayman.admin.dashboard.v1.' + accountId, JSON.stringify(prefs));
+}
+
+const recentPageLimit = 6;
+
+export function readRecentAdminPages(accountId: string): AdminDashboardShortcut[] {
+  const raw = read('sayman.admin.recent-pages.v1.' + accountId);
+  if (!raw || raw.length > 1024) return [];
+  try {
+    return knownUnique(JSON.parse(raw), adminDashboardShortcuts, []).slice(0, recentPageLimit);
+  } catch {
+    return [];
+  }
+}
+
+export function rememberAdminPage(accountId: string, page: AdminDashboardShortcut) {
+  const previous = readRecentAdminPages(accountId);
+  const recent = [page, ...previous.filter((item) => item !== page)].slice(0, recentPageLimit);
+  write('sayman.admin.recent-pages.v1.' + accountId, JSON.stringify(recent));
 }
 
 export function moveAdminPreference<T extends string>(

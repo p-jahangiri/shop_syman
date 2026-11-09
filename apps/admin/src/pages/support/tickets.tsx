@@ -10,9 +10,20 @@ import { api } from '../../api/api';
 import { adminViewRevision } from '../../auth/admin-view-authority';
 import { TicketWorkspace } from '@sayman/web-shared/components/support/ticket-workspace';
 import { adminTicketJournal } from '../../state/support/ticket-journal';
+import { PublicQuestionReply, SuggestedProduct } from './shopping-reply-tools';
 import '../../styles/customers/customer-service-workspace.css';
 import '../../styles/support/support-inbox.css';
-export function TicketsPage({ viewerId, writable }: { viewerId: string; writable: boolean }) {
+export function TicketsPage({
+  viewerId,
+  writable,
+  canPickProduct,
+  canPublishQuestion,
+}: {
+  viewerId: string;
+  writable: boolean;
+  canPickProduct: boolean;
+  canPublishQuestion: boolean;
+}) {
   const transport = useCallback(async (path: string, init: RequestInit = {}) => {
     if (!path.startsWith('/api/admin/support/')) throw Error('Invalid private support path');
     const revision = adminViewRevision(),
@@ -58,6 +69,23 @@ export function TicketsPage({ viewerId, writable }: { viewerId: string; writable
         transport={transport}
         download={download}
         journal={adminTicketJournal}
+        replyTools={{
+          suggestProduct: canPickProduct
+            ? (selected, onSelect, disabled) => (
+                <SuggestedProduct selected={selected} onSelect={onSelect} disabled={disabled} />
+              )
+            : undefined,
+          publishQuestion: canPublishQuestion
+            ? (ticket, first, refresh) => (
+                <PublicQuestionReply
+                  key={ticket.id}
+                  ticket={ticket}
+                  first={first}
+                  refresh={refresh}
+                />
+              )
+            : undefined,
+        }}
       />
     </div>
   );

@@ -1,6 +1,9 @@
 import { z } from '@sayman/web-shared/lib/config/schema-runtime.ts';
 import { canIndexEnvironment, publicOrigin, type SeoEnvironment } from './seo.ts';
 import type { Locale } from '@sayman/web-shared/lib/shared/types.ts';
+import { guidePaths } from '../content/buying-guides.ts';
+import { magazineGuides, magazineGuidePath, magazinePath } from '../content/magazine.ts';
+import { budgetFinderPath } from '../catalog/budget-finder.ts';
 export interface SitemapEnvironment extends SeoEnvironment {
   SHOP_DATA_MODE?: string;
   SHOP_API_URL?: string;
@@ -207,6 +210,13 @@ export function sitemapPageXml(
     : [
         { path: '', languages: enabled },
         { path: '/catalog', languages: enabled },
+        { path: budgetFinderPath, languages: enabled },
+        { path: magazinePath, languages: enabled },
+        ...magazineGuides.map(({ slug }) => ({
+          path: magazineGuidePath(slug),
+          languages: enabled,
+        })),
+        ...guidePaths.map((path) => ({ path, languages: enabled })),
       ];
   return sitemapUrlSet(
     rows.map((r) => ({

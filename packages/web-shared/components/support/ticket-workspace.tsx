@@ -18,6 +18,7 @@ import {
   useState,
   useSyncExternalStore,
   type FormEvent,
+  type ReactNode,
 } from 'react';
 import {
   readTicketPage,
@@ -30,9 +31,25 @@ import {
   type TicketPage,
   type TicketSummary,
   type TicketMessages,
+  type TicketMessage,
 } from '../../lib/support/ticket-contract';
 import { TicketJournal } from '../../lib/support/ticket-journal';
+import {
+  ShoppingRequestFields,
+  shoppingMarker,
+  shoppingRequestContent,
+  type ShoppingRequest,
+} from './shopping-request-fields';
 import { normalizePersian } from '../../lib/shared/commerce';
+export type TicketProductSuggestion = { slug: string; label: string };
+type TicketReplyTools = {
+  suggestProduct?: (
+    selected: TicketProductSuggestion | null,
+    onSelect: (product: TicketProductSuggestion | null) => void,
+    disabled: boolean,
+  ) => ReactNode;
+  publishQuestion?: (ticket: TicketSummary, first: TicketMessage, refresh: () => void) => ReactNode;
+};
 export type TicketTransport = (path: string, init?: RequestInit) => Promise<unknown>;
 export class TicketRequestError extends Error {
   constructor(
@@ -79,7 +96,11 @@ export function TicketWorkspace({
   onSelect,
   live,
   download,
+  shoppingRequest,
+  replyTools,
 }: {
+  replyTools?: TicketReplyTools;
+  shoppingRequest?: ShoppingRequest;
   download?: TicketDownloadTransport;
   live?: PrivateRealtimeClient | null;
   owner: string;
@@ -107,6 +128,7 @@ export function TicketWorkspace({
     [subject, setSubject] = useState(''),
     [body, setBody] = useState(''),
     [invalid, setInvalid] = useState(false);
+  const [completedCreateId, setCompletedCreateId] = useState<string>();
   const generation = useRef(0),
     controller = useRef<AbortController | null>(null);
   const normalizedSearch = normalizePersian(search);
@@ -190,6 +212,7 @@ export function TicketWorkspace({
       setRefresh((n) => n + 1);
       setBody('');
       setSubject('');
+      if (entry.command.kind === 'create') setCompletedCreateId(entry.command.id);
     }
   }, [entry?.state, entry?.command.id]);
   useEffect(() => {
@@ -244,10 +267,13 @@ export function TicketWorkspace({
       }
     }
   }
-  function create(event: FormEvent) {
+  function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (unresolved) return;
-    const parsed = ticketCreateSchema.safeParse({ subject, body, locale });
+    const content = shoppingRequest
+      ? shoppingRequestContent(new FormData(event.currentTarget), shoppingRequest, locale)
+      : { subject, body };
+    const parsed = ticketCreateSchema.safeParse(content ? { ...content, locale } : null);
     if (!parsed.success) {
       setInvalid(true);
       return;
@@ -269,6 +295,8 @@ export function TicketWorkspace({
   const terms = exactId ? [] : normalizedSearch.split(' ').filter(Boolean);
   const items = page?.items.filter(
     (item) =>
+      (!shoppingRequest ||
+        Object.values(shoppingMarker).some((marker) => item.subject.startsWith(marker + ' '))) &&
       (!exactId || item.id === exactId) &&
       (!effectiveState || item.state === effectiveState) &&
       terms.every(
@@ -359,7 +387,9 @@ export function TicketWorkspace({
               {entry.state === 'done' && (
                 <button type="button" onClick={() => select(entry.result!.ticket.id)}>
                   {entry.command.kind === 'create'
-                    ? text('باز کردن گفت‌وگو و افزودن عکس', 'Open conversation and add a photo')
+                    ? shoppingRequest
+                      ? text('پیگیری درخواست', 'Track request')
+                      : text('باز کردن گفت‌وگو و افزودن عکس', 'Open conversation and add a photo')
                     : text('مشاهدهٔ گفت‌وگو', 'View conversation')}
                 </button>
               )}
@@ -405,6 +435,17 @@ export function TicketWorkspace({
                     </button>
                   );
                 })}
+              </div>
+              <div className="row-buttons">
+                <button type="button" onClick={() => setSearch(shoppingMarker.phone)}>
+                  درخواست گوشی
+                </button>
+                <button type="button" onClick={() => setSearch(shoppingMarker['product-question'])}>
+                  پرسش کالا
+                </button>
+                <button type="button" onClick={() => setSearch('')}>
+                  همهٔ موضوع‌ها
+                </button>
               </div>
               <label className="ticket-field ticket-queue-search">
                 <span>{text('پیدا کردن تیکت', 'Find a ticket')}</span>
@@ -525,6 +566,7 @@ export function TicketWorkspace({
           }
           download={download}
           onDraftChange={staff ? recordDraft : undefined}
+          replyTools={replyTools}
           send={(command, blob) => send(command, false, blob)}
           back={() => select(null)}
         />
@@ -540,39 +582,55 @@ export function TicketWorkspace({
         </section>
       ) : (
         <section className="ticket-panel">
-          <h2>{text('درخواست تازه', 'New request')}</h2>
-          <form onSubmit={create}>
-            <label className="ticket-field">
-              <span>{text('موضوع', 'Subject')}</span>
-              <input
-                value={subject}
-                maxLength={120}
-                required
-                disabled={unresolved}
-                onChange={(e) => setSubject(e.target.value)}
-              />
-            </label>
-            <label className="ticket-field">
-              <span>{text('پیام شما', 'Your message')}</span>
-              <textarea
-                value={body}
-                maxLength={4000}
-                rows={6}
-                required
-                disabled={unresolved}
-                onChange={(e) => setBody(e.target.value)}
-              />
-            </label>
+          <h2>
+            {shoppingRequest?.kind === 'phone'
+              ? text('گوشی دلخواهت را درخواست کن', 'Request a phone')
+              : shoppingRequest?.kind === 'product-question'
+                ? text('از سایمان بپرس', 'Ask Sayman')
+                : text('درخواست تازه', 'New request')}
+          </h2>
+          <form key={completedCreateId ?? 'draft'} onSubmit={create}>
+            {shoppingRequest ? (
+              <fieldset disabled={unresolved}>
+                <ShoppingRequestFields request={shoppingRequest} locale={locale} />
+              </fieldset>
+            ) : (
+              <>
+                <label className="ticket-field">
+                  <span>{text('موضوع', 'Subject')}</span>
+                  <input
+                    value={subject}
+                    maxLength={120}
+                    required
+                    disabled={unresolved}
+                    onChange={(e) => setSubject(e.target.value)}
+                  />
+                </label>
+                <label className="ticket-field">
+                  <span>{text('پیام شما', 'Your message')}</span>
+                  <textarea
+                    value={body}
+                    maxLength={4000}
+                    rows={6}
+                    required
+                    disabled={unresolved}
+                    onChange={(e) => setBody(e.target.value)}
+                  />
+                </label>
+              </>
+            )}
             {invalid && (
               <p role="alert">
                 {text(
-                  'موضوع حداکثر۱۲۰ و متن حداکثر۴۰۰۰ نویسه است؛ هر دو را تکمیل کنید.',
-                  'Enter a subject of up to 120 characters and a message of up to 4,000 characters.',
+                  'فیلدهای الزامی و قالب مبلغ را بررسی کنید.',
+                  'Check the required fields and budget format.',
                 )}
               </p>
             )}
             <button type="submit" disabled={unresolved}>
-              {text('ثبت درخواست پشتیبانی', 'Send support request')}
+              {shoppingRequest
+                ? text('ثبت درخواست', 'Send request')
+                : text('ثبت درخواست پشتیبانی', 'Send support request')}
             </button>
             <p className="ticket-upload-hint">
               {text(
@@ -616,7 +674,9 @@ function TicketConversation({
   back,
   download,
   onDraftChange,
+  replyTools,
 }: {
+  replyTools?: TicketReplyTools;
   download?: TicketDownloadTransport;
   owner: string;
   id: string;
@@ -632,6 +692,7 @@ function TicketConversation({
 }) {
   const text = (fa: string, en: string) => (locale === 'fa' ? fa : en),
     prefix = staff ? '/api/admin/support' : '/api/support';
+  const [suggested, setSuggested] = useState<TicketProductSuggestion | null>(null);
   const [ticket, setTicket] = useState<TicketSummary | null>(null),
     [messages, setMessages] = useState<TicketMessages | null>(null),
     [body, setBody] = useState(''),
@@ -733,8 +794,8 @@ function TicketConversation({
     if (staff) heading.current?.focus();
   }, [staff]);
   useEffect(() => {
-    onDraftChange?.(Boolean(body.trim() || file));
-  }, [body, file, onDraftChange]);
+    onDraftChange?.(Boolean(body.trim() || file || suggested));
+  }, [body, file, onDraftChange, suggested]);
   useEffect(() => () => onDraftChange?.(false), [onDraftChange]);
 
   useEffect(() => {
@@ -749,6 +810,7 @@ function TicketConversation({
   useEffect(() => {
     if (completedReplyId) {
       setBody('');
+      setSuggested(null);
       setFile(null);
       setFileError(false);
     }
@@ -780,7 +842,11 @@ function TicketConversation({
   async function reply(event: FormEvent) {
     event.preventDefault();
     if (!ticket || !writable || busy || failed || hashing) return;
-    const parsed = ticketReplySchema.safeParse({ version: ticket.version, body, locale });
+    const message =
+      staff && suggested && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(suggested.slug)
+        ? body.trim() + '\n\n[product:' + suggested.slug + ']'
+        : body;
+    const parsed = ticketReplySchema.safeParse({ version: ticket.version, body: message, locale });
     if (!parsed.success) {
       setInvalid(true);
       return;
@@ -900,7 +966,24 @@ function TicketConversation({
                   <time dateTime={message.at}>{date(message.at)}</time>
                 </div>
                 <p lang={message.locale} dir={message.locale === 'fa' ? 'rtl' : 'ltr'}>
-                  {message.body}
+                  {message.author === 'support'
+                    ? message.body
+                        .split(/(\[product:[a-z0-9][a-z0-9-]{0,139}\])/)
+                        .map((part, index) => {
+                          const slug = /^\[product:([a-z0-9][a-z0-9-]{0,139})\]$/.exec(part)?.[1];
+                          return slug ? (
+                            <a
+                              className="ticket-suggested-product"
+                              key={index}
+                              href={`/${locale}/product/${slug}`}
+                            >
+                              {text('دیدن کالای پیشنهادی', 'View suggested product')}
+                            </a>
+                          ) : (
+                            part
+                          );
+                        })
+                    : message.body}
                 </p>
               </li>
             ))}
@@ -989,6 +1072,15 @@ function TicketConversation({
               )}
             </p>
           )}
+          {staff &&
+            writable &&
+            !failed &&
+            ticket.state !== 'Closed' &&
+            ticket.subject.startsWith(shoppingMarker['product-question'] + ' ') &&
+            messages?.items[0] &&
+            replyTools?.publishQuestion?.(ticket, messages.items[0], () =>
+              setLocalRefresh((n) => n + 1),
+            )}
           {ticket.state === 'Closed' ? (
             <p>
               {text(
@@ -1009,6 +1101,13 @@ function TicketConversation({
                   onChange={(e) => setBody(e.target.value)}
                 />
               </label>
+              {staff &&
+                ticket.subject.startsWith(shoppingMarker.phone + ' ') &&
+                replyTools?.suggestProduct?.(
+                  suggested,
+                  setSuggested,
+                  !writable || busy || failed || hashing,
+                )}
               {capabilities?.configured && !fileFull && (
                 <label className="ticket-field ticket-file-picker">
                   <span>

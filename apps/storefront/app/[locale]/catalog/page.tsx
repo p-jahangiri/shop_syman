@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import { serverI18n } from '@/lib/navigation/server-locale';
 import { Catalog } from '@/components/catalog/catalog';
 import Link from '@/components/navigation/localized-link';
+import { GuideLink } from '@/components/guides/guide-discovery';
+import { BudgetFinderLink } from '@/components/budget-finder/budget-finder-link';
 import {
   getCatalogSearch,
   getCatalogFilters,
@@ -59,13 +61,22 @@ export default async function CatalogPage({
       getCatalogFilters(locale, query.categoryId, undefined, condition),
     ]);
     return (
-      <Catalog
-        key={locale}
-        query={query}
-        page={page}
-        facets={facets}
-        suggestion={page.suggestion}
-      />
+      <>
+        <Catalog
+          key={locale}
+          query={query}
+          page={page}
+          facets={facets}
+          suggestion={page.suggestion}
+        />
+        <div className="container guide-product-link">
+          <BudgetFinderLink locale={locale} />
+          <GuideLink
+            locale={locale}
+            slug={query.condition === 'used' ? 'used-device-checklist' : 'compare-products'}
+          />
+        </div>
+      </>
     );
   } catch (error) {
     if (error instanceof CatalogServiceError && error.status === 404) notFound();

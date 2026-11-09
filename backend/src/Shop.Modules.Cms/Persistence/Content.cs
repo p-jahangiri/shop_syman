@@ -54,13 +54,25 @@ public sealed class ContentService(CmsDbContext db, IPublicImageReferences image
             var settings = shared ? rows.SingleOrDefault(x => x.Locale == "fa")?.PublishedJson : null;
             if (json is not null && settings is not null)
                 SharedSiteSettings.Apply(JsonNode.Parse(settings)!.AsObject(), content);
+            content.Remove("paletteLibrary");
             StoreIdentityRules.ProjectPublic(content, development);
         }
         return content;
     }
-    public async Task<object> AdminAsync(CancellationToken ct) => new { Documents = await db.Documents.AsNoTracking().OrderBy(x => x.Key).ThenBy(x => x.Locale).ToListAsync(ct), Revisions = await db.Revisions.AsNoTracking().OrderByDescending(x => x.Id).Take(50).Select(x => new { x.Id, x.Key, x.Locale, x.Revision, x.PublishedBy, x.PublishedAt }).ToListAsync(ct) };
+    public Task<ContentDocument?> ProductHelpDraftAsync(string id, string locale, CancellationToken ct)
+    {
+        var key = ProductHelpRules.Key(id);
+        return db.Documents.AsNoTracking().SingleOrDefaultAsync(x => x.Key == key && x.Locale == locale, ct);
+    }
+
+    public async Task<object> AdminAsync(CancellationToken ct) => new { Documents = await db.Documents.AsNoTracking().Where(x => !x.Key.StartsWith(ProductHelpRules.Prefix) && !x.Key.StartsWith(ProductAnswersService.Prefix)).OrderBy(x => x.Key).ThenBy(x => x.Locale).ToListAsync(ct), Revisions = await db.Revisions.AsNoTracking().Where(x => !x.Key.StartsWith(ProductHelpRules.Prefix) && !x.Key.StartsWith(ProductAnswersService.Prefix)).OrderByDescending(x => x.Id).Take(50).Select(x => new { x.Id, x.Key, x.Locale, x.Revision, x.PublishedBy, x.PublishedAt }).ToListAsync(ct) };
     public static void Validate(string key, string locale, JsonObject value)
     {
+        if (locale is "fa" or "en" && ProductHelpRules.IsKey(key))
+        {
+            _ = ProductHelpRules.Read(key, value);
+            return;
+        }
         if (locale is not ("fa" or "en") || key is not ("site" or "auth" or "support")) throw new BusinessException("invalid_content", "Unsupported content key, locale or document size.");
         if (key == "support") { _ = SupportContentRules.Read(value); return; }
         if (JsonSerializer.SerializeToUtf8Bytes(value).Length > 100000) throw new BusinessException("invalid_content", "Unsupported content key, locale or document size.");
@@ -117,6 +129,7 @@ public sealed class ContentService(CmsDbContext db, IPublicImageReferences image
         StoreIdentityRules.Validate(value);
         SitePurchaseRules.Validate(value);
         SitePaletteRules.Validate(value["palette"]);
+        SitePaletteRules.ValidateLibrary(value["paletteLibrary"], value["palette"]);
         if (value["contact"] is JsonObject contact) {
             foreach (var pair in contact) if (pair.Key is not ("phone" or "email" or "address" or "hours") || pair.Value is not JsonValue textNode || !textNode.TryGetValue<string>(out var text) || text.Length > (pair.Key == "address" ? 1000 : pair.Key == "email" ? 254 : pair.Key == "phone" ? 32 : 200)) throw new BusinessException("invalid_contact", "Contact fields must contain bounded text.");
             if (contact["phone"] is not null && !System.Text.RegularExpressions.Regex.IsMatch(contact["phone"]!.ToString(), "^[0-9+() -]{5,32}$")) throw new BusinessException("invalid_contact", "Use an ASCII phone number.");
@@ -138,6 +151,7 @@ public sealed class ContentService(CmsDbContext db, IPublicImageReferences image
     public async Task SaveAsync(string key, string locale, ContentInput input, string actorId, CancellationToken ct)
     {
         Validate(key, locale, input.Content);
+        if (ProductHelpRules.IsKey(key)) ProductHelpRules.RequireEnvironment(input.Content, development);
         if (key == "site") StoreIdentityRules.RequireEnvironment(input.Content, development);
         if (key == "site") await images.RequireReadyAsync(CmsImageReferences.Site(input.Content), ct);
         var entity = await db.Documents.SingleOrDefaultAsync(x => x.Key == key && x.Locale == locale, ct);
@@ -154,6 +168,7 @@ public sealed class ContentService(CmsDbContext db, IPublicImageReferences image
         var json = section is not null ? MergeSocialLinks(entity) : restoreRevisionId is null ? entity.DraftJson : (await db.Revisions.SingleOrDefaultAsync(x => x.Id == restoreRevisionId && x.Key == key && x.Locale == locale, ct) ?? throw new BusinessException("not_found", "Revision was not found.")).Json;
         var content = JsonNode.Parse(json)!.AsObject();
         Validate(key, locale, content);
+        if (ProductHelpRules.IsKey(key)) ProductHelpRules.RequireEnvironment(content, development);
         if (key == "site") StoreIdentityRules.RequireEnvironment(content, development);
         if (key == "auth") await loginContinuity.RequireAsync(content["emailPassword"]!.GetValue<bool>(),content["usernamePassword"]!.GetValue<bool>(),content["mobileOtp"]!.GetValue<bool>(),ct);
         if (key == "site") await images.RequireReadyAsync(CmsImageReferences.Site(content), ct);
@@ -187,6 +202,7 @@ public sealed class ContentService(CmsDbContext db, IPublicImageReferences image
     {
         if (await db.Documents.AnyAsync(x => x.Key == key && x.Locale == locale, ct)) return;
         Validate(key, locale, value);
+        if (ProductHelpRules.IsKey(key)) ProductHelpRules.RequireEnvironment(value, development);
         if (key == "site") StoreIdentityRules.RequireEnvironment(value, development);
         if (key == "auth") await loginContinuity.RequireAsync(value["emailPassword"]!.GetValue<bool>(),value["usernamePassword"]!.GetValue<bool>(),value["mobileOtp"]!.GetValue<bool>(),ct);
         if (key == "site") await images.RequireReadyAsync(CmsImageReferences.Site(value), ct);
