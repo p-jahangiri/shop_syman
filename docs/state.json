@@ -137,14 +137,20 @@
     "tls": "self-signed-test-leaf-ip-and-hostname",
     "ci": {
       "branch": "codex/arvan-test-deploy",
-      "tag": "test-v0.1.1",
+      "tag": "test-v0.1.2",
       "runner": "sayman-arvan-test",
       "autoDeployEnabled": true,
-      "run": "https://github.com/p-jahangiri/shop_syman/actions/runs/42597831107",
-      "runAttempt": 2,
-      "deployedCommit": "8be3bdf42bf0d6346906ba471b94173bc398909a",
+      "run": "https://github.com/p-jahangiri/shop_syman/actions/runs/42601432373",
+      "runAttempt": 1,
+      "deployedCommit": "29179ebb6d8ae16bbab75b8f617a9ba37ffa4a3e",
       "permissionDecision": "D118",
       "sudoProvider": "/usr/bin/sudo.ws"
-    }
+    },
+    "currentSlice": "D119",
+    "origins": {
+      "storefront": "https://94.101.186.45:8443",
+      "admin": "https://94.101.186.45"
+    },
+    "settingsGuide": "docs/STOREFRONT-SHARED-SETTINGS.md"
   }
 }
