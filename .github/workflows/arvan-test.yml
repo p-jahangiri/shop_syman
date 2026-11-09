@@ -95,9 +95,14 @@ jobs:
         if: vars.ARVAN_TEST_AUTO_DEPLOY == 'true'
         env:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUDO_PROVIDER: ${{ vars.ARVAN_TEST_SUDO_PROVIDER || '/usr/bin/sudo' }}
         run: |
           set -euo pipefail
-          python3 - <<'PY' | sudo -n /usr/local/sbin/sayman-arvan-release
+          case "$SUDO_PROVIDER" in
+            /usr/bin/sudo|/usr/bin/sudo.ws) ;;
+            *) echo 'Unsupported sudo provider.' >&2; exit 1 ;;
+          esac
+          python3 - <<'PY' | "$SUDO_PROVIDER" -n /usr/local/sbin/sayman-arvan-release
           import json
           import os
           from pathlib import Path
