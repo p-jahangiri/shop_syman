@@ -142,11 +142,6 @@
 }
 
 @media (max-width: 600px) {
-  .storefront-design .header .notifications-header {
-    inline-size: 40px;
-    block-size: 40px;
-  }
-
   .storefront-design .header .search-box input {
     font-size: 1rem;
   }

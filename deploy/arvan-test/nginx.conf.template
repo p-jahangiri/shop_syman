@@ -10,8 +10,8 @@ map "$request_method:$uri" $shop_browse_allowed {
     ~^(GET|HEAD):/(fa|en)/(catalog|compare|budget-finder|install|installments|moments|support)/?$ 1;
     ~^(GET|HEAD):/(fa|en)/(product|blog|pages|guides|mobile-news)(/[-a-zA-Z0-9_]+)?/?$ 1;
     ~^(GET|HEAD):/(fa|en)/manifest\.webmanifest$ 1;
-    ~^(GET|HEAD):/(?:_next/static|products|media/catalog|media/videos|pwa|magazine)/[-a-zA-Z0-9_./]+$ 1;
-    ~^(GET|HEAD):/(_next/image|favicon-32\.png|favicon-192\.png|favicon\.ico|robots\.txt)$ 1;
+    ~^(GET|HEAD):/(?:webui/assets|products|media/catalog|media/videos|pwa|magazine)/[-a-zA-Z0-9_./]+$ 1;
+    ~^(GET|HEAD):/(webui/image|favicon-32\.png|favicon-192\.png|favicon\.ico|robots\.txt)$ 1;
     ~^GET:/api/catalog/(fa|en)/filters$ 1;
     ~^POST:/api/catalog/(fa|en)/(search|lookup|facet-values)$ 1;
 }
@@ -63,6 +63,11 @@ server {
         add_header X-Robots-Tag 'noindex, nofollow' always;
         if ($shop_browse_allowed = 0) { return 403 'This route requires the HTTPS storefront.'; }
         set $app http://storefront:3000;
+        # The public HTTP network resets requests to the default Next static/chunks path.
+        # Equal-length substitutions preserve length-prefixed React Flight records.
+        rewrite ^/webui/assets/bundle/(.+)$ /_next/static/chunks/$1 break;
+        rewrite ^/webui/assets/(.+)$ /_next/static/$1 break;
+        rewrite ^/webui/image$ /_next/image break;
         proxy_pass $app$uri$is_args$args;
         proxy_http_version 1.1;
         proxy_set_header Host ${SHOP_DOMAIN};
@@ -74,8 +79,18 @@ server {
         proxy_set_header Cookie "";
         proxy_set_header Authorization "";
         proxy_set_header Origin "";
+        proxy_set_header Accept-Encoding "";
+        proxy_hide_header Link;
         proxy_hide_header Set-Cookie;
         proxy_hide_header Strict-Transport-Security;
+        sub_filter_types text/css application/javascript text/javascript text/x-component;
+        sub_filter_once off;
+        sub_filter '/_next/static/chunks/' '/webui/assets/bundle/';
+        sub_filter '/_next/static/' '/webui/assets/';
+        sub_filter 'static/chunks/' 'assets/bundle/';
+        sub_filter '/_next/' '/webui/';
+        gzip on;
+        gzip_types text/css application/javascript text/javascript text/x-component;
         proxy_buffering off;
         proxy_read_timeout 30s;
     }
