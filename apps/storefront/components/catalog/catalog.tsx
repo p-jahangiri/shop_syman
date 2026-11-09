@@ -479,11 +479,12 @@ export function Catalog({
                 type="button"
                 ref={shareTrigger}
                 className="catalog-share-button"
+                aria-label={text('اشتراک نتایج', 'Share results')}
                 disabled={pending || priceWaiting}
                 onClick={openShare}
               >
                 <Share2 size={16} aria-hidden="true" />
-                {text('اشتراک نتایج', 'Share results')}
+                <span>{text('اشتراک نتایج', 'Share results')}</span>
               </button>
               <span className="catalog-total" role="status">
                 {pending || priceWaiting

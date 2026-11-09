@@ -891,6 +891,14 @@ html[dir] .storefront-design .catalog-filter-dialog {
 .catalog-share-button:hover {
   background: var(--sf-tint, var(--surface-soft));
 }
+@media (max-width: 360px) {
+  .catalog-share-button {
+    min-inline-size: 44px;
+  }
+  .catalog-share-button > span {
+    display: none;
+  }
+}
 .catalog-share-dialog {
   display: grid;
   gap: 0.75rem;

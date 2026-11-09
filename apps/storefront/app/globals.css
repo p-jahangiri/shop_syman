@@ -4442,9 +4442,6 @@ textarea::placeholder {
   .product-detail-info h1 {
     font-size: 20px;
   }
-  .product-gallery {
-    position: static;
-  }
   .product-gallery .gallery-main {
     aspect-ratio: 0.85;
     padding-top: 25px;

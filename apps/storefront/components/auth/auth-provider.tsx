@@ -14,9 +14,15 @@ import { RmaCommandGuard } from '@sayman/web-shared/components/orders/rma-comman
 import { customerRmaJournal } from '@sayman/web-shared/lib/orders/rma-journal.ts';
 import { rmaRequest } from '@sayman/web-shared/lib/orders/rma-client.ts';
 const Context = createContext<CustomerSessionStore | null>(null);
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({
+  children,
+  enabled = true,
+}: {
+  children: ReactNode;
+  enabled?: boolean;
+}) {
   const { dataSource, locale } = useStorefront();
-  const active = dataSource === 'api';
+  const active = enabled && dataSource === 'api';
   const channel = useRef<BroadcastChannel | null>(null);
   const [store] = useState(
     () =>

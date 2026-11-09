@@ -15,6 +15,7 @@ export function InstallGuide() {
   const status = {
     checking: text('در حال آماده‌سازی…', 'Getting ready…'),
     ready: text('مرور آفلاین آماده است', 'Offline browsing is ready'),
+    insecure: text('نصب به HTTPS معتبر نیاز دارد', 'Installation requires trusted HTTPS'),
     unsupported: text(
       'مرور آفلاین در این مرورگر در دسترس نیست',
       'Offline browsing is unavailable in this browser',
@@ -67,20 +68,25 @@ export function InstallGuide() {
               : text('افزودن به صفحهٔ اصلی', 'Add to your home screen')}
           </h2>
           <p>
-            {pwa.installed
+            {pwa.phase === 'insecure'
               ? text(
-                  'می‌توانید فروشگاه را از آیکن دستگاه باز کنید.',
-                  'You can open the store using its home screen icon.',
+                  'برای نصب برنامه و مرور آفلاین، فروشگاه را از نشانی HTTPS با گواهی معتبر باز کنید.',
+                  'Open the store over HTTPS with a trusted certificate to install it and browse offline.',
                 )
-              : pwa.ios
+              : pwa.installed
                 ? text(
-                    'در Safari، دکمهٔ اشتراک‌گذاری را بزنید و «Add to Home Screen» را انتخاب کنید.',
-                    'In Safari, tap Share, then choose Add to Home Screen.',
+                    'می‌توانید فروشگاه را از آیکن دستگاه باز کنید.',
+                    'You can open the store using its home screen icon.',
                   )
-                : text(
-                    'از گزینهٔ نصب برنامه یا افزودن به صفحهٔ اصلی در منوی مرورگر استفاده کنید.',
-                    'Use Install app or Add to Home Screen in your browser menu.',
-                  )}
+                : pwa.ios
+                  ? text(
+                      'در Safari، از منوی اشتراک‌گذاری «Add to Home Screen» را بزنید. اگر «Open as Web App» نمایش داده شد، آن را روشن کنید.',
+                      'In Safari, tap Share, then Add to Home Screen. Enable Open as Web App if shown.',
+                    )
+                  : text(
+                      'از گزینهٔ نصب برنامه یا افزودن به صفحهٔ اصلی در منوی مرورگر استفاده کنید.',
+                      'Use Install app or Add to Home Screen in your browser menu.',
+                    )}
           </p>
           {pwa.canInstall && !pwa.installed && (
             <Button onClick={() => void pwa.install()}>

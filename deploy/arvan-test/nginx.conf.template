@@ -2,6 +2,19 @@ map $http_upgrade $connection_upgrade {
     default upgrade;
     '' close;
 }
+# Plain HTTP is an anonymous storefront only. POST is limited to catalog reads.
+map "$request_method:$uri" $shop_browse_allowed {
+    default 0;
+    ~^(GET|HEAD):/$ 1;
+    ~^(GET|HEAD):/(fa|en)/?$ 1;
+    ~^(GET|HEAD):/(fa|en)/(catalog|compare|budget-finder|install|installments|moments|support)/?$ 1;
+    ~^(GET|HEAD):/(fa|en)/(product|blog|pages|guides|mobile-news)(/[-a-zA-Z0-9_]+)?/?$ 1;
+    ~^(GET|HEAD):/(fa|en)/manifest\.webmanifest$ 1;
+    ~^(GET|HEAD):/(?:_next/static|products|media/catalog|media/videos|pwa|magazine)/[-a-zA-Z0-9_./]+$ 1;
+    ~^(GET|HEAD):/(_next/image|favicon-32\.png|favicon-192\.png|favicon\.ico|robots\.txt)$ 1;
+    ~^GET:/api/catalog/(fa|en)/filters$ 1;
+    ~^POST:/api/catalog/(fa|en)/(search|lookup|facet-values)$ 1;
+}
 # Cookies are scoped to a host, not a port. Pass only the app's own
 # cookies upstream, and keep ambiguous duplicates invalid.
 map $http_cookie $shop_refresh_cookie {
@@ -43,7 +56,29 @@ server {
         root /var/www/acme;
         try_files $uri =404;
     }
-    location / { return 308 https://${ADMIN_DOMAIN}$request_uri; }
+    location / {
+        set $shop_http_browse ${SHOP_HTTP_BROWSE};
+        if ($shop_http_browse != true) { return 308 https://${ADMIN_DOMAIN}$request_uri; }
+        default_type text/plain;
+        add_header X-Robots-Tag 'noindex, nofollow' always;
+        if ($shop_browse_allowed = 0) { return 403 'This route requires the HTTPS storefront.'; }
+        set $app http://storefront:3000;
+        proxy_pass $app$uri$is_args$args;
+        proxy_http_version 1.1;
+        proxy_set_header Host ${SHOP_DOMAIN};
+        proxy_set_header X-Forwarded-Host ${SHOP_DOMAIN};
+        proxy_set_header X-Forwarded-Proto http;
+        proxy_set_header X-Forwarded-Port 80;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Sayman-Public-Browse 1;
+        proxy_set_header Cookie "";
+        proxy_set_header Authorization "";
+        proxy_set_header Origin "";
+        proxy_hide_header Set-Cookie;
+        proxy_hide_header Strict-Transport-Security;
+        proxy_buffering off;
+        proxy_read_timeout 30s;
+    }
 }
 server {
     listen 80;
@@ -83,6 +118,7 @@ server {
         proxy_set_header Host ${SHOP_DOMAIN}:${SHOP_TLS_PORT};
         proxy_set_header X-Forwarded-Host ${SHOP_DOMAIN}:${SHOP_TLS_PORT};
         proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Sayman-Public-Browse "";
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Cookie "$shop_cart_cookie$shop_refresh_cookie";
         proxy_set_header Upgrade $http_upgrade;

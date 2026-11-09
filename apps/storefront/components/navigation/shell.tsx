@@ -36,6 +36,7 @@ import {
   ShieldCheck,
   CreditCard,
   PackageCheck,
+  Smartphone,
   X,
   Plus,
   Minus,
@@ -287,11 +288,7 @@ export function Header() {
                 }
                 aria-label={t('جست‌وجوی محصولات')}
                 aria-controls={showResults ? 'storefront-search-results' : undefined}
-                placeholder={
-                  locale === 'fa'
-                    ? 'جست‌وجوی نام کالا، مدل یا برند'
-                    : 'Search products, models or brands'
-                }
+                placeholder={locale === 'fa' ? 'نام کالا، مدل یا برند' : 'Product, model or brand'}
                 value={query}
                 onFocus={() => setSearchOpen(true)}
                 onChange={(e) => {
@@ -525,6 +522,10 @@ export function Header() {
           <Link href="/support" onClick={() => setMenu(false)}>
             {t('راهنما و پشتیبانی')}
           </Link>
+          <Link href="/install" onClick={() => setMenu(false)}>
+            <Smartphone size={19} aria-hidden="true" />
+            {locale === 'fa' ? 'نصب فروشگاه' : 'Install the store'}
+          </Link>
         </nav>
         <div className="mobile-menu-footer">
           <Link href="/account" onClick={() => setMenu(false)}>
@@ -651,24 +652,30 @@ export function Footer() {
   );
 }
 export function MobileNav() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const pathname = usePathname();
   const { setCartOpen, cart, serverCart } = useShop();
   const destinations = [
     { href: '/', label: t('خانه'), Icon: Home },
     { href: '/catalog', label: t('دسته‌ها'), Icon: Grid2X2 },
     { href: '/wishlist', label: t('علاقه‌مندی'), Icon: Heart },
-    { href: '/account', label: t('حساب من'), Icon: UserRound },
+    { href: '/account', label: locale === 'fa' ? 'حساب من' : 'Account', Icon: UserRound },
   ];
   const cartButton = (
-    <button type="button" key="cart" onClick={() => setCartOpen(true)} aria-haspopup="dialog">
+    <button
+      type="button"
+      key="cart"
+      onClick={() => setCartOpen(true)}
+      aria-label={t('سبد خرید')}
+      aria-haspopup="dialog"
+    >
       <span className="mobile-nav-icon">
         <ShoppingBag size={20} />
         {(serverCart ? cartV2HasBuyLines(serverCart) : cart.length > 0) && (
           <i className="cart-has-items" />
         )}
       </span>
-      {t('سبد خرید')}
+      {locale === 'fa' ? t('سبد خرید') : 'Bag'}
     </button>
   );
   return (

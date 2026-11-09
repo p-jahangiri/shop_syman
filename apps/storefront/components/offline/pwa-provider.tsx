@@ -6,7 +6,7 @@ type InstallEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 };
-type Phase = 'checking' | 'ready' | 'unsupported' | 'unavailable' | 'disabled';
+type Phase = 'checking' | 'ready' | 'insecure' | 'unsupported' | 'unavailable' | 'disabled';
 interface PwaContextValue {
   phase: Phase;
   installed: boolean;
@@ -146,7 +146,11 @@ export function PwaProvider({ enabled, children }: { enabled: boolean; children:
       worker.postMessage({ type: 'ACTIVATE_UPDATE' }, [channel.port2]);
     };
     const ready = async () => {
-      if (!('serviceWorker' in navigator) || !window.isSecureContext) {
+      if (!window.isSecureContext) {
+        setPhase('insecure');
+        return;
+      }
+      if (!('serviceWorker' in navigator)) {
         setPhase('unsupported');
         return;
       }

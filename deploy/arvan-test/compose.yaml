@@ -23,7 +23,11 @@ services:
       MSSQL_MEMORY_LIMIT_MB: '1450'
     volumes: ['sql-data:/var/opt/mssql']
     healthcheck:
-      test: [CMD-SHELL, 'SQLCMDPASSWORD="$$MSSQL_SA_PASSWORD" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -Q "SET NOCOUNT ON; SELECT 1" >/dev/null']
+      test:
+        [
+          CMD-SHELL,
+          'SQLCMDPASSWORD="$$MSSQL_SA_PASSWORD" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -Q "SET NOCOUNT ON; SELECT 1" >/dev/null',
+        ]
       interval: 15s
       timeout: 8s
       start_period: 45s
@@ -97,9 +101,10 @@ services:
       SHOP_ORIGIN: ${SHOP_ORIGIN}
       SHOP_TLS_PORT: ${SHOP_TLS_PORT:-8443}
       SHOP_LEGACY_DOMAIN: ${SHOP_LEGACY_DOMAIN:-disabled.invalid}
+      SHOP_HTTP_BROWSE: ${SHOP_HTTP_BROWSE:-false}
       ADMIN_DOMAIN: ${ADMIN_DOMAIN:?Set the admin hostname or IP}
       TESTER_IP: ${TESTER_IP:?Set the authorized tester IP}
-      NGINX_ENVSUBST_FILTER: '^(SHOP_DOMAIN|SHOP_ORIGIN|SHOP_TLS_PORT|SHOP_LEGACY_DOMAIN|ADMIN_DOMAIN|TESTER_IP)$$'
+      NGINX_ENVSUBST_FILTER: '^(SHOP_DOMAIN|SHOP_ORIGIN|SHOP_TLS_PORT|SHOP_LEGACY_DOMAIN|SHOP_HTTP_BROWSE|ADMIN_DOMAIN|TESTER_IP)$$'
     volumes:
       - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ${SAYMAN_TLS_DIR:?Set the TLS certificate directory}:/etc/nginx/sayman-tls:ro

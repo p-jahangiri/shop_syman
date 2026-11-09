@@ -70,7 +70,10 @@ export default async function RootLayout({
   const snapshot = await getStorefront(locale);
   const palette = snapshot.site.palette;
   const { appearance, font, theme } = resolveSiteDesign(snapshot.site);
-  const nonce = snapshot.site.design ? ((await headers()).get('x-nonce') ?? undefined) : undefined;
+  const requestHeaders = await headers();
+  const nonce = snapshot.site.design ? (requestHeaders.get('x-nonce') ?? undefined) : undefined;
+  const publicBrowse = requestHeaders.get('x-sayman-public-browse') === '1';
+  const secureOrigin = publicBrowse ? publicOrigin() : undefined;
   const branding = {
     ...storefrontColorVariables('light', palette),
     ...storefrontColorVariables('dark', palette),
@@ -85,6 +88,7 @@ export default async function RootLayout({
       data-shop-density={appearance.density}
       data-shop-corners={appearance.corners}
       data-shop-font={font}
+      data-shop-public-browse={publicBrowse || undefined}
       data-shop-theme={snapshot.site.design ? theme : undefined}
       data-theme={snapshot.site.design && theme !== 'system' ? theme : undefined}
       data-shop-cards={appearance.cards}
@@ -107,14 +111,30 @@ export default async function RootLayout({
         <LocaleProvider key={locale} locale={locale} snapshot={snapshot}>
           <PwaProvider
             enabled={
-              process.env.NODE_ENV === 'production' && process.env.SHOP_PWA_ENABLED !== 'false'
+              !publicBrowse &&
+              process.env.NODE_ENV === 'production' &&
+              process.env.SHOP_PWA_ENABLED !== 'false'
             }
           >
-            <AuthProvider>
+            <AuthProvider enabled={!publicBrowse}>
               <ShopProvider>
                 <a className="skip-link" href="#main">
                   {translate('رفتن به محتوای اصلی', locale)}
                 </a>
+                {publicBrowse && (
+                  <div className="public-browse-notice">
+                    <span>
+                      {locale === 'fa' ? 'نسخهٔ مرور عمومی فروشگاه' : 'Public browsing version'}
+                    </span>
+                    {secureOrigin && (
+                      <a href={`${secureOrigin}/${locale}`}>
+                        {locale === 'fa'
+                          ? 'ورود، خرید و نصب در نسخهٔ HTTPS'
+                          : 'Sign in, shop and install on HTTPS'}
+                      </a>
+                    )}
+                  </div>
+                )}
                 <Header />
                 <main id="main">{children}</main>
                 <Footer />
