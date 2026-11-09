@@ -115,5 +115,32 @@
     "authenticated-palette-flow",
     "similar-product-browser-flow",
     "digital-and-mixed-fulfillment-end-to-end"
-  ]
+  ],
+  "arvanTest": {
+    "slice": "D117",
+    "scope": "remote-isolated-test",
+    "host": "94.101.186.45",
+    "resources": {
+      "cpu": 2,
+      "memoryMiB": 3916
+    },
+    "active": true,
+    "production": false,
+    "sql": {
+      "edition": "Express",
+      "version": "16.0.4305.5",
+      "tableCount": 245,
+      "migrationHistoryTables": 12,
+      "seedProducts": 12,
+      "seedCategories": 4
+    },
+    "tls": "self-signed-test-leaf-ip-and-hostname",
+    "ci": {
+      "branch": "codex/arvan-test-deploy",
+      "tag": "test-v0.1.0",
+      "runner": "sayman-arvan-test",
+      "autoDeployEnabled": false,
+      "run": "https://github.com/p-jahangiri/shop_syman/actions/runs/42592370983"
+    }
+  }
 }
