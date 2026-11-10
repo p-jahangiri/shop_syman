@@ -84,6 +84,57 @@ public sealed partial class TicketSqlTests(SqlFixture fixture) : IClassFixture<S
         using var customerLookup = await customer.GetAsync("/api/support/tickets?ticketId=" + id);
         Assert.Equal(HttpStatusCode.BadRequest, customerLookup.StatusCode);
     }
+    [Fact]
+    public async Task CustomerTicketKindFiltersBeforePagingAndBindsCursorToOwnerAndKind()
+    {
+        var person = await Customer();
+        var other = await Customer();
+        using var customer = person.Client;
+        using var stranger = other.Client;
+        const string path = "/api/support/tickets";
+        var created = await Body(await customer.PostAsJsonAsync(path + "/commands/" + Id(),
+            new CreateTicketInput("[phone] Exact SKU", "Color — Black\nVariant ID — v3-black", "en")));
+        var purchaseId = Value(created["ticket"]!, "id");
+        var question = await Body(await customer.PostAsJsonAsync(path + "/commands/" + Id(),
+            new CreateTicketInput("[product-question] Sample", "iphone-16\n\nDoes it include a charger?", "en")));
+        var questionId = Value(question["ticket"]!, "id");
+        await using (var scope = fixture.Factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SupportDbContext>();
+            var protection = scope.ServiceProvider.GetRequiredService<ITicketProtection>();
+            for (var i = 0; i < 68; i++)
+            {
+                var row = new SupportTicket
+                {
+                    OwnerId = person.Owner.ToUpperInvariant(), MessageCount = 1,
+                    CreatedAt = DateTimeOffset.UtcNow, ChangedAt = DateTimeOffset.UtcNow,
+                };
+                row.ProtectedSubject = protection.Protect(row.Id, "subject", row.Id, "Support sample");
+                db.Tickets.Add(row);
+            }
+            await db.SaveChangesAsync();
+        }
+
+        var purchase = await Body(await customer.GetAsync(path + "?kind=purchase"));
+        Assert.Equal("purchase", Value(purchase, "kind"));
+        Assert.Equal(purchaseId, Value(Assert.Single(purchase["items"]!.AsArray())!, "id"));
+        Assert.Null(purchase["nextCursor"]);
+        var questions = await Body(await customer.GetAsync(path + "?kind=question"));
+        Assert.Equal(questionId, Value(Assert.Single(questions["items"]!.AsArray())!, "id"));
+        var support = await Body(await customer.GetAsync(path + "?kind=support"));
+        Assert.Equal(50, support["items"]!.AsArray().Count);
+        var cursor = Uri.EscapeDataString(Value(support, "nextCursor"));
+        var older = await Body(await customer.GetAsync(path + "?kind=support&cursor=" + cursor));
+        Assert.Equal(18, older["items"]!.AsArray().Count);
+        Assert.Empty(support["items"]!.AsArray().Select(x => Value(x!, "id"))
+            .Intersect(older["items"]!.AsArray().Select(x => Value(x!, "id"))));
+        using var wrongKind = await customer.GetAsync(path + "?kind=purchase&cursor=" + cursor);
+        using var wrongOwner = await stranger.GetAsync(path + "?kind=support&cursor=" + cursor);
+        Assert.Equal(HttpStatusCode.BadRequest, wrongKind.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, wrongOwner.StatusCode);
+        Assert.Empty((await Body(await stranger.GetAsync(path + "?kind=purchase")))["items"]!.AsArray());
+    }
+
     [Fact]public async Task PrivateConversationReplyCloseReopenAndHistoricalReceiptKeepOwnersAndAuditSeparate()
     {
         var person=await Customer();using var customer=person.Client;using var staff=await Staff();var command=Id();var createPath="/api/support/tickets/commands/"+command;var created=await Body(await customer.PostAsJsonAsync(createPath,Input()),"created");var id=Value(created["ticket"]!,"id");Assert.Equal("Open",Value(created["ticket"]!,"state"));

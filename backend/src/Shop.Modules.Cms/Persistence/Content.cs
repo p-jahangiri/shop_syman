@@ -41,6 +41,24 @@ public sealed partial class CmsDbContext(DbContextOptions<CmsDbContext> options)
 public record ContentInput(JsonObject Content, string? Version);
 public sealed class ContentService(CmsDbContext db, IPublicImageReferences images, ICustomerLoginContinuity loginContinuity, bool development = false) : ISiteContentReader
 {
+    private static readonly JsonSerializerOptions WebJson = new(JsonSerializerDefaults.Web);
+
+    public async Task<WarrantyTemplateLibrary> ReadWarrantyTemplatesAsync(CancellationToken ct)
+    {
+        var document = await db.Documents.AsNoTracking()
+            .SingleOrDefaultAsync(row => row.Key == WarrantyTemplateRules.Key && row.Locale == "fa", ct);
+        if (document is null) return new(null, []);
+        var items = JsonSerializer.Deserialize<WarrantyTemplate[]>(document.DraftJson, WebJson)
+            ?? throw new InvalidOperationException("Warranty templates could not be read.");
+        return new(Convert.ToBase64String(document.Version), items);
+    }
+
+    public Task SaveWarrantyTemplatesAsync(WarrantyTemplateLibrary input, string actor, CancellationToken ct)
+    {
+        WarrantyTemplateRules.Validate(input.Items);
+        return SaveDocumentAsync(WarrantyTemplateRules.Key, "fa", JsonSerializer.Serialize(input.Items, WebJson), input.Version, actor, ct);
+    }
+
     public async Task<JsonObject> ReadAsync(string key, string locale, CancellationToken ct)
     {
         var documents = db.Documents.AsNoTracking().Where(x => x.Key == key);
@@ -65,12 +83,17 @@ public sealed class ContentService(CmsDbContext db, IPublicImageReferences image
         return db.Documents.AsNoTracking().SingleOrDefaultAsync(x => x.Key == key && x.Locale == locale, ct);
     }
 
-    public async Task<object> AdminAsync(CancellationToken ct) => new { Documents = await db.Documents.AsNoTracking().Where(x => !x.Key.StartsWith(ProductHelpRules.Prefix) && !x.Key.StartsWith(ProductAnswersService.Prefix)).OrderBy(x => x.Key).ThenBy(x => x.Locale).ToListAsync(ct), Revisions = await db.Revisions.AsNoTracking().Where(x => !x.Key.StartsWith(ProductHelpRules.Prefix) && !x.Key.StartsWith(ProductAnswersService.Prefix)).OrderByDescending(x => x.Id).Take(50).Select(x => new { x.Id, x.Key, x.Locale, x.Revision, x.PublishedBy, x.PublishedAt }).ToListAsync(ct) };
+    public async Task<object> AdminAsync(CancellationToken ct) => new { Documents = await db.Documents.AsNoTracking().Where(x => x.Key != WarrantyTemplateRules.Key && !x.Key.StartsWith(ProductHelpRules.Prefix) && !x.Key.StartsWith(ProductAnswersService.Prefix)).OrderBy(x => x.Key).ThenBy(x => x.Locale).ToListAsync(ct), Revisions = await db.Revisions.AsNoTracking().Where(x => !x.Key.StartsWith(ProductHelpRules.Prefix) && !x.Key.StartsWith(ProductAnswersService.Prefix)).OrderByDescending(x => x.Id).Take(50).Select(x => new { x.Id, x.Key, x.Locale, x.Revision, x.PublishedBy, x.PublishedAt }).ToListAsync(ct) };
     public static void Validate(string key, string locale, JsonObject value)
     {
         if (locale is "fa" or "en" && ProductHelpRules.IsKey(key))
         {
             _ = ProductHelpRules.Read(key, value);
+            return;
+        }
+        if (locale is "fa" or "en" && key == CategoryReturnGuidance.DocumentKey)
+        {
+            CategoryReturnGuidance.Validate(value);
             return;
         }
         if (locale is not ("fa" or "en") || key is not ("site" or "auth" or "support")) throw new BusinessException("invalid_content", "Unsupported content key, locale or document size.");
@@ -155,13 +178,20 @@ public sealed class ContentService(CmsDbContext db, IPublicImageReferences image
         if (ProductHelpRules.IsKey(key)) ProductHelpRules.RequireEnvironment(input.Content, development);
         if (key == "site") StoreIdentityRules.RequireEnvironment(input.Content, development);
         if (key == "site") await images.RequireReadyAsync(CmsImageReferences.Site(input.Content), ct);
+        await SaveDocumentAsync(key, locale, input.Content.ToJsonString(), input.Version, actorId, ct);
+    }
+
+    private async Task SaveDocumentAsync(string key, string locale, string draft, string? version, string actorId, CancellationToken ct)
+    {
         var entity = await db.Documents.SingleOrDefaultAsync(x => x.Key == key && x.Locale == locale, ct);
-        if (entity is null) { if (input.Version is not null) throw new BusinessException("version_conflict", "Content changed. Reload first."); entity = new() { Key = key, Locale = locale }; db.Documents.Add(entity); }
-        else if (input.Version != Convert.ToBase64String(entity.Version)) throw new BusinessException("version_conflict", "Content changed. Reload first.");
-        entity.DraftJson = input.Content.ToJsonString(); entity.UpdatedAt = DateTimeOffset.UtcNow; entity.UpdatedBy = actorId; await db.SaveChangesAsync(ct);
+        if (entity is null) { if (version is not null) throw new BusinessException("version_conflict", "Content changed. Reload first."); entity = new() { Key = key, Locale = locale }; db.Documents.Add(entity); }
+        else if (version != Convert.ToBase64String(entity.Version)) throw new BusinessException("version_conflict", "Content changed. Reload first.");
+        entity.DraftJson = draft; entity.UpdatedAt = DateTimeOffset.UtcNow; entity.UpdatedBy = actorId; await db.SaveChangesAsync(ct);
     }
     public async Task PublishAsync(string key, string locale, string version, string actorId, long? restoreRevisionId, CancellationToken ct, string? section = null)
     {
+        if (key == WarrantyTemplateRules.Key)
+            throw new BusinessException("invalid_content", "Warranty templates are managed through the catalog.");
         if (section is not null && (section != "socialLinks" || key != "site" || locale != "fa" || restoreRevisionId is not null))
             throw new BusinessException("invalid_publish_section", "Only saved site social links can be published separately.");
         var entity = await db.Documents.SingleOrDefaultAsync(x => x.Key == key && x.Locale == locale, ct) ?? throw new BusinessException("not_found", "Content was not found.");

@@ -20,7 +20,7 @@ public sealed record ReplyTicketInput(string Version, string Body, string Locale
 public sealed record ChangeTicketStateInput(string Version, string State);
 public sealed record TicketSummary(string Id, string Subject, string Locale, string State, string Version, int MessageCount, DateTimeOffset CreatedAt, DateTimeOffset ChangedAt);
 public sealed record TicketQueueCounts(int Open, int WaitingCustomer, int Closed);
-public sealed record TicketPage(int SchemaVersion, [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] string? State, TicketSummary[] Items, [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] string? NextCursor, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] TicketQueueCounts? QueueCounts = null);
+public sealed record TicketPage(int SchemaVersion, [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] string? State, TicketSummary[] Items, [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] string? NextCursor, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] TicketQueueCounts? QueueCounts = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Kind = null);
 public sealed record TicketDetail(int SchemaVersion, TicketSummary Ticket);
 public sealed record TicketMessageData(string Id, string Sequence, string Author, string Locale, string Body, DateTimeOffset At);
 public sealed record TicketMessagePage(int SchemaVersion, string TicketId, TicketMessageData[] Items, [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] string? NextCursor);

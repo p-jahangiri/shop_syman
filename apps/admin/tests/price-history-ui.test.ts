@@ -338,6 +338,9 @@ test('retry is explicit and a read-only catalogue viewer can open the dedicated 
       },
       '../../api/api': {},
       '../../features/catalog/product-editor': { ProductEditor: 'ProductEditor' },
+      '../../features/catalog/warranty-library-editor': {
+        WarrantyLibraryEditor: 'WarrantyLibraryEditor',
+      },
       '../../features/catalog/product-quick-prices': { ProductQuickPrices: 'ProductQuickPrices' },
       '../../features/catalog/product-form-settings': {
         ProductFormSettings: 'ProductFormSettings',

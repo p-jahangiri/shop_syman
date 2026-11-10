@@ -196,11 +196,14 @@ function ProductHeader({
   product,
   fallback,
   tab,
+  timestamp,
 }: {
   product?: AccountProduct | null;
   fallback: string;
   tab: 'reviews' | 'questions';
+  timestamp?: string;
 }) {
+  const { locale } = useI18n();
   const image = product?.image ?? '';
   const local =
     /^\/(?:products|media\/catalog)\/[A-Za-z0-9_./-]+$/.test(image) && !image.includes('..');
@@ -211,22 +214,25 @@ function ProductHeader({
         <img
           src={publicImageVariant(image, 'thumb')}
           alt=""
-          width={64}
-          height={64}
+          width={46}
+          height={46}
           loading="lazy"
         />
       ) : (
         <span className="contribution-product-placeholder">
-          <Package size={23} aria-hidden="true" />
+          <Package size={19} aria-hidden="true" />
         </span>
       )}
-      {product ? (
-        <Link href={productPath(product, tab)}>
-          <strong dir="auto">{product.name}</strong>
-        </Link>
-      ) : (
-        <strong dir="auto">{fallback}</strong>
-      )}
+      <div className="contribution-product-label">
+        {product ? (
+          <Link href={productPath(product, tab)}>
+            <strong dir="auto">{product.name}</strong>
+          </Link>
+        ) : (
+          <strong dir="auto">{fallback}</strong>
+        )}
+        {timestamp && <time dateTime={timestamp}>{dates[locale].format(new Date(timestamp))}</time>}
+      </div>
     </div>
   );
 }
@@ -274,6 +280,32 @@ function PendingCard({ product }: { product: AccountProduct }) {
   );
 }
 
+function ContributionText({ body }: { body: string }) {
+  const { locale } = useI18n();
+  const letters = Array.from(body);
+  const end = letters.slice(0, 220).join('');
+  const boundary = end.lastIndexOf(' ');
+  if (letters.length <= 220 && body.split('\n').length <= 3)
+    return (
+      <p className="contribution-copy" dir="auto">
+        {body}
+      </p>
+    );
+  return (
+    <details className="contribution-detail">
+      <summary>
+        <span className="contribution-excerpt" dir="auto">
+          {boundary > 180 ? end.slice(0, boundary) : end}…
+        </span>
+        <span className="contribution-expand">{locale === 'fa' ? 'متن کامل' : 'Full text'}</span>
+      </summary>
+      <p className="contribution-copy" dir="auto">
+        {body}
+      </p>
+    </details>
+  );
+}
+
 function Pagination({ previous, next }: { previous?: () => void; next?: () => void }) {
   const { locale } = useI18n();
   if (!previous && !next) return null;
@@ -314,25 +346,23 @@ function ReviewContributions() {
                 product={product}
                 fallback={fa ? 'کالا در دسترس نیست' : 'Product unavailable'}
                 tab="reviews"
+                timestamp={review.content.at}
               />
               <span className="contribution-status" data-state={review.state}>
                 {states[review.state][fa ? 0 : 1]}
               </span>
             </header>
-            <div className="contribution-review-meta">
+            <div className="contribution-card-body">
               <ReviewStars rating={review.content.rating} locale={locale} />
-              <time dateTime={review.content.at}>
-                {dates[locale].format(new Date(review.content.at))}
-              </time>
+              {!['دیدگاه دربارهٔ کالا', 'Product review'].includes(review.content.title) && (
+                <h3 dir="auto">{review.content.title}</h3>
+              )}
+              <ContributionText body={review.content.body} />
             </div>
-            <h3 dir="auto">{review.content.title}</h3>
-            <p className="contribution-copy" dir="auto">
-              {review.content.body}
-            </p>
             {review.reply && (
               <blockquote>
                 <strong>{fa ? 'پاسخ سایمان' : 'Sayman reply'}</strong>
-                <p dir="auto">{review.reply}</p>
+                <ContributionText body={review.reply} />
               </blockquote>
             )}
             <footer className="contribution-actions">
@@ -340,7 +370,7 @@ function ReviewContributions() {
               <div className="contribution-actions">
                 {product && (
                   <Link
-                    className="button button-outline"
+                    className="button button-ghost"
                     href={productPath(product, 'reviews', true)}
                   >
                     <PencilLine size={16} />
@@ -435,6 +465,27 @@ function WithdrawButton({ review, onDone }: { review: PrivateReview; onDone: () 
   );
 }
 
+function QuestionReply({
+  reply,
+}: {
+  reply: { byStore: boolean; displayName?: string | null; body: string };
+}) {
+  const { locale } = useI18n();
+  const fa = locale === 'fa';
+  return (
+    <blockquote>
+      <strong dir="auto">
+        {reply.byStore
+          ? fa
+            ? 'پاسخ سایمان'
+            : 'Sayman reply'
+          : reply.displayName || (fa ? 'کاربر سایمان' : 'Sayman customer')}
+      </strong>
+      <ContributionText body={reply.body} />
+    </blockquote>
+  );
+}
+
 function QuestionContributions() {
   const page = useContributionPage('questions');
   const { locale, digits } = useI18n();
@@ -452,7 +503,12 @@ function QuestionContributions() {
         {page.result?.items.map((item) => (
           <article className="contribution-card" key={item.id}>
             <header className="contribution-card-header">
-              <ProductHeader product={item.product} fallback={item.name} tab="questions" />
+              <ProductHeader
+                product={item.product}
+                fallback={item.name}
+                tab="questions"
+                timestamp={item.createdAt}
+              />
               <span
                 className="contribution-status"
                 data-state={item.published ? 'Approved' : 'Pending'}
@@ -470,26 +526,26 @@ function QuestionContributions() {
                       : 'Awaiting review'}
               </span>
             </header>
-            <time dateTime={item.createdAt}>{dates[locale].format(new Date(item.createdAt))}</time>
-            <h3 className="contribution-copy" dir="auto">
-              {item.question}
-            </h3>
-            {item.replies.map((reply) => (
-              <blockquote key={reply.id}>
-                <strong dir="auto">
-                  {reply.byStore
-                    ? fa
-                      ? 'پاسخ سایمان'
-                      : 'Sayman reply'
-                    : reply.displayName || (fa ? 'کاربر سایمان' : 'Sayman customer')}
-                </strong>
-                <p dir="auto">{reply.body}</p>
-              </blockquote>
-            ))}
+            <div className="contribution-card-body">
+              <ContributionText body={item.question} />
+              {item.replies[0] && <QuestionReply reply={item.replies[0]} />}
+              {item.replies.length > 1 && (
+                <details className="contribution-other-replies">
+                  <summary>
+                    {fa
+                      ? `${digits(item.replies.length - 1)} پاسخ دیگر`
+                      : `${item.replies.length - 1} more replies`}
+                  </summary>
+                  {item.replies.slice(1).map((reply) => (
+                    <QuestionReply key={reply.id} reply={reply} />
+                  ))}
+                </details>
+              )}
+            </div>
             {item.privateReply && (
               <blockquote>
                 <strong>{fa ? 'پاسخ خصوصی فروشگاه' : 'Private store reply'}</strong>
-                <p dir="auto">{item.privateReply}</p>
+                <ContributionText body={item.privateReply} />
               </blockquote>
             )}
             {!item.replies.length && !item.privateReply && (

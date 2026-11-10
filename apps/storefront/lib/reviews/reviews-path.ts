@@ -29,7 +29,7 @@ export function isCustomerReviewsPath(path: string, method: string) {
   }
   return (
     (method === 'GET' &&
-      /^\/api\/reviews\/products\/[A-Za-z0-9_-]{1,64}(?:\/photos\/[a-f0-9]{32}\/[a-f0-9]{32})?\/mine$/.test(
+      /^\/api\/reviews\/products\/[A-Za-z0-9_-]{1,64}(?:\/photos\/[a-f0-9]{32}\/[a-f0-9]{32}(?:\/[23])?)?\/mine$/.test(
         path,
       )) ||
     (method === 'PUT' &&

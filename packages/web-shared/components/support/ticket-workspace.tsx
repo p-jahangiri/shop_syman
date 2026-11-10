@@ -29,6 +29,7 @@ import {
   ticketCommandPath,
   type TicketCommand,
   type TicketPage,
+  type TicketListKind,
   type TicketSummary,
   type TicketMessages,
   type TicketMessage,
@@ -86,6 +87,15 @@ const queueCopy = {
 const isTicketId = (value: string) => /^[a-f0-9]{32}$/.test(value) && !/^0+$/.test(value);
 const isTicketPhoto = (type: string) =>
   type === 'image/jpeg' || type === 'image/png' || type === 'image/webp';
+function customerTicketSubject(subject: string) {
+  if (subject.startsWith(shoppingMarker.phone + ' '))
+    return { kind: 'phone', title: subject.slice(shoppingMarker.phone.length + 1) } as const;
+  const marker = shoppingMarker['product-question'];
+  if (subject.startsWith(marker + ' '))
+    return { kind: 'product-question', title: subject.slice(marker.length + 1) } as const;
+  return { kind: 'support', title: subject } as const;
+}
+
 export function TicketWorkspace({
   owner,
   staff = false,
@@ -98,10 +108,16 @@ export function TicketWorkspace({
   live,
   download,
   shoppingRequest,
+  listKind,
+  renderPurchaseComposer,
+  onPurchaseSaved,
   replyTools,
 }: {
   replyTools?: TicketReplyTools;
   shoppingRequest?: ShoppingRequest;
+  listKind?: TicketListKind;
+  renderPurchaseComposer?: (form: ReactNode) => ReactNode;
+  onPurchaseSaved?: (id: string) => void;
   download?: TicketDownloadTransport;
   live?: PrivateRealtimeClient | null;
   owner: string;
@@ -130,6 +146,7 @@ export function TicketWorkspace({
     [body, setBody] = useState(''),
     [invalid, setInvalid] = useState(false);
   const [completedCreateId, setCompletedCreateId] = useState<string>();
+  const [purchaseCommand, setPurchaseCommand] = useState<string>();
   const generation = useRef(0),
     controller = useRef<AbortController | null>(null);
   const normalizedSearch = normalizePersian(search);
@@ -176,6 +193,7 @@ export function TicketWorkspace({
         const query = new URLSearchParams();
         if (effectiveState) query.set('state', effectiveState);
         if (exactId) query.set('ticketId', exactId);
+        if (listKind) query.set('kind', listKind);
         if (cursor) query.set('cursor', cursor);
         const value = readTicketPage(
           await transport(prefix + '/tickets' + (query.size ? '?' + query : ''), {
@@ -184,6 +202,7 @@ export function TicketWorkspace({
           effectiveState || null,
           staff,
           exactId,
+          listKind,
         );
         if (ticket !== generation.current || abort.signal.aborted) return;
         const items = reset ? value.items : [...previous, ...value.items];
@@ -196,7 +215,7 @@ export function TicketWorkspace({
         if (ticket === generation.current && !abort.signal.aborted) setLoading(false);
       }
     },
-    [effectiveState, exactId, owner, prefix, staff, transport],
+    [effectiveState, exactId, listKind, owner, prefix, staff, transport],
   );
   useEffect(() => {
     setSelected(initialTicketId ?? null);
@@ -216,6 +235,12 @@ export function TicketWorkspace({
       if (entry.command.kind === 'create') setCompletedCreateId(entry.command.id);
     }
   }, [entry?.state, entry?.command.id]);
+  useEffect(() => {
+    if (entry?.state === 'done' && entry.result && purchaseCommand === entry.command.id) {
+      setPurchaseCommand(undefined);
+      onPurchaseSaved?.(entry.result.ticket.id);
+    }
+  }, [entry, onPurchaseSaved, purchaseCommand]);
   useEffect(() => {
     if (!unresolved) return;
     const warn = (event: BeforeUnloadEvent) => {
@@ -280,8 +305,10 @@ export function TicketWorkspace({
       return;
     }
     setInvalid(false);
+    const id = crypto.randomUUID().replaceAll('-', '');
+    if (onPurchaseSaved) setPurchaseCommand(id);
     void send({
-      id: crypto.randomUUID().replaceAll('-', ''),
+      id,
       kind: 'create',
       staff: false,
       body: parsed.data,
@@ -313,6 +340,76 @@ export function TicketWorkspace({
   };
   const number = (value: number) => value.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-GB');
   useRealtimeRefresh(live, 'support', () => setRefresh((n) => n + 1), unresolved || loading);
+  const composeForm = (
+    <form className="ticket-create-form" key={completedCreateId ?? 'draft'} onSubmit={create}>
+      {shoppingRequest ? (
+        <fieldset disabled={unresolved}>
+          <ShoppingRequestFields request={shoppingRequest} locale={locale} />
+        </fieldset>
+      ) : (
+        <>
+          <label className="ticket-field">
+            <span>{text('موضوع', 'Subject')}</span>
+            <input
+              value={subject}
+              maxLength={120}
+              required
+              disabled={unresolved}
+              onChange={(e) => setSubject(e.target.value)}
+            />
+          </label>
+          <label className="ticket-field">
+            <span>{text('پیام شما', 'Your message')}</span>
+            <textarea
+              value={body}
+              maxLength={4000}
+              rows={6}
+              required
+              disabled={unresolved}
+              onChange={(e) => setBody(e.target.value)}
+            />
+          </label>
+        </>
+      )}
+      {invalid && (
+        <p role="alert">
+          {text(
+            'فیلدهای الزامی و قالب مبلغ را بررسی کنید.',
+            'Check the required fields and budget format.',
+          )}
+        </p>
+      )}
+      {renderPurchaseComposer &&
+        purchaseCommand &&
+        entry?.command.id === purchaseCommand &&
+        entry.state !== 'done' && (
+          <p role={entry.state === 'rejected' ? 'alert' : 'status'}>
+            {entry.state === 'rejected'
+              ? text(
+                  'درخواست پذیرفته نشد. اطلاعات را بررسی و دوباره تلاش کنید.',
+                  'The request was declined. Check the details and try again.',
+                )
+              : entry.state === 'unknown'
+                ? text(
+                    'نتیجه هنوز مشخص نیست. پنجره را ببندید و رسید را در همین صفحه بررسی کنید.',
+                    'The result is unknown. Close this window to check the receipt on this page.',
+                  )
+                : text('در حال ثبت درخواست…', 'Sending your request…')}
+          </p>
+        )}
+      <button type="submit" disabled={unresolved}>
+        {shoppingRequest
+          ? text('ثبت درخواست', 'Send request')
+          : text('ثبت درخواست پشتیبانی', 'Send support request')}
+      </button>
+      <p className="ticket-upload-hint">
+        {text(
+          'اگر عکس دارید، پس از ثبت درخواست می‌توانید آن را در گفت‌وگوی خصوصی پیوست کنید.',
+          'After sending your request, you can attach a photo in the private conversation.',
+        )}
+      </p>
+    </form>
+  );
   return (
     <div className="ticket-workspace" data-selected={selected ? 'true' : undefined}>
       <PrivateRealtimeStatus client={live} locale={locale} />
@@ -321,26 +418,20 @@ export function TicketWorkspace({
           <h2 ref={inboxHeading} tabIndex={staff ? -1 : undefined}>
             {staff
               ? text('صندوق پشتیبانی', 'Support inbox')
-              : text('درخواست‌های پشتیبانی من', 'My support requests')}
+              : shoppingRequest
+                ? text('سوابق درخواست خرید', 'Purchase request history')
+                : text('درخواست‌های من', 'My requests')}
           </h2>
           <button type="button" disabled={loading} onClick={() => setRefresh((n) => n + 1)}>
             {text('دریافت وضعیت تازه', 'Refresh')}
           </button>
         </div>
-        <p className="ticket-inbox-intro">
-          {staff
-            ? text(
-                'درخواست‌های مشتریان را بررسی و پاسخ دهید. پاسخ شما در همان گفت‌وگوی خصوصی مشتری ثبت می‌شود.',
-                'Review and reply to customer requests. Your reply is saved in the customer’s private conversation.',
-              )
-            : text(
-                'پیام‌ها در حساب شما ذخیره می‌شوند و پاسخ‌های ثبت‌شده همین‌جا نمایش داده می‌شوند.',
-                'Messages are saved to your account. Recorded replies appear in this conversation.',
-              )}
-        </p>
-        {!staff && (
-          <p>
-            {text('زمان‌ها به وقت تهران نمایش داده می‌شوند.', 'Times are shown in Tehran time.')}
+        {staff && (
+          <p className="ticket-inbox-intro">
+            {text(
+              'درخواست‌های مشتریان را بررسی و پاسخ دهید. پاسخ شما در همان گفت‌وگوی خصوصی مشتری ثبت می‌شود.',
+              'Review and reply to customer requests. Your reply is saved in the customer’s private conversation.',
+            )}
           </p>
         )}
         {entry &&
@@ -492,7 +583,7 @@ export function TicketWorkspace({
               </button>
             </div>
           )}
-          {page && page.items.length === 0 && (
+          {page && page.items.length === 0 && !page.nextCursor && (
             <p className="ticket-result-note" role="status">
               {exactId
                 ? text('تیکتی با این شناسه پیدا نشد.', 'No ticket matches this ID.')
@@ -500,7 +591,7 @@ export function TicketWorkspace({
             </p>
           )}
           {items?.length === 0 && !!page?.items.length && (
-            <p role="status">
+            <p className="ticket-result-note" role="status">
               {text(
                 'در درخواست‌های دریافت‌شده نتیجه‌ای پیدا نشد.',
                 'No matches in the loaded requests.',
@@ -516,26 +607,36 @@ export function TicketWorkspace({
             </p>
           )}
           <ul className="ticket-list">
-            {items?.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  aria-current={selected === item.id ? 'page' : undefined}
-                  onClick={() => select(item.id)}
-                >
-                  <strong>{item.subject}</strong>
-                  <span className="ticket-list-meta">
-                    <span className="ticket-list-state" data-state={item.state}>
-                      {stateName(item.state, staff, locale)}
+            {items?.map((item) => {
+              const label = staff ? null : customerTicketSubject(item.subject);
+              return (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    aria-current={selected === item.id ? 'page' : undefined}
+                    onClick={() => select(item.id)}
+                  >
+                    <strong dir="auto">{label?.title ?? item.subject}</strong>
+                    <span className="ticket-list-meta">
+                      <span className="ticket-list-state" data-state={item.state}>
+                        {stateName(item.state, staff, locale)}
+                      </span>
+                      {!listKind && label && label.kind !== 'support' && (
+                        <span className="ticket-list-kind">
+                          {label.kind === 'phone'
+                            ? text('درخواست خرید', 'Purchase request')
+                            : text('پرسش کالا', 'Product question')}
+                        </span>
+                      )}
+                      <time dateTime={item.changedAt}>{date(item.changedAt)}</time>
                     </span>
-                    <time dateTime={item.changedAt}>{date(item.changedAt)}</time>
-                  </span>
-                  <small>
-                    <bdi title={item.id}>{staff ? item.id.slice(0, 8) : item.id}</bdi>
-                  </small>
-                </button>
-              </li>
-            ))}
+                    <small>
+                      <bdi title={item.id}>{item.id.slice(0, 8)}</bdi>
+                    </small>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
           {page?.nextCursor && (
             <button
@@ -568,21 +669,31 @@ export function TicketWorkspace({
           download={download}
           onDraftChange={staff ? recordDraft : undefined}
           replyTools={replyTools}
+          purchaseOnly={listKind === 'purchase'}
           send={(command, blob) => send(command, false, blob)}
           back={() => select(null)}
         />
-      ) : staff ? (
+      ) : staff || renderPurchaseComposer ? (
         <section className="ticket-panel ticket-selection-empty">
-          <h2>{text('یک گفت‌وگو انتخاب کنید', 'Select a conversation')}</h2>
+          <h2>
+            {renderPurchaseComposer
+              ? text('پیگیری درخواست خرید', 'Track a purchase request')
+              : text('یک گفت‌وگو انتخاب کنید', 'Select a conversation')}
+          </h2>
           <p>
-            {text(
-              'از صف پشتیبانی، تیکت موردنظر را باز کنید تا پیام‌ها و اقدامات آن را ببینید.',
-              'Open a ticket from the support inbox to see its messages and actions.',
-            )}
+            {renderPurchaseComposer
+              ? text(
+                  'یک درخواست را باز کنید تا پاسخ سایمان و ادامهٔ گفت‌وگو را ببینید.',
+                  'Open a request to see Sayman’s reply and continue the conversation.',
+                )
+              : text(
+                  'از صف پشتیبانی، تیکت موردنظر را باز کنید تا پیام‌ها و اقدامات آن را ببینید.',
+                  'Open a ticket from the support inbox to see its messages and actions.',
+                )}
           </p>
         </section>
       ) : (
-        <section className="ticket-panel">
+        <section className="ticket-panel ticket-compose" id="customer-ticket-compose" tabIndex={-1}>
           <h2>
             {shoppingRequest?.kind === 'phone'
               ? text('گوشی دلخواهت را درخواست کن', 'Request a phone')
@@ -590,58 +701,10 @@ export function TicketWorkspace({
                 ? text('از سایمان بپرس', 'Ask Sayman')
                 : text('درخواست تازه', 'New request')}
           </h2>
-          <form key={completedCreateId ?? 'draft'} onSubmit={create}>
-            {shoppingRequest ? (
-              <fieldset disabled={unresolved}>
-                <ShoppingRequestFields request={shoppingRequest} locale={locale} />
-              </fieldset>
-            ) : (
-              <>
-                <label className="ticket-field">
-                  <span>{text('موضوع', 'Subject')}</span>
-                  <input
-                    value={subject}
-                    maxLength={120}
-                    required
-                    disabled={unresolved}
-                    onChange={(e) => setSubject(e.target.value)}
-                  />
-                </label>
-                <label className="ticket-field">
-                  <span>{text('پیام شما', 'Your message')}</span>
-                  <textarea
-                    value={body}
-                    maxLength={4000}
-                    rows={6}
-                    required
-                    disabled={unresolved}
-                    onChange={(e) => setBody(e.target.value)}
-                  />
-                </label>
-              </>
-            )}
-            {invalid && (
-              <p role="alert">
-                {text(
-                  'فیلدهای الزامی و قالب مبلغ را بررسی کنید.',
-                  'Check the required fields and budget format.',
-                )}
-              </p>
-            )}
-            <button type="submit" disabled={unresolved}>
-              {shoppingRequest
-                ? text('ثبت درخواست', 'Send request')
-                : text('ثبت درخواست پشتیبانی', 'Send support request')}
-            </button>
-            <p className="ticket-upload-hint">
-              {text(
-                'اگر عکس دارید، پس از ثبت درخواست می‌توانید آن را در گفت‌وگوی خصوصی پیوست کنید.',
-                'After sending your request, you can attach a photo in the private conversation.',
-              )}
-            </p>
-          </form>
+          {composeForm}
         </section>
       )}
+      {renderPurchaseComposer?.(composeForm)}
     </div>
   );
 }
@@ -676,7 +739,9 @@ function TicketConversation({
   download,
   onDraftChange,
   replyTools,
+  purchaseOnly,
 }: {
+  purchaseOnly?: boolean;
   replyTools?: TicketReplyTools;
   download?: TicketDownloadTransport;
   owner: string;
@@ -766,6 +831,8 @@ function TicketConversation({
           ),
         ]);
         const header = readTicketDetail(rawHeader, id).ticket;
+        if (purchaseOnly && customerTicketSubject(header.subject).kind !== 'phone')
+          throw Error('Not a purchase request');
         const page = readTicketMessages(rawMessages, id);
         if (!current()) return;
         const items = reset ? page.items : [...previous, ...page.items];
@@ -782,7 +849,7 @@ function TicketConversation({
         if (revision === generation.current && !abort.signal.aborted) setBusy(false);
       }
     },
-    [prefix, id, transport],
+    [prefix, id, purchaseOnly, transport],
   );
   useEffect(() => {
     mounted.current = true;
@@ -919,20 +986,25 @@ function TicketConversation({
     <section className="ticket-panel ticket-conversation">
       <div className="ticket-heading">
         <h2 ref={heading} tabIndex={staff ? -1 : undefined}>
-          {ticket?.subject ?? text('گفت‌وگوی پشتیبانی', 'Support conversation')}
+          {ticket
+            ? staff
+              ? ticket.subject
+              : customerTicketSubject(ticket.subject).title
+            : text('گفت‌وگوی پشتیبانی', 'Support conversation')}
         </h2>
         <div className="ticket-actions">
           <button type="button" onClick={back}>
             {staff
               ? text('بازگشت به صف', 'Back to inbox')
-              : text('فهرست / درخواست تازه', 'List / new request')}
+              : text('بازگشت به فهرست', 'Back to requests')}
           </button>
           <button type="button" disabled={busy} onClick={() => setLocalRefresh((n) => n + 1)}>
-            {text('تازه‌سازی گفت‌وگو', 'Refresh conversation')}
+            {text('تازه‌سازی', 'Refresh')}
           </button>
         </div>
       </div>
       <p className="ticket-tracking">
+        {text('شناسهٔ پیگیری: ', 'Tracking ID: ')}
         <bdi>{id}</bdi>
       </p>
       {busy && !ticket && (

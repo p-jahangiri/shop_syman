@@ -4,6 +4,7 @@ import { siteDesignSchema } from '@sayman/web-shared/lib/content/site-design.ts'
 import { validProductVideoUrl } from '../catalog/product-video.ts';
 import { usedConditionSchema } from '@sayman/web-shared/lib/catalog/used-condition-contract.ts';
 import { storeIdentitySchema } from '@sayman/web-shared/lib/content/store-identity.ts';
+import { categoryReturnGuidanceSchema } from '@sayman/web-shared/lib/content/category-return-guidance.ts';
 import { sitePaletteSchema } from '@sayman/web-shared/lib/content/site-palette.ts';
 import { motionPresets } from '@sayman/web-shared/lib/content/appearance.ts';
 import { publicImageUrlSchema } from '@sayman/web-shared/lib/media/public-image-url.ts';
@@ -41,6 +42,7 @@ export const snapshotSchema = z.object({
   locale: z.enum(['fa', 'en']).optional(),
   site: z.object({
     storeIdentity: storeIdentitySchema.optional(),
+    categoryReturnGuidance: categoryReturnGuidanceSchema.optional(),
     seo: z
       .object({
         title: z.string().max(150).optional(),

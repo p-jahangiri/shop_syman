@@ -195,9 +195,13 @@ test('review photo proxy serves only bounded WebP and scopes the bearer to owner
   const publicPath = ['products', 'p1', 'photos', id, other];
   const ownerPath = [...publicPath, 'mine'];
   const webp = Uint8Array.from('RIFF0000WEBPfake', (letter) => letter.charCodeAt(0));
+  for (const suffix of [['1'], ['4'], ['mine', '2']]) {
+    const path = [...publicPath, ...suffix];
+    assert.equal((await proxyReviews(request(path), path, env, never)).status, 404);
+  }
   assert(!isCustomerReviewsPath('/api/reviews/' + publicPath.join('/'), 'GET'));
   assert(isCustomerReviewsPath('/api/reviews/' + ownerPath.join('/'), 'GET'));
-  for (const path of [publicPath, ownerPath]) {
+  for (const path of [publicPath, ownerPath, [...publicPath, '2'], [...publicPath, '3', 'mine']]) {
     const result = await proxyReviews(
       request(path, 'GET', undefined, { Cookie: 'staff=private' }),
       path,
@@ -205,7 +209,7 @@ test('review photo proxy serves only bounded WebP and scopes the bearer to owner
       async (url, init) => {
         assert.equal(url, env.SHOP_API_URL + '/api/reviews/' + path.join('/'));
         const headers = new Headers(init?.headers);
-        assert.equal(headers.get('Authorization'), path === ownerPath ? token : null);
+        assert.equal(headers.get('Authorization'), path.at(-1) === 'mine' ? token : null);
         assert(!headers.has('Cookie'));
         return new Response(webp, {
           headers: { 'Content-Type': 'image/webp', 'Set-Cookie': 'private=1' },
@@ -253,4 +257,37 @@ test('review photo proxy serves only bounded WebP and scopes the bearer to owner
     );
     assert.equal(result.status, 503);
   }
+});
+
+test('review proxy forwards three full-size images and rejects a fourth before API forwarding', async () => {
+  const path = ['products', 'p1', 'commands', id];
+  const data = Buffer.alloc(2 * 1024 * 1024, 65).toString('base64');
+  const image = { action: 'replace', name: 'test.png', contentType: 'image/png', data };
+  const input = {
+    version: null,
+    locale: 'fa',
+    rating: 4,
+    displayName: 'test',
+    title: 'review',
+    body: 'Review body here.',
+    publishConsent: true,
+    photos: [image, image, image],
+  };
+  const result = await proxyReviews(request(path, 'PUT', input), path, env, async (_url, init) => {
+    assert.equal(JSON.parse(String(init?.body)).photos.length, 3);
+    return Response.json({ title: 'review_photos_busy' }, { status: 503 });
+  });
+  assert.equal(result.status, 503);
+  assert.equal((await result.json()).title, 'review_photos_busy');
+  assert.equal(
+    (
+      await proxyReviews(
+        request(path, 'PUT', { ...input, photos: [...input.photos, image] }),
+        path,
+        env,
+        never,
+      )
+    ).status,
+    413,
+  );
 });

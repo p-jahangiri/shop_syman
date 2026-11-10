@@ -10,6 +10,7 @@ import * as commerce from '@sayman/web-shared/lib/shared/commerce.ts';
 import * as money from '@sayman/web-shared/lib/shared/money.ts';
 import * as media from '@sayman/web-shared/lib/media/media-paths.ts';
 import * as inspectionPhotos from '../lib/catalog/used-inspection-photos.ts';
+import * as phoneConfigurations from '../lib/catalog/phone-configurations.ts';
 import * as catalog from '../lib/catalog/catalog-contract.ts';
 import * as homeBlocks from '../lib/content/home-blocks.ts';
 import * as seo from '../lib/seo/seo.ts';
@@ -218,6 +219,12 @@ function compile(
     '@sayman/web-shared/lib/shared/money.ts': money,
     '@sayman/web-shared/lib/media/media-paths.ts': media,
     '@/lib/catalog/used-inspection-photos': inspectionPhotos,
+    './product-detail-presentation.css': {},
+    '@/lib/catalog/phone-configurations': phoneConfigurations,
+    './phone-variant-picker': {
+      PhoneColorOptions: 'PhoneColorOptions',
+      PhoneConfigurationOptions: 'PhoneConfigurationOptions',
+    },
     '@sayman/web-shared/lib/orders/order-form.ts': { accountReturnTo },
     ...overrides,
   };
@@ -438,6 +445,32 @@ test('enabled cheque-only purchasing retains the product calculator and does not
   );
   assert.ok(text(tree).includes('Product price'));
   assert.equal(text(tree).includes('Sample cash price'), false);
+});
+
+test('the product purchase panel shows the exact category return note and the selected warranty', () => {
+  const value = snapshot('en');
+  const product = structuredClone(value.products[0]);
+  product.name = 'Samsung Galaxy A07 Dual SIM with 128 GB storage and 4 GB RAM';
+  product.variants = [{ ...product.variants[0], warranty: '18-month warranty' }];
+  value.site.categoryReturnGuidance = [
+    { categoryId: product.category, text: 'Keep the original packaging for review.' },
+    { categoryId: 'laptops', text: 'Laptop-only conditions' },
+  ];
+  const component = compile('components/catalog/product-detail.tsx', value);
+  const renderProduct = component.ProductDetail as (props: unknown) => Element;
+  let tree = renderProduct({ product });
+  assert.ok(text(tree).includes(product.name));
+  assert.ok(text(tree).includes('Keep the original packaging for review.'));
+  assert.ok(text(tree).includes('18-month warranty'));
+  assert.ok(!text(tree).includes('Laptop-only conditions'));
+
+  product.variants[0].warranty = '';
+  value.site.categoryReturnGuidance = [{ categoryId: 'laptops', text: 'Laptop-only conditions' }];
+  tree = renderProduct({ product });
+  assert.ok(!elements(tree).some((node) => node.props.className === 'purchase-return-guidance'));
+  assert.ok(
+    !elements(tree).some((node) => node.props.className === 'purchase-detail product-warranty'),
+  );
 });
 
 test('preview account acquisition links disappear when disabled but return when cheque is enabled', () => {

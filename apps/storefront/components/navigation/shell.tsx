@@ -161,11 +161,12 @@ export function Header() {
   useEffect(() => {
     const preference = window.matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
-      let saved: string | null = null;
+      const root = document.documentElement;
+      let saved = root.dataset.themePreference;
       try {
-        saved = localStorage.getItem('sayman:theme');
+        saved ??= localStorage.getItem('sayman:theme') ?? undefined;
       } catch {
-        saved = document.documentElement.dataset.theme ?? null;
+        /* The cookie-backed preference is already available on the root. */
       }
       const selected = saved === 'dark' || saved === 'light' ? saved : defaultTheme;
       const dark = selected === 'system' ? preference.matches : selected === 'dark';
@@ -236,9 +237,12 @@ export function Header() {
   function theme() {
     const value = !dark;
     setDark(value);
-    document.documentElement.dataset.theme = value ? 'dark' : 'light';
+    const selected = value ? 'dark' : 'light';
+    document.documentElement.dataset.theme = selected;
+    document.documentElement.dataset.themePreference = selected;
+    document.cookie = `sayman-theme=${selected}; Path=/; Max-Age=31536000; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
     try {
-      localStorage.setItem('sayman:theme', value ? 'dark' : 'light');
+      localStorage.setItem('sayman:theme', selected);
     } catch {
       /* Storage can be unavailable; the current tab still uses the selected theme. */
     }

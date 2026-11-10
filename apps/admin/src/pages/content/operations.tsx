@@ -12,6 +12,7 @@ import { ImageEditor } from '../../features/media/media';
 import { useCmsImageUploads } from '../../features/content/cms-image-uploads';
 import { SupportContentPreview } from '../../features/content/support-content-preview';
 import { SupportContentEditor } from '../../features/content/support-content-editor';
+import { CategoryReturnEditor } from '../../features/content/category-return-editor';
 import { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, RotateCcw, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
@@ -180,6 +181,7 @@ const documentLabels = {
   site: 'تنظیمات مشترک فروشگاه',
   support: 'راهنما و پرسش‌های پشتیبانی',
   auth: 'روش‌های ورود مشتری',
+  'category-returns': 'شرایط مرجوعی دسته‌ها',
 } as const;
 
 function settingsLabel(document: Pick<ContentDocument, 'key' | 'locale'>) {
@@ -220,6 +222,10 @@ function ContentSettings({
   const sharedSite = data.documents.find((d) => d.key === 'site' && d.locale === 'fa');
   const missingSupport = (['fa', 'en'] as const).filter(
     (locale) => !data.documents.some((item) => item.key === 'support' && item.locale === locale),
+  );
+  const missingReturns = (['fa', 'en'] as const).filter(
+    (locale) =>
+      !data.documents.some((item) => item.key === 'category-returns' && item.locale === locale),
   );
   async function publish({
     document: doc,
@@ -360,6 +366,21 @@ function ContentSettings({
             {missingSupport.map((locale) => (
               <button type="button" key={locale} onClick={() => setSelected('support/' + locale)}>
                 {locale === 'fa' ? 'ساخت محتوای پشتیبانی فارسی' : 'ساخت محتوای پشتیبانی انگلیسی'}
+              </button>
+            ))}
+          </div>
+        )}
+        {writable && missingReturns.length > 0 && (
+          <div className="row-buttons">
+            {missingReturns.map((locale) => (
+              <button
+                type="button"
+                key={locale}
+                onClick={() => setSelected('category-returns/' + locale)}
+              >
+                {locale === 'fa'
+                  ? 'ساخت شرایط مرجوعی دسته‌ها (فارسی)'
+                  : 'ساخت شرایط مرجوعی دسته‌ها (انگلیسی)'}
               </button>
             ))}
           </div>
@@ -511,6 +532,16 @@ function ContentSettings({
             key={selected}
             document={document}
             locale={selected === 'support/en' ? 'en' : 'fa'}
+            onClose={() => setSelected(null)}
+          />
+        </Modal>
+      ) : selected?.startsWith('category-returns/') ? (
+        <Modal title="شرایط مرجوعی دسته‌ها" onClose={() => setSelected(null)}>
+          <CategoryReturnEditor
+            key={selected}
+            document={document}
+            locale={selected === 'category-returns/en' ? 'en' : 'fa'}
+            catalog={catalog}
             onClose={() => setSelected(null)}
           />
         </Modal>

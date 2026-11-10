@@ -38,6 +38,14 @@ import { ProductVariantsTable } from './product-variants-table';
 import { ProductVariantGenerator } from './product-variant-generator';
 import { ProductQuickCreate } from './product-quick-create';
 import { ProductFormSettings } from './product-form-settings';
+import {
+  warrantyFields,
+  warrantyLibrarySchema,
+  warrantyTemplatesPath,
+  warrantyTemplatesQuery,
+  withDefaultWarranty,
+  type WarrantyTemplate,
+} from './warranty-templates';
 import { useProductCommand } from '../../hooks/use-product-command';
 import { productErrorPaths } from './product-field-errors';
 import {
@@ -248,6 +256,18 @@ function ProductEditorForm({
       ? draftFromSimilarProduct(copyFrom, key, methods)
       : { ...draftOfProduct(item, key, methods), videos };
   });
+  const warrantyLibrary = useQuery({
+    queryKey: warrantyTemplatesQuery,
+    queryFn: async ({ signal }) =>
+      warrantyLibrarySchema.parse(await api(warrantyTemplatesPath, { signal })),
+  });
+  const templates = warrantyLibrary.data?.items ?? [];
+  const categoryWarranties = templates.filter((entry) =>
+    entry.categoryIds.includes(value.categoryId),
+  );
+  const defaultWarranty = categoryWarranties.find((entry) =>
+    entry.defaultCategoryIds.includes(value.categoryId),
+  );
   const initial = useRef(JSON.stringify(value));
   const tabsId = useId();
   const [activeSection, setActiveSection] = useState<EditorSection>('identity');
@@ -303,6 +323,12 @@ function ProductEditorForm({
   function change(patch: Partial<ProductDraft>, paths: string[] = Object.keys(patch)) {
     setValue((old) => {
       if (patch.categoryId && patch.categoryId !== old.categoryId) {
+        const previousDefault = templates.find((entry) =>
+          entry.defaultCategoryIds.includes(old.categoryId),
+        );
+        const nextDefault = templates.find((entry) =>
+          entry.defaultCategoryIds.includes(patch.categoryId!),
+        );
         const allowed = new Set(
           data.categories
             .find((c) => c.id === patch.categoryId)
@@ -313,7 +339,7 @@ function ProductEditorForm({
           ...patch,
           attributes: old.attributes.filter((a) => allowed.has(a.attributeId)),
           variants: old.variants.map((row) => ({
-            ...row,
+            ...(row.id ? row : withDefaultWarranty(row, nextDefault, previousDefault)),
             attributes: row.attributes.filter((a) => allowed.has(a.attributeId)),
           })),
         };
@@ -331,12 +357,18 @@ function ProductEditorForm({
   }
   const variantsChanged = useCallback(
     (transform: (old: ProductVariantDraft[]) => ProductVariantDraft[]) => {
-      setValue((old) => ({ ...old, variants: transform(old.variants) }));
+      setValue((old) => {
+        const before = new Set(old.variants.map((row) => row.key));
+        const variants = transform(old.variants).map((row) =>
+          !before.has(row.key) && defaultWarranty ? withDefaultWarranty(row, defaultWarranty) : row,
+        );
+        return { ...old, variants };
+      });
       setServerErrors((old) =>
         Object.fromEntries(Object.entries(old).filter(([path]) => !path.startsWith('variants.'))),
       );
     },
-    [],
+    [defaultWarranty],
   );
   const editVariant = useCallback((key: string) => setVariantKey(key), []);
   const variant = value.variants.find((v) => v.key === variantKey);
@@ -764,6 +796,27 @@ function ProductEditorForm({
             'variants',
             'تنوع‌ها و قیمت فروش',
             <Stack spacing={2}>
+              {defaultWarranty && (
+                <Alert
+                  severity="info"
+                  action={
+                    <Button
+                      disabled={disabled}
+                      onClick={() =>
+                        variantsChanged((rows) =>
+                          rows.map((row) =>
+                            row.id ? row : withDefaultWarranty(row, defaultWarranty),
+                          ),
+                        )
+                      }
+                    >
+                      پرکردن تنوع‌های تازه
+                    </Button>
+                  }
+                >
+                  گارانتی پیش‌فرض دسته: {defaultWarranty.nameFa}
+                </Alert>
+              )}
               {copyFrom &&
                 copyCategory &&
                 copyFrom.variants.length > 0 &&
@@ -1099,6 +1152,7 @@ function ProductEditorForm({
           value={variant}
           data={data}
           categoryId={value.categoryId}
+          warranties={categoryWarranties}
           methods={methods}
           errors={errors}
           disabled={disabled}
@@ -1133,6 +1187,7 @@ function VariantDetails({
   value,
   data,
   categoryId,
+  warranties,
   methods,
   errors,
   fields,
@@ -1143,6 +1198,7 @@ function VariantDetails({
   value: ProductVariantDraft;
   data: Catalog;
   categoryId: string;
+  warranties: WarrantyTemplate[];
   methods: PurchaseMethod[];
   errors: ProductFieldErrors;
   fields: FormFieldsConfiguration['fields'];
@@ -1227,15 +1283,47 @@ function VariantDetails({
             </>
           )}
           {(field('warranty').visible || Boolean(errors[root + 'warrantyFa'])) && (
-            <ProductTextField
-              {...config('warranty')}
-              path={root + 'warrantyFa'}
-              value={value.warrantyFa}
-              multiline
-              minRows={2}
-              disabled={disabled}
-              onChange={(e) => onChange({ warrantyFa: e.target.value })}
-            />
+            <Stack spacing={1.5}>
+              {warranties.length > 0 && (
+                <ProductTextField
+                  label="انتخاب از گارانتی‌های دسته"
+                  help="انتخاب الگو متن گارانتی این تنوع را پر می‌کند. پس از انتخاب می‌توانید متن را ویرایش کنید."
+                  path={root + 'warrantyTemplate'}
+                  value=""
+                  select
+                  disabled={disabled}
+                  onChange={(event) => {
+                    const selected = warranties.find((entry) => entry.id === event.target.value);
+                    if (selected) onChange(warrantyFields(selected));
+                  }}
+                >
+                  <MenuItem value="">انتخاب الگو</MenuItem>
+                  {warranties.map((entry) => (
+                    <MenuItem key={entry.id} value={entry.id}>
+                      {entry.nameFa}
+                    </MenuItem>
+                  ))}
+                </ProductTextField>
+              )}
+              <ProductTextField
+                {...config('warranty')}
+                path={root + 'warrantyFa'}
+                value={value.warrantyFa}
+                multiline
+                minRows={2}
+                disabled={disabled}
+                onChange={(e) => onChange({ warrantyFa: e.target.value })}
+              />
+              <ProductTextField
+                label="گارانتی انگلیسی"
+                path={root + 'warrantyEn'}
+                value={value.warrantyEn}
+                multiline
+                minRows={2}
+                disabled={disabled}
+                onChange={(e) => onChange({ warrantyEn: e.target.value })}
+              />
+            </Stack>
           )}
           {axes.map((rule) => {
             const definition = data.attributes.find((a) => a.id === rule.attributeId);

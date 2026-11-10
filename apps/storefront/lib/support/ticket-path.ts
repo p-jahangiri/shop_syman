@@ -7,7 +7,7 @@ export function isCustomerTicketPath(value: string, method = 'GET') {
     path = url.pathname.slice('/api/support/'.length);
   let allowed: string[] = [];
   if (method === 'GET') {
-    if (path === 'tickets') allowed = ['state', 'cursor'];
+    if (path === 'tickets') allowed = ['state', 'cursor', 'kind'];
     else if (new RegExp(`^tickets/${id}/messages$`).test(path)) allowed = ['cursor'];
     else if (!new RegExp(`^(tickets|commands)/${id}$`).test(path)) return false;
   } else if (
@@ -27,7 +27,9 @@ export function isCustomerTicketPath(value: string, method = 'GET') {
     if (
       k === 'state'
         ? !['Open', 'WaitingCustomer', 'Closed'].includes(v)
-        : v.length < 1 || v.length > 180 || !/^[A-Za-z0-9+/]+={0,2}$/.test(v)
+        : k === 'kind'
+          ? !['purchase', 'support', 'question'].includes(v)
+          : v.length < 1 || v.length > 180 || !/^[A-Za-z0-9+/]+={0,2}$/.test(v)
     )
       return false;
   return !/(?:^|\/)0{32}(?:\/|$)/.test(path);

@@ -123,7 +123,7 @@ export interface Inventory {
   }[];
 }
 export interface ContentDocument {
-  key: 'site' | 'auth' | 'support';
+  key: 'site' | 'auth' | 'support' | 'category-returns';
   locale: 'fa' | 'en';
   draftJson: string;
   publishedJson?: string;

@@ -415,7 +415,7 @@ function QuestionComposer({ name, slug }: { name: string; slug: string }) {
   const [commandId, setCommandId] = useState<string>();
   const ownedEntry = commandId === entry?.command.id ? entry : null;
   const unresolved = entry?.state === 'pending' || entry?.state === 'unknown';
-  const context = '/purchase-requests?question=' + encodeURIComponent(slug);
+  const context = '/product/' + encodeURIComponent(slug) + '?tab=questions';
 
   async function send(id: string, payload?: TicketCommand) {
     if (!owner) return;

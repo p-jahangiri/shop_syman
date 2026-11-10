@@ -1,3 +1,4 @@
+import { reviewPhotoSlots } from '@sayman/web-shared/lib/reviews/reviews-contract.ts';
 import { AdminFilterForm } from '../../components/filters/admin-filters';
 import { useEffect, useRef, useState } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -251,7 +252,8 @@ export function ReviewsPage({ writable, viewerId }: { writable: boolean; viewerI
                       )}
                       {r.hasPhoto && (
                         <span className="review-queue-badge">
-                          <ImageIcon size={14} aria-hidden="true" /> عکس دارد
+                          <ImageIcon size={14} aria-hidden="true" />{' '}
+                          {reviewPhotoSlots(r).length.toLocaleString('fa-IR')} عکس
                         </span>
                       )}
                     </div>
@@ -325,7 +327,7 @@ function Rating({ rating }: { rating: number }) {
   );
 }
 
-function StaffPhoto({ id, revision }: { id: string; revision: string }) {
+function StaffPhoto({ id, revision, slot }: { id: string; revision: string; slot: number }) {
   const [attempt, setAttempt] = useState(0);
   const [src, setSrc] = useState('');
   const [error, setError] = useState(false);
@@ -334,7 +336,11 @@ function StaffPhoto({ id, revision }: { id: string; revision: string }) {
     const controller = new AbortController();
     const authority = adminViewRevision();
     let url = '';
-    void api<Blob>(`/admin/reviews/${id}/photos/${revision}`, { signal: controller.signal }, 'blob')
+    void api<Blob>(
+      `/admin/reviews/${id}/photos/${revision}${slot > 1 ? '/' + slot : ''}`,
+      { signal: controller.signal },
+      'blob',
+    )
       .then((photo) => {
         if (controller.signal.aborted || adminViewRevision() !== authority) return;
         if (photo.type !== 'image/webp' || !photo.size) throw new Error('invalid photo');
@@ -348,11 +354,11 @@ function StaffPhoto({ id, revision }: { id: string; revision: string }) {
       controller.abort();
       if (url) URL.revokeObjectURL(url);
     };
-  }, [attempt, id, revision]);
+  }, [attempt, id, revision, slot]);
   return (
     <div className="review-staff-photo">
       {src ? (
-        <img src={src} alt="عکس پیوست این نسخهٔ دیدگاه" />
+        <img src={src} alt={'عکس ' + slot.toLocaleString('fa-IR') + ' این دیدگاه'} />
       ) : attempt && !error ? (
         <span role="status">در حال دریافت عکس…</span>
       ) : (
@@ -364,7 +370,7 @@ function StaffPhoto({ id, revision }: { id: string; revision: string }) {
           }}
         >
           <ImageIcon size={16} aria-hidden="true" />
-          {error ? 'عکس دریافت نشد؛ تلاش دوباره' : 'مشاهدهٔ عکس پیوست'}
+          {error ? 'عکس دریافت نشد؛ تلاش دوباره' : 'مشاهدهٔ عکس ' + slot.toLocaleString('fa-IR')}
         </button>
       )}
     </div>
@@ -466,7 +472,18 @@ function Moderation({
         <p>
           شناسهٔ کالا <bdi>{row.productId}</bdi>
         </p>
-        {row.hasPhoto && <StaffPhoto id={row.id} revision={row.content.revisionId} />}
+        {row.hasPhoto && (
+          <div className="review-staff-album">
+            {reviewPhotoSlots(row).map((slot) => (
+              <StaffPhoto
+                key={row.content.revisionId + ':' + slot}
+                id={row.id}
+                revision={row.content.revisionId}
+                slot={slot}
+              />
+            ))}
+          </div>
+        )}
         {row.reply && !writable && (
           <p>
             <strong>پاسخ عمومی فروشگاه</strong> {row.reply}

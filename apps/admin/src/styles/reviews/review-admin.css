@@ -151,3 +151,10 @@
     justify-content: space-between;
   }
 }
+
+.review-staff-album {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: 0.5rem;
+  align-items: start;
+}

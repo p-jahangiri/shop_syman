@@ -13,6 +13,10 @@ internal static class PublicStorefrontEndpoints
             var site = await cms.ReadAsync("site", locale, ct);
             var data = metadata ?? await catalog.ReadAsync(locale, ct, !SiteAppearanceRules.ShowUsedProducts(site));
             if (site.Count == 0) throw new BusinessException("content_unpublished", "Storefront content has not been published.");
+            var returns = await cms.ReadAsync(CategoryReturnGuidance.DocumentKey, locale, ct);
+            site.Remove("categoryReturnGuidance");
+            if (returns["items"] is System.Text.Json.Nodes.JsonArray { Count: > 0 } items)
+                site["categoryReturnGuidance"] = items.DeepClone();
             var auth = await cms.ReadAsync("auth", "fa", ct);
             CustomerAuthSettingsRules.ApplyEffective(auth, await sms.CustomerLoginAvailableAsync(ct));
             var methods = await purchasing.MethodsAsync(locale, ct);

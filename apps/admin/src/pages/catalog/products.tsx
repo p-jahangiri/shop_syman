@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { WarrantyLibraryEditor } from '../../features/catalog/warranty-library-editor';
 import { useQuery } from '@tanstack/react-query';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -355,6 +356,7 @@ export function ProductsPage({
   const [history, setHistory] = useState<{ id: string; name: string } | null>(null);
   const [archive, setArchive] = useState<WorkspaceProductRow | null>(null);
   const [settings, setSettings] = useState(false);
+  const [warranties, setWarranties] = useState(false);
   const [pricing, setPricing] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [view, setView] = useState(() => readCatalogView(viewerId));
@@ -493,6 +495,15 @@ export function ProductsPage({
               onClick={() => setSettings(true)}
             >
               مدیریت فیلدها
+            </Button>
+          )}
+          {writable && (
+            <Button
+              variant="outlined"
+              disabled={command.blocked}
+              onClick={() => setWarranties(true)}
+            >
+              الگوهای گارانتی
             </Button>
           )}
           {onInventory && (
@@ -761,6 +772,9 @@ export function ProductsPage({
           <ProductFormSettings data={data} viewerId={viewerId} onClose={() => setSettings(false)} />
         )}
       </Suspense>
+      {warranties && writable && (
+        <WarrantyLibraryEditor categories={data.categories} onClose={() => setWarranties(false)} />
+      )}
       {history && (
         <Dialog open fullWidth maxWidth="lg" onClose={() => setHistory(null)}>
           <DialogTitle>تاریخچهٔ قیمت کالا</DialogTitle>

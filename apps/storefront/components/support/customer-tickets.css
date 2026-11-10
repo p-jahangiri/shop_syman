@@ -1,0 +1,229 @@
+.support-tickets-page .customer-ticket-header {
+  display: grid;
+  gap: 0.55rem;
+  margin-block-end: 0.8rem;
+}
+.customer-ticket-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+}
+.customer-ticket-title {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: clamp(0.7rem, 2vw, 1.25rem);
+  border: 1px solid var(--border);
+  border-radius: 0.95rem;
+  background: color-mix(in oklch, var(--surface) 87%, var(--primary));
+}
+.customer-ticket-header[data-kind='shopping'] .customer-ticket-title {
+  background: color-mix(in oklch, var(--surface) 91%, #a87247);
+}
+.customer-ticket-icon {
+  display: grid;
+  place-items: center;
+  width: 2.85rem;
+  height: 2.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--surface);
+}
+.customer-ticket-title h1 {
+  margin: 0;
+  font-size: clamp(1.05rem, 2.6vw, 1.65rem);
+  line-height: 1.6;
+}
+.customer-ticket-title p {
+  margin-block: 0.2rem 0;
+  font-size: 0.87rem;
+}
+.support-tickets-page .ticket-workspace {
+  gap: 0.85rem;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.5fr);
+}
+.support-tickets-page .ticket-panel {
+  padding: clamp(0.65rem, 1.65vw, 1.1rem);
+  border-radius: 0.85rem;
+}
+.support-tickets-page .ticket-panel h2 {
+  margin: 0;
+  font-size: 1.02rem;
+}
+.support-tickets-page .ticket-heading {
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+}
+.support-tickets-page .ticket-heading button,
+.support-tickets-page .ticket-actions button {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.81rem;
+}
+.support-tickets-page .ticket-field {
+  margin-block: 0.7rem;
+  gap: 0.3rem;
+}
+.support-tickets-page .ticket-inbox .ticket-field {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  font-size: 0.84rem;
+}
+.support-tickets-page .ticket-field :is(input, textarea, select) {
+  padding: 0.5rem 0.65rem;
+}
+.support-tickets-page .ticket-list,
+.support-tickets-page .ticket-messages {
+  gap: 0.42rem;
+  margin: 0.55rem 0;
+}
+.support-tickets-page .ticket-list button {
+  padding: 0.48rem 0.6rem;
+  gap: 0.14rem;
+  background: var(--surface);
+  box-shadow: none;
+  text-align: start;
+}
+.support-tickets-page .ticket-list button[aria-current='page'] {
+  border-inline-start: 3px solid var(--primary);
+  background: color-mix(in oklch, var(--surface) 90%, var(--primary));
+}
+.support-tickets-page .ticket-list button > strong {
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+.support-tickets-page .ticket-list-meta {
+  display: flex;
+  gap: 0.3rem 0.55rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.support-tickets-page .ticket-list-state {
+  display: inline-flex;
+  align-items: center;
+  background: color-mix(in oklch, var(--surface) 90%, var(--primary));
+  border: 1px solid var(--border);
+  border-radius: 100vmax;
+  padding: 0.03rem 0.4rem;
+  font-size: 0.77rem;
+}
+.support-tickets-page .ticket-list-state[data-state='WaitingCustomer'] {
+  background: color-mix(in oklch, var(--surface) 84%, #bd8938);
+}
+.support-tickets-page .ticket-list-state[data-state='Closed'] {
+  background: var(--surface);
+}
+.support-tickets-page .ticket-list time,
+.support-tickets-page .ticket-list bdi,
+.support-tickets-page .ticket-tracking {
+  color: var(--muted);
+}
+.support-tickets-page .ticket-messages {
+  padding: 0.6rem;
+  border-radius: 0.7rem;
+  background: color-mix(in oklch, var(--surface) 96%, var(--primary));
+}
+.support-tickets-page .ticket-message {
+  width: fit-content;
+  max-width: min(92%, 42rem);
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.7rem;
+  background: var(--surface);
+}
+.support-tickets-page .ticket-message.customer {
+  justify-self: start;
+}
+.support-tickets-page .ticket-message.support {
+  justify-self: end;
+  border-inline-start-width: 2px;
+  background: color-mix(in oklch, var(--surface) 88%, var(--primary));
+}
+.support-tickets-page .ticket-message p {
+  margin-block: 0.2rem 0;
+  font-size: 0.9rem;
+}
+.support-tickets-page .ticket-conversation form {
+  margin-block: 0.85rem 0;
+}
+.support-tickets-page .ticket-compose {
+  scroll-margin-block-start: 7rem;
+}
+.support-tickets-page .ticket-result-note {
+  padding: 0.6rem;
+  border-radius: 0.55rem;
+  border: 1px dashed var(--border);
+  font-size: 0.87rem;
+}
+@media (max-width: 740px) {
+  .support-tickets-page .ticket-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .support-tickets-page
+    .ticket-workspace[data-selected='true']
+    > .ticket-inbox:not(:has(.ticket-command)),
+  .support-tickets-page .ticket-workspace[data-selected='true'] .ticket-queue-results {
+    display: none;
+  }
+  .customer-ticket-title {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .customer-ticket-title > .button {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+.support-tickets-page .ticket-list-kind {
+  color: var(--muted);
+  font-size: 0.73rem;
+}
+
+.purchase-request-modal {
+  inline-size: min(34rem, calc(100% - 1.25rem));
+  max-block-size: calc(100dvh - 1.25rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.purchase-request-modal fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem 0.8rem;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.purchase-request-modal fieldset > :not(.ticket-field),
+.purchase-request-modal .ticket-field:has(:is(input[name='model'], textarea)) {
+  grid-column: 1 / -1;
+}
+.purchase-request-modal fieldset > p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.purchase-request-modal .ticket-field {
+  min-inline-size: 0;
+  margin: 0;
+}
+.purchase-request-modal .ticket-field :is(input, textarea) {
+  width: 100%;
+  min-inline-size: 0;
+  font-size: 1rem;
+}
+.purchase-request-modal .ticket-create-form > button {
+  min-block-size: 44px;
+  margin-block-start: 0.8rem;
+}
+.support-tickets-page[data-purchase] .ticket-selection-empty {
+  border-style: dashed;
+}
+.support-tickets-page[data-purchase] .ticket-list button {
+  min-block-size: 60px;
+}
+@media (max-width: 400px) {
+  .purchase-request-modal fieldset {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

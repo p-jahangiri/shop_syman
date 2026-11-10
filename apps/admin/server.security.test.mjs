@@ -48,7 +48,14 @@ test('admin review photos are exact, authenticated WebP reads with no cache or c
     assert.equal(approved.headers.get('Content-Type'), 'image/webp');
     assert.equal(approved.headers.get('Cache-Control'), 'private, no-store');
     assert.deepEqual(Buffer.from(await approved.arrayBuffer()), webp);
-    assert.deepEqual(seen, [[endpoint, token, undefined]]);
+    const third = await fetch(url + '/3', { headers });
+    assert.equal(third.status, 200);
+    assert.deepEqual(Buffer.from(await third.arrayBuffer()), webp);
+    assert.equal((await fetch(url + '/4', { headers })).status, 404);
+    assert.deepEqual(seen, [
+      [endpoint, token, undefined],
+      [endpoint + '/3', token, undefined],
+    ]);
     for (const malformed of [
       { 'Content-Type': 'text/html' },
       { 'Set-Cookie': 'private=do-not-forward' },

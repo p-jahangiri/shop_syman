@@ -15,6 +15,7 @@ import {
   withdrawResult,
   reviewResult,
   saveReviewInput,
+  reviewPhotoRequestMaxBytes,
   reportReviewInput,
 } from '@sayman/web-shared/lib/reviews/reviews-contract.ts';
 import { publicOrigin } from '../seo/seo.ts';
@@ -79,6 +80,7 @@ export async function proxyReviews(
   environment: ReviewsEnvironment,
   fetcher: typeof fetch = fetch,
 ) {
+  const photoTail = path.slice(5).join('/');
   const product = path[0] === 'products' && reviewProductId.safeParse(path[1]).success;
   const page = product && path.length === 2 && request.method === 'GET',
     watch = product && path.length === 3 && path[2] === 'watch' && request.method === 'GET',
@@ -105,7 +107,7 @@ export async function proxyReviews(
     mine = product && path.length === 3 && path[2] === 'mine' && request.method === 'GET',
     photo =
       product &&
-      (path.length === 5 || (path.length === 6 && path[5] === 'mine')) &&
+      ['', 'mine', '2', '3', '2/mine', '3/mine'].includes(photoTail) &&
       path[2] === 'photos' &&
       reviewId.safeParse(path[3]).success &&
       reviewId.safeParse(path[4]).success &&
@@ -124,7 +126,7 @@ export async function proxyReviews(
       request.method === 'POST';
   if (!(page || watch || mine || save || report || photo || votes || account || vote || withdraw))
     return new Response(null, { status: 404, headers });
-  const anonymous = page || watch || (photo && path.length === 5);
+  const anonymous = page || watch || (photo && !photoTail.endsWith('mine'));
   const origin = publicOrigin(environment);
   if (environment.SHOP_DATA_MODE !== 'api' || !environment.SHOP_API_URL || !origin)
     return Response.json({ title: 'reviews_unconfigured' }, { status: 503, headers });
@@ -173,17 +175,23 @@ export async function proxyReviews(
       if (!/^application\/json(?:\s*;|$)/i.test(request.headers.get('Content-Type') ?? ''))
         throw new Failure(400);
       const textLimit = 16_384;
-      const limit = save ? 2_900_000 : textLimit;
+      const limit = save ? reviewPhotoRequestMaxBytes : textLimit;
       if (Number(request.headers.get('Content-Length')) > limit) throw new Failure(413);
       let value: unknown;
       try {
         const bytes = await readBytes(request.body, limit, 413);
         value = JSON.parse(decode(bytes, 400));
-        if (
-          bytes.length > textLimit &&
-          (value as { photo?: { action?: unknown } } | null)?.photo?.action !== 'replace'
-        )
-          throw new Failure(413);
+        if (save && bytes.length > textLimit) {
+          const input = value as { photo?: { action?: unknown }; photos?: unknown } | null;
+          if (
+            input?.photo?.action !== 'replace' &&
+            !(
+              Array.isArray(input?.photos) &&
+              input.photos.some((photo) => photo?.action === 'replace')
+            )
+          )
+            throw new Failure(413);
+        }
       } catch (e) {
         if (e instanceof Failure) throw e;
         throw new Failure(400);

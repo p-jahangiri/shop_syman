@@ -26,6 +26,10 @@ public sealed class ReviewRevision
     public string Body{get;set;}="";
     public DateTimeOffset At{get;set;}
     public string? PhotoId{get;set;}
+    public string? Photo2Id { get; set; }
+    public string? Photo3Id { get; set; }
+    public string?[] PhotoIds() => [PhotoId, Photo2Id, Photo3Id];
+    public int PhotoCount() => Photo3Id is not null ? 3 : Photo2Id is not null ? 2 : PhotoId is not null ? 1 : 0;
 }
 public sealed class ReviewPhoto
 {
@@ -92,6 +96,10 @@ public sealed class ReviewsDbContext(DbContextOptions<ReviewsDbContext> options)
             e.HasOne<ProductReview>().WithMany().HasForeignKey(x=>x.ReviewId).OnDelete(DeleteBehavior.Restrict);
             e.Property(x=>x.PhotoId).HasMaxLength(32);
             e.HasOne<ReviewPhoto>().WithMany().HasForeignKey(x=>x.PhotoId).OnDelete(DeleteBehavior.Restrict);
+            e.Property(x => x.Photo2Id).HasMaxLength(32);
+            e.Property(x => x.Photo3Id).HasMaxLength(32);
+            e.HasOne<ReviewPhoto>().WithMany().HasForeignKey(x => x.Photo2Id).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<ReviewPhoto>().WithMany().HasForeignKey(x => x.Photo3Id).OnDelete(DeleteBehavior.Restrict);
         });
         b.Entity<ReviewPhoto>(e=>{
             e.ToTable("Photos",t=>t.HasCheckConstraint("CK_Review_PhotoBytes","DATALENGTH([Webp]) BETWEEN 12 AND 2097152"));

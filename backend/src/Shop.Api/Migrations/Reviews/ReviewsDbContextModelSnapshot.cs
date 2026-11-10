@@ -245,6 +245,14 @@ namespace Shop.Api.Migrations.Reviews
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<string>("Photo3Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("Photo2Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
                     b.Property<int>("Rating")
                         .HasColumnType("int");
 
@@ -261,6 +269,10 @@ namespace Shop.Api.Migrations.Reviews
                     b.HasKey("Id");
 
                     b.HasIndex("PhotoId");
+
+                    b.HasIndex("Photo3Id");
+
+                    b.HasIndex("Photo2Id");
 
                     b.HasIndex("ReviewId", "Id")
                         .IsUnique();
@@ -315,6 +327,16 @@ namespace Shop.Api.Migrations.Reviews
                     b.HasOne("Shop.Modules.Reviews.ReviewPhoto", null)
                         .WithMany()
                         .HasForeignKey("PhotoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Shop.Modules.Reviews.ReviewPhoto", null)
+                        .WithMany()
+                        .HasForeignKey("Photo3Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Shop.Modules.Reviews.ReviewPhoto", null)
+                        .WithMany()
+                        .HasForeignKey("Photo2Id")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
             modelBuilder.Entity("Shop.Modules.Reviews.ReviewVote", b =>

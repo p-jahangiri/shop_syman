@@ -45,12 +45,15 @@ export const ticketSummarySchema = z
   })
   .strict()
   .refine((x) => Date.parse(x.changedAt) >= Date.parse(x.createdAt));
+export const ticketListKind = z.enum(['purchase', 'support', 'question']);
+export type TicketListKind = z.infer<typeof ticketListKind>;
 export const ticketPageSchema = z
   .object({
     schemaVersion: z.literal(1),
     state: ticketStateSchema.nullable(),
     items: z.array(ticketSummarySchema).max(50),
     nextCursor: cursor,
+    kind: ticketListKind.optional(),
     queueCounts: z
       .object({
         open: z.number().int().min(0).max(2147483647),
@@ -64,7 +67,7 @@ export const ticketPageSchema = z
   .refine(
     (x) =>
       new Set(x.items.map((i) => i.id)).size === x.items.length &&
-      (x.nextCursor === null || x.items.length === 50) &&
+      (x.nextCursor === null || x.items.length === 50 || x.kind !== undefined) &&
       x.items.every((i) => x.state === null || i.state === x.state),
   );
 export const ticketDetailSchema = z
@@ -168,10 +171,21 @@ export function readTicketPage(
   state: string | null,
   staff = false,
   ticketId?: string,
+  kind?: TicketListKind,
 ) {
   const r = ticketPageSchema.parse(raw);
   if (
     r.state !== state ||
+    r.kind !== kind ||
+    r.items.some(({ subject }) => {
+      const purchase = subject.startsWith('[phone] ');
+      const question = subject.startsWith('[product-question] ');
+      return kind === 'purchase'
+        ? !purchase
+        : kind === 'question'
+          ? !question
+          : kind === 'support' && (purchase || question);
+    }) ||
     (!staff && r.queueCounts !== undefined) ||
     (ticketId !== undefined &&
       (r.nextCursor !== null || r.items.some((item) => item.id !== ticketId)))

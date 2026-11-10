@@ -39,9 +39,9 @@ internal static class ReviewAccountEndpoints
                 }), page.NextCursor });
             }
             if (section != "questions") return Results.NotFound();
-            var history = await tickets.PageAsync(actor, false, null, cursor, ct, pageSize: 12);
+            var history = await tickets.PageAsync(actor, false, null, cursor, ct, pageSize: 12, kind: "question");
             var questions = new List<(TicketSummary Ticket, string Slug, string Body, string? Reply)>();
-            foreach (var ticket in history.Items.Where(t => t.Subject.StartsWith("[product-question] ", StringComparison.Ordinal)))
+            foreach (var ticket in history.Items)
             {
                 var messages = await tickets.ProductQuestionMessagesAsync(actor, ticket.Id, ct);
                 var parts = messages.Question.Split("\n\n", 2, StringSplitOptions.None);

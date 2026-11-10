@@ -7,7 +7,12 @@ import Link from '../navigation/localized-link';
 import { Button, Modal } from '../shared/ui';
 import { ReviewVoteBar } from '../reviews/review-votes';
 import { ReviewStarInput, ReviewStars } from '../reviews/review-stars';
-import { readReviewPhoto, reviewPhotoPath, ReviewPhotoInput } from '../reviews/review-photo';
+import {
+  readReviewPhoto,
+  reviewPhotoPath,
+  ReviewPhotoInput,
+  type DraftPhoto,
+} from '../reviews/review-photo';
 import { CartError, type CartFetch } from '@/lib/checkout/cart-client';
 import {
   listReviews,
@@ -19,6 +24,8 @@ import {
 import {
   saveReviewInput,
   reviewPhotoMime,
+  reviewPhotoSlots,
+  type ReviewAlbumPhoto,
   type PublicReview,
   type PrivateReview,
   type ReviewPage,
@@ -191,17 +198,20 @@ function ConnectedReviews({
   const average =
     page && total ? page.ratingCounts.reduce((n, c, i) => n + c * (i + 1), 0) / total : null;
   const visible = buyersOnly ? items.filter((item) => item.verifiedBuyer) : items;
-  const photos = items.filter((item) => item.hasPhoto);
-  const photoIndex = photos.findIndex((item) => item.content.revisionId === photoId);
+  const photos = items.flatMap((item) =>
+    reviewPhotoSlots(item).map((slot) => ({
+      id: item.content.revisionId + ':' + slot,
+      path: reviewPhotoPath(productId, item.id, item.content.revisionId, slot),
+    })),
+  );
+  const photoIndex = photos.findIndex((item) => item.id === photoId);
   const photo = photos[photoIndex];
   const productReturn = slug ? `/product/${slug}?tab=reviews#product-tabs` : '';
   const signIn =
     '/account' + (productReturn ? '?returnTo=' + encodeURIComponent(productReturn) : '');
-  const photoPath = (item: PublicReview) =>
-    reviewPhotoPath(productId, item.id, item.content.revisionId);
-  function openPhoto(item: PublicReview, trigger: HTMLButtonElement) {
+  function openPhoto(id: string, trigger: HTMLButtonElement) {
     photoTrigger.current = trigger;
-    setPhotoId(item.content.revisionId);
+    setPhotoId(id);
   }
 
   return (
@@ -278,10 +288,10 @@ function ConnectedReviews({
             <div className="review-photo-strip">
               {photos.slice(0, 6).map((item) => (
                 <ReviewPhotoButton
-                  key={item.content.revisionId}
-                  path={photoPath(item)}
+                  key={item.id}
+                  path={item.path}
                   locale={locale}
-                  onOpen={(trigger) => openPhoto(item, trigger)}
+                  onOpen={(trigger) => openPhoto(item.id, trigger)}
                 />
               ))}
             </div>
@@ -372,11 +382,16 @@ function ConnectedReviews({
               {!reviewTitles.includes(item.content.title) && <h3>{item.content.title}</h3>}
               <ReviewText body={item.content.body} locale={locale} />
               {item.hasPhoto && (
-                <ReviewPhotoButton
-                  path={photoPath(item)}
-                  locale={locale}
-                  onOpen={(trigger) => openPhoto(item, trigger)}
-                />
+                <div className="review-photo-strip">
+                  {reviewPhotoSlots(item).map((slot) => (
+                    <ReviewPhotoButton
+                      key={slot}
+                      path={reviewPhotoPath(productId, item.id, item.content.revisionId, slot)}
+                      locale={locale}
+                      onOpen={(trigger) => openPhoto(item.content.revisionId + ':' + slot, trigger)}
+                    />
+                  ))}
+                </div>
               )}
               {item.reply && (
                 <blockquote>
@@ -448,14 +463,14 @@ function ConnectedReviews({
             {/* eslint-disable-next-line @next/next/no-img-element -- Pre-resized same-origin review photo. */}
             <img
               className="review-gallery-image"
-              src={photoPath(photo)}
+              src={photo.path}
               alt={text('عکس پیوست دیدگاه', 'Photo attached to review')}
             />
             <div className="review-gallery-navigation">
               <Button
                 variant="outline"
                 disabled={photoIndex === 0}
-                onClick={() => setPhotoId(photos[photoIndex - 1]?.content.revisionId)}
+                onClick={() => setPhotoId(photos[photoIndex - 1]?.id)}
               >
                 {text('قبلی', 'Previous')}
               </Button>
@@ -466,7 +481,7 @@ function ConnectedReviews({
               <Button
                 variant="outline"
                 disabled={photoIndex + 1 >= photos.length}
-                onClick={() => setPhotoId(photos[photoIndex + 1]?.content.revisionId)}
+                onClick={() => setPhotoId(photos[photoIndex + 1]?.id)}
               >
                 {text('بعدی', 'Next')}
               </Button>
@@ -578,8 +593,7 @@ function ReviewEditor({
     [loaded, setLoaded] = useState(false),
     [error, setError] = useState(''),
     [encoding, setEncoding] = useState(false),
-    [photoFile, setPhotoFile] = useState<File | null>(null),
-    [removePhoto, setRemovePhoto] = useState(false),
+    [draftPhotos, setDraftPhotos] = useState<DraftPhoto[] | null>(null),
     [uncertain, setUncertain] = useState(false),
     [formEpoch, setFormEpoch] = useState(0),
     [saved, setSaved] = useState(false),
@@ -600,8 +614,7 @@ function ReviewEditor({
       if (!controller.signal.aborted) {
         setOwn(result);
         onOwn?.(result?.id);
-        setPhotoFile(null);
-        setRemovePhoto(false);
+        setDraftPhotos(null);
         setLoaded(true);
         setUncertain(false);
         pending.current = null;
@@ -637,8 +650,7 @@ function ReviewEditor({
       if (!controller.signal.aborted) {
         setOwn(result.review);
         onOwn?.(result.review?.id);
-        setPhotoFile(null);
-        setRemovePhoto(false);
+        setDraftPhotos(null);
         setUncertain(false);
         pending.current = null;
         setSaved(true);
@@ -649,12 +661,12 @@ function ReviewEditor({
     } catch (e) {
       if (controller.signal.aborted) return;
       const status = e instanceof CartError ? e.status : 0;
-      const scannerUnavailable = e instanceof CartError && e.code === 'media_unavailable';
-      if ((status >= 400 && status < 500 && status !== 429) || scannerUnavailable) {
+      const photosBusy = e instanceof CartError && e.code === 'review_photos_busy';
+      if ((status >= 400 && status < 500 && status !== 429) || photosBusy) {
         pending.current = null;
         setUncertain(false);
         setError(
-          scannerUnavailable
+          photosBusy
             ? 'photo-unavailable'
             : status === 409
               ? 'conflict'
@@ -720,19 +732,24 @@ function ReviewEditor({
         e.currentTarget.querySelector<HTMLElement>(`[name="${field}"]`)?.focus();
       return;
     }
-    if (photoFile) {
+    if (draftPhotos !== null) {
       const session = abort.current;
       encodingRef.current = true;
       setEncoding(true);
       try {
-        const data = await readReviewPhoto(photoFile);
+        value.data.photos = await Promise.all(
+          draftPhotos.map(async (photo): Promise<ReviewAlbumPhoto> =>
+            'file' in photo
+              ? {
+                  action: 'replace',
+                  name: photo.file.name,
+                  contentType: reviewPhotoMime.parse(photo.file.type),
+                  data: await readReviewPhoto(photo.file),
+                }
+              : { action: 'keep', slot: photo.slot },
+          ),
+        );
         if (session?.signal.aborted) return;
-        value.data.photo = {
-          action: 'replace',
-          name: photoFile.name,
-          contentType: reviewPhotoMime.parse(photoFile.type),
-          data,
-        };
       } catch {
         setError('photo');
         return;
@@ -740,7 +757,7 @@ function ReviewEditor({
         encodingRef.current = false;
         setEncoding(false);
       }
-    } else if (removePhoto) value.data.photo = { action: 'remove' };
+    }
     void run({ id: crypto.randomUUID().replaceAll('-', ''), input: value.data });
   }
   return (
@@ -756,12 +773,10 @@ function ReviewEditor({
       {own && <p role="status">{states[locale][own.state]}</p>}
       {saved && (
         <p role="status">
-          {own?.state === 'Approved'
-            ? text('دیدگاه ذخیره و منتشر شد.', 'Your review was saved and published.')
-            : text(
-                'ویرایش ذخیره شد و منتظر بررسی است.',
-                'Your edit was saved and is awaiting review.',
-              )}
+          {text(
+            'دیدگاه ذخیره شد و پس از تأیید منتشر می‌شود.',
+            'Your review was saved and will appear after approval.',
+          )}
         </p>
       )}
       {loaded && (
@@ -900,14 +915,18 @@ function ReviewEditor({
               <ReviewPhotoInput
                 locale={locale}
                 fetcher={fetcher}
-                file={photoFile}
-                remove={removePhoto}
-                path={
-                  own?.hasPhoto ? reviewPhotoPath(productId, own.id, own.content.revisionId) : null
+                photos={
+                  draftPhotos ??
+                  (own
+                    ? reviewPhotoSlots(own).map((slot) => ({
+                        id: own.content.revisionId + ':' + slot,
+                        path: reviewPhotoPath(productId, own.id, own.content.revisionId, slot),
+                        slot,
+                      }))
+                    : [])
                 }
-                onFile={(file, remove) => {
-                  setPhotoFile(file);
-                  setRemovePhoto(remove);
+                onChange={(photos) => {
+                  setDraftPhotos(photos);
                   if (error === 'photo' || error === 'photo-unavailable') setError('');
                 }}
               />
@@ -922,19 +941,19 @@ function ReviewEditor({
               {error === 'photo-unavailable' && (
                 <small className="review-photo-error" role="alert">
                   {text(
-                    'بررسی عکس فعلاً در دسترس نیست. دوباره تلاش کنید یا دیدگاه را بدون عکس بفرستید.',
-                    'Photo scanning is temporarily unavailable. Retry or submit the review without a photo.',
+                    'پردازش عکس‌ها شلوغ است. چند لحظه دیگر دوباره تلاش کنید.',
+                    'Photo processing is busy. Try again in a moment.',
                   )}
                 </small>
               )}
               <p className="small-note">
                 {text(
-                  'دیدگاه شما عمومی است. شماره، نشانی و جزئیات سفارش را در متن یا عکس وارد نکنید.',
-                  'Your review is public. Leave contact, address and order details out of your text and photo.',
+                  'دیدگاه پس از تأیید عمومی می‌شود. شماره، نشانی و جزئیات سفارش را در متن یا عکس وارد نکنید.',
+                  'Your review becomes public after approval. Leave contact, address and order details out of your text and photo.',
                 )}
               </p>
               <Button type="submit">
-                {own ? text('ذخیرهٔ ویرایش', 'Save edit') : text('ثبت دیدگاه', 'Publish review')}
+                {own ? text('ذخیرهٔ ویرایش', 'Save edit') : text('ثبت دیدگاه', 'Submit review')}
               </Button>
             </fieldset>
           </form>

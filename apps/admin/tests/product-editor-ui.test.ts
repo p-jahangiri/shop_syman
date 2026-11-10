@@ -9,6 +9,7 @@ import {
 import * as model from '../src/features/catalog/product-editor-model.ts';
 import * as contract from '../src/api/contracts/catalog/product-workspace-contract.ts';
 import * as fieldErrors from '../src/features/catalog/product-field-errors.ts';
+import * as warrantyTemplates from '../src/features/catalog/warranty-templates.ts';
 import type { Catalog, Product } from '../src/types/types';
 const material = [
   'Dialog',
@@ -90,7 +91,11 @@ const data: Catalog = {
   attributes: [],
   products: [],
 };
-function setup(copyFrom?: Product, catalog = data) {
+function setup(
+  copyFrom?: Product,
+  catalog = data,
+  templates: warrantyTemplates.WarrantyTemplate[] = [],
+) {
   const calls: { kind: string; body: unknown }[] = [],
     events: string[] = [];
   const command = {
@@ -108,7 +113,7 @@ function setup(copyFrom?: Product, catalog = data) {
     {
       ...Object.fromEntries(material.map((name) => ['@mui/material/' + name, name])),
       '@mui/material/useMediaQuery': () => false,
-      '@tanstack/react-query': {},
+      '@tanstack/react-query': { useQuery: () => ({ data: { items: templates } }) },
       '../../api/api': { ApiError: class ApiError extends Error {} },
       '../media/media': { ImageEditor: 'ImageEditor' },
       './product-videos': { ProductVideos: 'ProductVideos' },
@@ -121,6 +126,7 @@ function setup(copyFrom?: Product, catalog = data) {
       './product-variant-generator': { ProductVariantGenerator: 'ProductVariantGenerator' },
       './product-quick-create': { ProductQuickCreate: 'ProductQuickCreate' },
       './product-form-settings': { ProductFormSettings: 'ProductFormSettings' },
+      './warranty-templates': warrantyTemplates,
       '../../hooks/use-product-command': { useProductCommand: () => command },
       './product-field-errors': fieldErrors,
       '../../api/contracts/catalog/product-workspace-contract': contract,
@@ -192,6 +198,34 @@ test('invalid product never sends a command and marks each affected field locall
   for (const path of ['nameFa', 'categoryId', 'brandId'])
     assert.equal(typeof x.node('ProductTextField', path).props.error, 'string');
   assert.ok(uiText(x.h.tree()).includes('فیلد نیاز به اصلاح دارد'));
+  x.h.unmount();
+});
+test('new variants copy the warranty default for their category and keep a custom warranty', async () => {
+  const template = {
+    id: '1'.repeat(32),
+    nameFa: 'گارانتی مثال',
+    nameEn: 'Example warranty',
+    detailsFa: '۱۸ ماه',
+    detailsEn: '18 months',
+    categoryIds: ['phones'],
+    defaultCategoryIds: ['phones'],
+  };
+  const x = setup(undefined, data, [template]);
+  await x.edit('categoryId', 'phones');
+  await x.tab('variants');
+  const change = x.node('ProductVariantsTable').props.onChange as (
+    change: (rows: model.ProductVariantDraft[]) => model.ProductVariantDraft[],
+  ) => void;
+  change((rows) => [
+    ...rows,
+    model.blankProductVariant('automatic'),
+    { ...model.blankProductVariant('manual'), warrantyFa: 'توضیح دستی' },
+  ]);
+  await x.h.settle();
+  const rows = x.node('ProductVariantsTable').props.rows as model.ProductVariantDraft[];
+  assert.equal(rows[0].warrantyFa, 'گارانتی مثال\n۱۸ ماه');
+  assert.equal(rows[0].warrantyEn, 'Example warranty\n18 months');
+  assert.equal(rows[1].warrantyFa, 'توضیح دستی');
   x.h.unmount();
 });
 test('a valid model draft can be saved without inventing price, variants or stock', async () => {

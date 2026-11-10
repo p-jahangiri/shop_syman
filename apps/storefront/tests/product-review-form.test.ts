@@ -32,7 +32,7 @@ test('review submission needs only stars and text, and closes on success', async
           input: reviews.SaveReviewInput,
         ) => {
           sent.push(input);
-          return { review: { state: 'Approved', content: input } };
+          return { review: { state: 'Pending', content: input } };
         },
       },
       '@sayman/web-shared/lib/reviews/reviews-contract.ts': reviews,
@@ -99,5 +99,6 @@ test('review submission needs only stars and text, and closes on success', async
     false,
   );
   assert.match(uiText(ui.tree()), /ویرایش دیدگاه/);
+  assert.match(uiText(ui.tree()), /پس از تأیید منتشر می‌شود/);
   assert(refreshed);
 });

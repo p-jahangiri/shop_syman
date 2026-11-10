@@ -1521,7 +1521,9 @@ export function createAdminServer({
             if (
               request.method !== 'GET' ||
               incoming.search ||
-              !/^\/api\/admin\/reviews\/[a-f0-9]{32}\/photos\/[a-f0-9]{32}$/.test(incoming.pathname)
+              !/^\/api\/admin\/reviews\/[a-f0-9]{32}\/photos\/[a-f0-9]{32}(?:\/[23])?$/.test(
+                incoming.pathname,
+              )
             ) {
               response.writeHead(404);
               response.end();

@@ -11,7 +11,7 @@ public sealed partial class TicketService(SupportDbContext db, ITicketProtection
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { MaxDepth = 16 };
     private static BusinessException Missing() => new("not_found", "Support record not found.");
     private static BusinessException Conflict() => new("ticket_version_conflict", "Ticket changed or its current state does not allow this command.");
-    public async Task<TicketPage> PageAsync(string actor, bool staff, string? state, string? cursor, CancellationToken ct, string? ticketId = null, int pageSize = 50)
+    public async Task<TicketPage> PageAsync(string actor, bool staff, string? state, string? cursor, CancellationToken ct, string? ticketId = null, int pageSize = 50, string? kind = null)
     {
         actor = TicketRules.Actor(actor);
         state = TicketRules.State(state);
@@ -23,12 +23,17 @@ public sealed partial class TicketService(SupportDbContext db, ITicketProtection
         }
 
         if (pageSize != 50 && (staff || pageSize != 12 || state is not null)) throw TicketRules.Invalid();
+        if (kind is not null && (staff || kind is not ("purchase" or "question" or "support")))
+            throw TicketRules.Invalid();
         var scope = $"tickets|{(staff ? "support" : actor)}|{state}" + (pageSize == 50 ? "" : "|product-questions");
+        if (kind is not null) scope += $"|kind:{kind}";
         var before = TicketRules.Cursor(cursor, scope, false);
         var query = db.Tickets.AsNoTracking().Where(x => x.Sequence < before);
         if (!staff) query = query.Where(x => x.OwnerId == actor);
         if (state is not null) query = query.Where(x => x.State == state);
         if (ticketId is not null) query = query.Where(x => x.Id == ticketId);
+        if (kind is not null)
+            return await PageByKindAsync(query, state, kind, scope, before, pageSize, ct);
         var rows = await query.OrderByDescending(x => x.Sequence).Take(pageSize+1).ToArrayAsync(ct);
         var selected = rows.Take(pageSize).ToArray();
 
@@ -43,6 +48,36 @@ public sealed partial class TicketService(SupportDbContext db, ITicketProtection
 
         return new(1, state, selected.Select(Summary).ToArray(), rows.Length > pageSize ? TicketRules.Cursor(selected[^1].Sequence, scope) : null, queueCounts);
     }
+    // Subjects stay encrypted at rest. Scan bounded batches from the owned queue.
+    private async Task<TicketPage> PageByKindAsync(IQueryable<SupportTicket> query, string? state,
+        string kind, string scope, long before, int pageSize, CancellationToken ct)
+    {
+        const int batchSize = 64;
+        const int maxBatches = 8;
+        var selected = new List<TicketSummary>(pageSize);
+        for (var batch = 0; batch < maxBatches; batch++)
+        {
+            var rows = await query.Where(x => x.Sequence < before).OrderByDescending(x => x.Sequence)
+                .Take(batchSize + 1).ToArrayAsync(ct);
+            foreach (var row in rows.Take(batchSize))
+            {
+                var item = Summary(row);
+                var isPurchase = item.Subject.StartsWith("[phone] ", StringComparison.Ordinal);
+                var isQuestion = item.Subject.StartsWith("[product-question] ", StringComparison.Ordinal);
+                if (kind switch { "purchase" => isPurchase, "question" => isQuestion, _ => !isPurchase && !isQuestion })
+                {
+                    if (selected.Count == pageSize)
+                        return new(1, state, selected.ToArray(), TicketRules.Cursor(before, scope), Kind: kind);
+                    selected.Add(item);
+                }
+                before = row.Sequence;
+            }
+            if (rows.Length <= batchSize)
+                return new(1, state, selected.ToArray(), null, Kind: kind);
+        }
+        return new(1, state, selected.ToArray(), TicketRules.Cursor(before, scope), Kind: kind);
+    }
+
     public async Task<TicketDetail> DetailAsync(string actor, bool staff, string ticketId, CancellationToken ct) => new(1, Summary(await VisibleAsync(actor, staff, ticketId, false, ct)));
     public async Task<TicketMessagePage> MessagesAsync(string actor, bool staff, string ticketId, string? cursor, CancellationToken ct)
     {

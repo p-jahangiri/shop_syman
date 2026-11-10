@@ -3,6 +3,7 @@ import { isTicketFilePath } from '@sayman/web-shared/lib/support/ticket-file-con
 import { proxyTicketFile } from './ticket-file-proxy.ts';
 import {
   readTicketPage,
+  ticketListKind,
   readTicketDetail,
   readTicketMessages,
   readTicketResult,
@@ -160,9 +161,11 @@ export async function proxyTicket(
       const receipt = ticketResultSchema.parse(value);
       if (receipt.commandId !== path[1]) throw Error('Wrong command receipt');
       data = receipt;
-    } else if (path.length === 1)
-      data = readTicketPage(value, new URL(request.url).searchParams.get('state'));
-    else
+    } else if (path.length === 1) {
+      const query = new URL(request.url).searchParams;
+      const kind = ticketListKind.optional().parse(query.get('kind') ?? undefined);
+      data = readTicketPage(value, query.get('state'), false, undefined, kind);
+    } else
       data =
         path.length === 2 ? readTicketDetail(value, path[1]) : readTicketMessages(value, path[1]);
     return Response.json(data, { headers });

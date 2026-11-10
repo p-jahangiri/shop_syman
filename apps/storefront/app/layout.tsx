@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import type { CSSProperties } from 'react';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import '@fontsource/vazirmatn/400.css';
 import '@fontsource/vazirmatn/500.css';
 import '@fontsource/vazirmatn/600.css';
@@ -26,8 +26,8 @@ import { storefrontColorVariables } from '@sayman/web-shared/lib/content/brand-c
 // Constant application code. CMS values are read only from validated attributes.
 const storefrontThemeBootstrap = `(() => {
   const root = document.documentElement;
-  let saved;
-  try { saved = localStorage.getItem('sayman:theme'); } catch {}
+  let saved = root.dataset.themePreference;
+  try { saved ||= localStorage.getItem('sayman:theme'); } catch {}
   const preferred = root.dataset.shopTheme;
   root.dataset.theme = saved === 'light' || saved === 'dark' ? saved :
     preferred === 'light' || preferred === 'dark' ? preferred :
@@ -71,7 +71,9 @@ export default async function RootLayout({
   const palette = snapshot.site.palette;
   const { appearance, font, theme } = resolveSiteDesign(snapshot.site);
   const requestHeaders = await headers();
-  const nonce = snapshot.site.design ? (requestHeaders.get('x-nonce') ?? undefined) : undefined;
+  const nonce = requestHeaders.get('x-nonce') ?? undefined;
+  const saved = (await cookies()).get('sayman-theme')?.value;
+  const preference = saved === 'dark' || saved === 'light' ? saved : undefined;
   const publicBrowse = requestHeaders.get('x-sayman-public-browse') === '1';
   const secureOrigin =
     publicBrowse && requestHeaders.get('x-forwarded-proto') === 'http' ? publicOrigin() : undefined;
@@ -90,8 +92,9 @@ export default async function RootLayout({
       data-shop-corners={appearance.corners}
       data-shop-font={font}
       data-shop-public-browse={publicBrowse || undefined}
-      data-shop-theme={snapshot.site.design ? theme : undefined}
-      data-theme={snapshot.site.design && theme !== 'system' ? theme : undefined}
+      data-shop-theme={theme}
+      data-theme-preference={preference}
+      data-theme={preference ?? (theme === 'system' ? undefined : theme)}
       data-shop-cards={appearance.cards}
       data-shop-navigation={appearance.navigation}
       data-shop-motion={appearance.motion}
@@ -105,6 +108,10 @@ export default async function RootLayout({
     >
       {nonce && (
         <head>
+          <meta
+            name="color-scheme"
+            content={preference ?? (theme === 'system' ? 'light dark' : theme)}
+          />
           <script nonce={nonce} dangerouslySetInnerHTML={{ __html: storefrontThemeBootstrap }} />
         </head>
       )}

@@ -35,6 +35,7 @@ export const publicReview = z
     dislikes: z.number().int().nonnegative().optional(),
     reply: text(1, 2000).nullable(),
     hasPhoto: z.literal(true).optional(),
+    photoCount: z.number().int().min(2).max(3).optional(),
     isDemo: z.literal(true).optional(),
   })
   .strict();
@@ -48,6 +49,7 @@ export const privateReview = z
     reply: text(1, 2000).nullable(),
     reportCount: z.number().int().nonnegative(),
     hasPhoto: z.literal(true).optional(),
+    photoCount: z.number().int().min(2).max(3).optional(),
     isDemo: z.literal(true).optional(),
   })
   .strict();
@@ -75,22 +77,35 @@ export const ownReview = z
   .object({ schemaVersion: z.literal(1), review: privateReview.nullable() })
   .strict();
 export const reviewPhotoMaxBytes = 2 * 1024 * 1024;
+export const reviewPhotoMaxCount = 3;
+export const reviewPhotoRequestMaxBytes = 8_500_000;
+export function reviewPhotoSlots(review: { hasPhoto?: true; photoCount?: number }) {
+  return Array.from({ length: review.photoCount ?? (review.hasPhoto ? 1 : 0) }, (_, i) => i + 1);
+}
 export const reviewPhotoMime = z.enum(['image/jpeg', 'image/png', 'image/webp']);
+const replacementPhoto = z
+  .object({
+    action: z.literal('replace'),
+    name: text(1, 120),
+    contentType: reviewPhotoMime,
+    data: z
+      .string()
+      .min(4)
+      .max(Math.ceil(reviewPhotoMaxBytes / 3) * 4),
+  })
+  .strict();
 const photoInput = z.discriminatedUnion('action', [
   z.object({ action: z.literal('keep') }).strict(),
   z.object({ action: z.literal('remove') }).strict(),
-  z
-    .object({
-      action: z.literal('replace'),
-      name: text(1, 120),
-      contentType: reviewPhotoMime,
-      data: z
-        .string()
-        .min(4)
-        .max(Math.ceil(reviewPhotoMaxBytes / 3) * 4),
-    })
-    .strict(),
+  replacementPhoto,
 ]);
+const albumPhoto = z.discriminatedUnion('action', [
+  z
+    .object({ action: z.literal('keep'), slot: z.number().int().min(1).max(reviewPhotoMaxCount) })
+    .strict(),
+  replacementPhoto,
+]);
+export type ReviewAlbumPhoto = z.infer<typeof albumPhoto>;
 export const saveReviewInput = z
   .object({
     version: version.nullable(),
@@ -101,8 +116,10 @@ export const saveReviewInput = z
     body: text(10, 2000),
     publishConsent: z.literal(true),
     photo: photoInput.optional(),
+    photos: z.array(albumPhoto).max(reviewPhotoMaxCount).optional(),
   })
-  .strict();
+  .strict()
+  .refine((value) => !value.photo || !value.photos);
 export const reportReviewInput = z
   .object({ revisionId: reviewId, reason: z.enum(['spam', 'abuse', 'personal_data', 'unrelated']) })
   .strict();

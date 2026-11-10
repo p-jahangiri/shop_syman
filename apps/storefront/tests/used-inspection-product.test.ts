@@ -11,6 +11,7 @@ import { localeFormat, translate } from '../lib/navigation/i18n.ts';
 import * as media from '@sayman/web-shared/lib/media/media-paths.ts';
 import * as gallery from '../lib/catalog/used-inspection-photos.ts';
 import * as purchasing from '../lib/catalog/purchasing.ts';
+import * as phoneConfigurations from '../lib/catalog/phone-configurations.ts';
 import * as commerce from '@sayman/web-shared/lib/shared/commerce.ts';
 import { usedConditionSchema } from '@sayman/web-shared/lib/catalog/used-condition-contract.ts';
 
@@ -55,6 +56,12 @@ for (const locale of ['fa', 'en'] as const)
           UsedConditionReport: 'UsedConditionReport',
         },
         './product-reviews': { ProductReviews: 'ProductReviews' },
+        './product-detail-presentation.css': {},
+        './phone-variant-picker': {
+          PhoneColorOptions: 'PhoneColorOptions',
+          PhoneConfigurationOptions: 'PhoneConfigurationOptions',
+        },
+        '@/lib/catalog/phone-configurations': phoneConfigurations,
         '@sayman/web-shared/lib/media/media-paths.ts': media,
         '@/lib/catalog/used-inspection-photos': gallery,
         '@/components/navigation/locale-provider': {

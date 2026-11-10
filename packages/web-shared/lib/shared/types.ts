@@ -1,4 +1,5 @@
 import type { SiteDesign } from '../content/site-design.ts';
+import type { CategoryReturnGuidance } from '../content/category-return-guidance.ts';
 import type { UsedCondition } from '../catalog/used-condition-contract';
 import type { StoreIdentity } from '../content/store-identity';
 import type { SitePalette } from '../content/site-palette';
@@ -175,6 +176,7 @@ export interface SiteContent {
   palette?: SitePalette;
   contact?: { phone?: string; email?: string; address?: string; hours?: string };
   storeIdentity?: StoreIdentity;
+  categoryReturnGuidance?: CategoryReturnGuidance;
 }
 export interface StorefrontSnapshot {
   version: number;

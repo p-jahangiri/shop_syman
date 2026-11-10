@@ -28,9 +28,9 @@ public static class TicketEndpoints
     }
     private static void MapReads(RouteGroupBuilder group, bool staff, bool requireWriteReceipt)
     {
-        group.MapGet("/tickets", async (string? state, string? cursor, string? ticketId, HttpContext http, TicketService service, CancellationToken ct) => {
-            if (!(staff ? Query(http, "state", "cursor", "ticketId") : Query(http, "state", "cursor"))) return Results.BadRequest();
-            return Results.Ok(await service.PageAsync(Actor(http), staff, state, cursor, ct, ticketId));
+        group.MapGet("/tickets", async (string? state, string? cursor, string? ticketId, string? kind, HttpContext http, TicketService service, CancellationToken ct) => {
+            if (!(staff ? Query(http, "state", "cursor", "ticketId") : Query(http, "state", "cursor", "kind"))) return Results.BadRequest();
+            return Results.Ok(await service.PageAsync(Actor(http), staff, state, cursor, ct, ticketId, kind: kind));
         });
         group.MapGet("/tickets/{id}", async (string id, HttpContext http, TicketService service, CancellationToken ct) => {
             if (!Query(http)) return Results.BadRequest(); return Results.Ok(await service.DetailAsync(Actor(http), staff, id, ct));

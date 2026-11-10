@@ -1,0 +1,143 @@
+.phone-configuration {
+  margin-block: 0.85rem 0;
+}
+.phone-configuration h2,
+.phone-color-picker h2 {
+  margin: 0 0 0.45rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+.phone-color-picker h2 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.phone-color-picker h2 bdi {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.selected-color-dot {
+  inline-size: 0.8rem;
+  block-size: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+.phone-configuration-options,
+.phone-color-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.phone-configuration-options button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.28rem 0.55rem;
+  min-block-size: 44px;
+  max-inline-size: 100%;
+  padding: 0.36rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--surface);
+  color: var(--foreground);
+  text-align: start;
+  font-size: 0.79rem;
+  overflow-wrap: anywhere;
+}
+.phone-configuration-options button[aria-checked='true'] {
+  border-color: var(--primary);
+  background: color-mix(in oklch, var(--surface) 91%, var(--primary));
+}
+.phone-configuration-options button > span {
+  display: grid;
+  line-height: 1.45;
+}
+.phone-configuration-options small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.phone-configuration-options bdi {
+  font-weight: 650;
+}
+.phone-color-options button {
+  display: grid;
+  place-items: center;
+  inline-size: 46px;
+  block-size: 46px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+}
+.phone-color-options button[aria-checked='true'] {
+  background: transparent;
+  font-weight: 700;
+}
+.phone-color-sample {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 41px;
+  block-size: 41px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+}
+.phone-color-sample > span {
+  inline-size: 29px;
+  block-size: 29px;
+  border: 1px solid rgb(0 0 0 / 20%);
+  border-radius: 50%;
+}
+.phone-color-options [aria-checked='true'] .phone-color-sample {
+  border: 2px solid var(--primary);
+}
+.phone-color-sample svg {
+  position: absolute;
+  inset-block-end: -2px;
+  inset-inline-end: -2px;
+  box-sizing: content-box;
+  padding: 2px;
+  border: 1px solid var(--primary);
+  border-radius: 50%;
+  color: var(--foreground);
+  background: var(--surface);
+}
+.phone-color-options [data-sold-out='true'] .phone-color-sample::after {
+  content: '';
+  position: absolute;
+  inset-block-start: calc(50% - 1px);
+  inline-size: 26px;
+  block-size: 2px;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 28%);
+  transform: rotate(-43deg);
+}
+.phone-color-options button:hover,
+.phone-configuration-options button:hover {
+  border-color: var(--primary);
+}
+.phone-color-options button:focus-visible,
+.phone-configuration-options button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.mobile-purchase .mobile-phone-price {
+  min-inline-size: 0;
+  gap: 0.06rem;
+}
+.mobile-purchase .mobile-phone-price > span {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.05rem 0.28rem;
+}
+.mobile-purchase .mobile-phone-price small,
+.mobile-phone-price del {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.mobile-phone-price .discount {
+  white-space: nowrap;
+}

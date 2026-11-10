@@ -5,9 +5,12 @@ import {
 } from '@sayman/web-shared/lib/support/ticket-file-download.ts';
 import { bindRealtimeTransport } from '@sayman/web-shared/lib/notifications/private-realtime-client.ts';
 import { usePrivateRealtime } from '@sayman/web-shared/components/notifications/private-realtime';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Headphones, Plus, ShoppingBag } from 'lucide-react';
+import './customer-tickets.css';
 import { useCustomerSession } from '../auth/auth-provider';
 import { useI18n, useStorefront } from '../navigation/locale-provider';
+import { Modal } from '../shared/ui';
 import Link, { useRouter } from '../navigation/localized-link';
 import {
   TicketWorkspace,
@@ -28,6 +31,8 @@ export function CustomerTickets({
     router = useRouter(),
     base = shoppingRequest ? '/purchase-requests' : '/support/tickets',
     text = (fa: string, en: string) => (locale === 'fa' ? fa : en);
+  const [compose, setCompose] = useState(Boolean(shoppingRequest?.product));
+  const composeButton = useRef<HTMLButtonElement>(null);
   const transport = useCallback(
     async (path: string, init: RequestInit = {}) => {
       const owner = auth.store.snapshot().session?.user.id;
@@ -87,15 +92,66 @@ export function CustomerTickets({
     [auth.store, realtimeOwner, downloadSession],
   );
   return (
-    <div className="container support-tickets-page">
-      <div className="page-top">
-        <Link href="/support">{text('راهنما و پشتیبانی', 'Help and support')}</Link>
-      </div>
-      <h1>
-        {shoppingRequest
-          ? text('درخواست‌های خرید و پرسش‌های کالا', 'Purchase requests and product questions')
-          : text('پیگیری پشتیبانی', 'Support requests')}
-      </h1>
+    <div
+      className="container support-tickets-page"
+      data-purchase={Boolean(shoppingRequest) || undefined}
+    >
+      <header
+        className="customer-ticket-header"
+        data-kind={shoppingRequest ? 'shopping' : 'support'}
+      >
+        <nav aria-label={text('مسیر صفحه', 'Breadcrumb')}>
+          <Link href="/account">{text('حساب کاربری', 'Your account')}</Link>
+          <span aria-hidden="true">/</span>
+          <Link href="/support">{text('راهنما و پشتیبانی', 'Help and support')}</Link>
+        </nav>
+        <div className="customer-ticket-title">
+          <span className="customer-ticket-icon" aria-hidden="true">
+            {shoppingRequest ? <ShoppingBag size={23} /> : <Headphones size={23} />}
+          </span>
+          <div>
+            <h1>
+              {shoppingRequest
+                ? text('درخواست‌های خرید', 'Purchase requests')
+                : text('پیگیری پشتیبانی', 'Support requests')}
+            </h1>
+            <p>
+              {shoppingRequest
+                ? text(
+                    'وضعیت درخواست‌ها، پاسخ سایمان و پیشنهادهای خرید را اینجا ببینید.',
+                    'Track requests, replies and purchase suggestions here.',
+                  )
+                : text(
+                    'درخواست‌ها و گفت‌وگوهای خصوصی شما با سایمان، یک‌جا.',
+                    'Your requests and private conversations with Sayman, in one place.',
+                  )}
+            </p>
+          </div>
+          {dataSource === 'api' &&
+            auth.status === 'member' &&
+            (shoppingRequest ? (
+              <button
+                ref={composeButton}
+                type="button"
+                className="button button-outline"
+                onClick={() => setCompose(true)}
+              >
+                <Plus size={17} aria-hidden="true" />
+                {text('درخواست خرید تازه', 'New purchase request')}
+              </button>
+            ) : id ? (
+              <Link href={base + '#customer-ticket-compose'} className="button button-outline">
+                <Plus size={17} aria-hidden="true" />
+                {text('درخواست تازه', 'New request')}
+              </Link>
+            ) : (
+              <a href="#customer-ticket-compose" className="button button-outline">
+                <Plus size={17} aria-hidden="true" />
+                {text('درخواست تازه', 'New request')}
+              </a>
+            ))}
+        </div>
+      </header>
       {dataSource !== 'api' ? (
         <p>
           {text(
@@ -114,6 +170,30 @@ export function CustomerTickets({
           journal={customerTicketJournal}
           initialTicketId={id}
           shoppingRequest={shoppingRequest}
+          listKind={shoppingRequest ? 'purchase' : 'support'}
+          renderPurchaseComposer={
+            shoppingRequest
+              ? (form) => (
+                  <Modal
+                    open={compose}
+                    onOpenChange={setCompose}
+                    restoreFocusRef={composeButton}
+                    className="purchase-request-modal"
+                    title={text('درخواست تهیهٔ کالا', 'Request a product')}
+                  >
+                    {form}
+                  </Modal>
+                )
+              : undefined
+          }
+          onPurchaseSaved={
+            shoppingRequest
+              ? (value) => {
+                  setCompose(false);
+                  router.replace(base + '/' + value);
+                }
+              : undefined
+          }
           onSelect={(value) => router.push(base + (value ? '/' + value : ''))}
         />
       ) : auth.status === 'restoring' ? (
@@ -122,8 +202,12 @@ export function CustomerTickets({
         <div className="card-panel">
           <p>
             {text(
-              'برای دیدن و ثبت پیام خصوصی، وارد حساب خود شوید.',
-              'Sign in to read and send private messages.',
+              shoppingRequest
+                ? 'برای ثبت یا پیگیری درخواست خرید، وارد حساب خود شوید.'
+                : 'برای دیدن و ثبت پیام خصوصی، وارد حساب خود شوید.',
+              shoppingRequest
+                ? 'Sign in to submit or track a purchase request.'
+                : 'Sign in to read and send private messages.',
             )}
           </p>
           {auth.status === 'unavailable' && (
@@ -141,15 +225,15 @@ export function CustomerTickets({
                         ? '/' + id
                         : shoppingRequest.slug
                           ? '?' +
-                            (shoppingRequest.kind === 'phone' ? 'product' : 'question') +
-                            '=' +
-                            shoppingRequest.slug +
-                            (shoppingRequest.variantId
-                              ? '&variant=' + shoppingRequest.variantId
-                              : '')
+                            new URLSearchParams({
+                              product: shoppingRequest.slug,
+                              ...(shoppingRequest.variantId && {
+                                variant: shoppingRequest.variantId,
+                              }),
+                            })
                           : ''),
                   )
-                : '/account'
+                : '/account?returnTo=' + encodeURIComponent(base + (id ? '/' + id : ''))
             }
           >
             {text('ورود به حساب', 'Sign in')}

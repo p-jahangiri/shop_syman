@@ -9,6 +9,9 @@ export type ShoppingRequest = {
   slug?: string;
   variant?: string;
   variantId?: string;
+  color?: string;
+  storage?: string;
+  isPhone?: boolean;
 };
 
 export const shoppingMarker = { phone: '[phone]', 'product-question': '[product-question]' };
@@ -40,8 +43,13 @@ export function shoppingRequestContent(
     body: [
       [text('مدل', 'Model'), name],
       [text('تنوع انتخاب‌شده در فروشگاه', 'Selected store variant'), request.variant ?? ''],
-      [text('رنگ', 'Color'), value('color')],
-      [text('حافظه', 'Storage'), value('storage')],
+      [
+        text('نشانی کالا', 'Product path'),
+        request.slug ? `/${locale}/product/${request.slug}` : '',
+      ],
+      [text('شناسهٔ تنوع', 'Variant ID'), request.variantId ?? ''],
+      [text('رنگ', 'Color'), request.color || value('color')],
+      [text('حافظه', 'Storage'), request.storage || value('storage')],
       [text('سقف بودجه (تومان)', 'Maximum budget (toman)'), digits],
       [text('توضیحات', 'Notes'), value('body')],
     ]
@@ -71,12 +79,13 @@ export function ShoppingRequestFields({
         </label>
       </>
     );
+  const showStorage = request.isPhone !== false || Boolean(request.storage);
   return (
     <>
       <p>
         {text(
-          'مدل را وارد کنید. رنگ، حافظه و سقف بودجه اختیاری‌اند. پاسخ در گفت‌وگو و اعلان حساب می‌آید.',
-          'Enter a model. Color, storage and budget are optional. Replies appear in the conversation and account notifications.',
+          'جزئیات دلخواه و سقف بودجه را وارد کنید. پاسخ را در همین بخش و اعلان‌های حساب می‌بینید.',
+          'Add your preferences and budget. Replies appear here and in your account notifications.',
         )}
       </p>
       {request.variant && (
@@ -85,27 +94,37 @@ export function ShoppingRequestFields({
         </p>
       )}
       <label className="ticket-field">
-        <span>{text('مدل گوشی', 'Phone model')}</span>
+        <span>{text('مدل کالا', 'Product model')}</span>
         <input
           name="model"
           required
           maxLength={100}
           defaultValue={request.product}
+          readOnly={Boolean(request.product)}
           placeholder={text('مثلاً آیفون ۱۴', 'For example, iPhone 14')}
         />
       </label>
       <label className="ticket-field">
         <span>{text('رنگ دلخواه', 'Preferred color')}</span>
-        <input name="color" maxLength={40} />
-      </label>
-      <label className="ticket-field">
-        <span>{text('حافظهٔ دلخواه', 'Preferred storage')}</span>
         <input
-          name="storage"
+          name="color"
           maxLength={40}
-          placeholder={text('مثلاً ۲۵۶ گیگابایت', 'For example, 256 GB')}
+          defaultValue={request.color}
+          readOnly={Boolean(request.color)}
         />
       </label>
+      {showStorage && (
+        <label className="ticket-field">
+          <span>{text('حافظهٔ دلخواه', 'Preferred storage')}</span>
+          <input
+            name="storage"
+            maxLength={40}
+            defaultValue={request.storage}
+            readOnly={Boolean(request.storage)}
+            placeholder={text('مثلاً ۲۵۶ گیگابایت', 'For example, 256 GB')}
+          />
+        </label>
+      )}
       <label className="ticket-field">
         <span>{text('سقف بودجه به تومان', 'Maximum budget in toman')}</span>
         <input name="budget" inputMode="numeric" maxLength={24} />
