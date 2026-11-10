@@ -333,6 +333,14 @@ if (args.Contains("--seed-moments-dev")) {
     Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
     return;
 }
+if (args.Contains("--seed-arvan-scenarios"))
+{
+    if (args.Length != 1 || !app.Environment.IsDevelopment() || !app.Configuration.GetValue<bool>("ArvanDemo:AllowSeed"))
+        throw new InvalidOperationException("The explicit online scenario command requires the internal demonstration deployment.");
+    var result = await ArvanDemoScenarios.RunAsync(app.Services, app.Environment, CancellationToken.None);
+    Console.WriteLine("ARVAN_SCENARIOS " + System.Text.Json.JsonSerializer.Serialize(result));
+    return;
+}
 if (args.Contains("--seed-review-examples"))
 {
     if (!app.Environment.IsDevelopment() || args.Length != 1)

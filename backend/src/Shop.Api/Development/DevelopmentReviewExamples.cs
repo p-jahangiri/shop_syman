@@ -26,14 +26,14 @@ public static class DevelopmentReviewExamples
             "در این نمونهٔ آموزشی شارژر به‌خاطر اندازهٔ کوچک انتخاب شده است؛ توان درج‌شده برای هر تنوع باید جداگانه بررسی شود.", true),
     ];
 
-    public static async Task<object> RunAsync(IServiceProvider services, IHostEnvironment environment, CancellationToken ct)
+    public static async Task<object> RunAsync(IServiceProvider services, IHostEnvironment environment, CancellationToken ct, bool arvan = false)
     {
         if (!environment.IsDevelopment()) throw new InvalidOperationException("Review examples require Development.");
         var reviews = services.GetRequiredService<ReviewsDbContext>();
         var catalog = services.GetRequiredService<CatalogDbContext>();
         var identity = services.GetRequiredService<IdentityDbContext>();
         var connection = reviews.Database.GetDbConnection();
-        const string source = "127.0.0.1,11433";
+        var source = arvan ? "sql,1433" : "127.0.0.1,11433";
         if (connection.DataSource != source || connection.Database != "Sayman" ||
             new DbContext[] { catalog, identity }.Any(context => context.Database.GetDbConnection().DataSource != source ||
                 context.Database.GetDbConnection().Database != "Sayman" || context.Database.GetDbConnection().State != ConnectionState.Closed))

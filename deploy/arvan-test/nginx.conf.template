@@ -2,40 +2,6 @@ map $http_upgrade $connection_upgrade {
     default upgrade;
     '' close;
 }
-# Public document routes, shared by HTTP and HTTPS browsing.
-map "$request_method:$uri" $shop_browse_page {
-    default 0;
-    ~^(GET|HEAD):/$ 1;
-    ~^(GET|HEAD):/(fa|en)/?$ 1;
-    ~^(GET|HEAD):/(fa|en)/(catalog|compare|budget-finder|browse-access|install|installments|moments|support)/?$ 1;
-    ~^(GET|HEAD):/(fa|en)/(product|blog|pages|guides|mobile-news)(/[-a-zA-Z0-9_]+)?/?$ 1;
-}
-# Anonymous browsing only. POST is limited to catalog reads.
-map "$request_method:$uri" $shop_browse_allowed {
-    default $shop_browse_page;
-    ~^(GET|HEAD):/(fa|en)/manifest\.webmanifest$ 1;
-    ~^(GET|HEAD):/(?:webui/assets|products|media/catalog|media/videos|pwa|magazine)/[-a-zA-Z0-9_./]+$ 1;
-    ~^(GET|HEAD):/(webui/image|favicon-32\.png|favicon-192\.png|favicon\.ico|robots\.txt)$ 1;
-    ~^GET:/api/catalog/(fa|en)/filters$ 1;
-    ~^GET:/api/reviews/products/[-a-zA-Z0-9_]+(/watch|/photos/[0-9a-f]+/[0-9a-f]+(/[23])?)?$ 1;
-    ~^POST:/api/catalog/(fa|en)/(search|lookup|facet-values)$ 1;
-}
-map "$request_method:$uri" $shop_browse_access_path {
-    default "";
-    ~^(GET|HEAD):/(?<shop_access_locale>fa|en)/(account|addresses|cart|checkout|credit|devices|notifications|orders|phone-interests|purchase-requests|support/tickets|wishlist)(?:/|$) /$shop_access_locale/browse-access;
-}
-map "${SHOP_HTTP_BROWSE}:$shop_browse_page" $shop_legacy_public_page {
-    default 0;
-    "true:1" 1;
-}
-map $server_port $shop_browse_authority {
-    8443 ${SHOP_DOMAIN}:${SHOP_TLS_PORT};
-    default ${SHOP_DOMAIN};
-}
-map $server_port $shop_browse_forwarded_port {
-    8443 ${SHOP_TLS_PORT};
-    default $server_port;
-}
 # Cookies are scoped to a host, not a port. Pass only the app's own
 # cookies upstream, and keep ambiguous duplicates invalid.
 map $http_cookie $shop_refresh_cookie {
@@ -82,9 +48,7 @@ server {
         try_files $uri =404;
     }
     location / {
-        set $shop_public_browse ${SHOP_HTTP_BROWSE};
-        if ($shop_public_browse != true) { return 308 https://${ADMIN_DOMAIN}$request_uri; }
-        include /etc/nginx/conf.d/sayman-public-browse.inc;
+        return 308 ${SHOP_ORIGIN}$request_uri;
     }
 }
 server {
@@ -95,7 +59,6 @@ server {
         try_files $uri =404;
     }
     location / {
-        if ($shop_legacy_public_page = 1) { return 302 http://${SHOP_DOMAIN}$uri$is_args$args; }
         return 308 ${SHOP_ORIGIN}$request_uri;
     }
 }
@@ -119,11 +82,15 @@ server {
     listen 8443 ssl;
     server_name ${SHOP_DOMAIN};
     add_header X-Robots-Tag 'noindex, nofollow' always;
+    location ~ ^/(?<locale>fa|en)/browse-access/?$ {
+        return 302 ${SHOP_ORIGIN}/$locale/account;
+    }
     location / {
-        allow ${TESTER_IP};
-        deny all;
-        error_page 403 = @shop_https_guest;
         set $app http://storefront:3000;
+        # Keep compatibility with previously loaded asset URLs.
+        rewrite ^/webui/assets/bundle/(.+)$ /_next/static/chunks/$1 break;
+        rewrite ^/webui/assets/(.+)$ /_next/static/$1 break;
+        rewrite ^/webui/image$ /_next/image break;
         proxy_pass $app;
         proxy_http_version 1.1;
         proxy_set_header Host ${SHOP_DOMAIN}:${SHOP_TLS_PORT};
@@ -138,18 +105,12 @@ server {
         proxy_buffering off;
         proxy_read_timeout 90s;
     }
-    location @shop_https_guest {
-        include /etc/nginx/conf.d/sayman-public-browse.inc;
-    }
 }
 server {
     listen 443 ssl;
     server_name ${ADMIN_DOMAIN};
     add_header X-Robots-Tag 'noindex, nofollow' always;
     location / {
-        allow ${TESTER_IP};
-        deny all;
-        error_page 403 = @shop_https_guest;
         set $app http://admin:8080;
         proxy_pass $app;
         proxy_http_version 1.1;
@@ -163,8 +124,5 @@ server {
         proxy_cookie_flags ~ secure;
         proxy_buffering off;
         proxy_read_timeout 90s;
-    }
-    location @shop_https_guest {
-        include /etc/nginx/conf.d/sayman-public-browse.inc;
     }
 }

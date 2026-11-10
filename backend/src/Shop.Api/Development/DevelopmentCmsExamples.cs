@@ -20,7 +20,7 @@ public static partial class DevelopmentCmsExamples
     [GeneratedRegex("^SaymanTest_[a-f0-9]{32}$", RegexOptions.CultureInvariant)]
     private static partial Regex TestDatabase();
 
-    public static async Task<Result> RunAsync(IServiceProvider services, IHostEnvironment environment, CancellationToken ct)
+    public static async Task<Result> RunAsync(IServiceProvider services, IHostEnvironment environment, CancellationToken ct, bool arvan = false)
     {
         if (!environment.IsDevelopment())
             throw new InvalidOperationException("CMS examples are available only in Development.");
@@ -29,7 +29,7 @@ public static partial class DevelopmentCmsExamples
         var identity = services.GetRequiredService<IdentityDbContext>();
         var connection = cms.Database.GetDbConnection();
         var auditConnection = identity.Database.GetDbConnection();
-        if (connection.DataSource != Source || (connection.Database != "Sayman" && !TestDatabase().IsMatch(connection.Database)))
+        if (connection.DataSource != (arvan ? "sql,1433" : Source) || (connection.Database != "Sayman" && !TestDatabase().IsMatch(connection.Database)))
             throw new InvalidOperationException("CMS examples require the local SQL service and Sayman or a disposable SQL fixture.");
         if (auditConnection.State != ConnectionState.Closed || auditConnection.Database != connection.Database || auditConnection.DataSource != connection.DataSource)
             throw new InvalidOperationException("CMS example commands and their audit require the same local database.");

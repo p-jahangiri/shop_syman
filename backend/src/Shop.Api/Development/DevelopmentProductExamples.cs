@@ -46,7 +46,30 @@ public static class DevelopmentProductExamples
             new("CHARGER-01","","","سفید","White","#efefeb","3900000","6500000",1)],
             new("passed","notApplicable",null,"unknown","worn","unknown","شارژر بدون باتری و نمایشگر؛ روی قاب آثار استفاده دیده می‌شود.","No battery or display; housing shows wear."))
     ];
-    public static async Task<object> RunAsync(IServiceProvider services, IHostEnvironment environment, string contentRoot, CancellationToken ct, bool usedExamples = false)
+    private static readonly Model[] ArvanModels = [
+        Extra("pixel-9", "phones", "Google", "گوگل Pixel 9", "Google Pixel 9", "phone-silver", 430000000, "128GB", "12GB"),
+        Extra("galaxy-a36", "phones", "Samsung", "سامسونگ Galaxy A36", "Samsung Galaxy A36", "phone-titanium", 235000000, "256GB", "8GB"),
+        Extra("redmi-note-14", "phones", "Xiaomi", "شیائومی Redmi Note 14", "Xiaomi Redmi Note 14", "phone-silver", 178000000, "128GB", "6GB"),
+        Extra("iphone-14", "phones", "Apple", "اپل iPhone 14", "Apple iPhone 14", "phone-titanium", 560000000, "128GB", "6GB"),
+        Extra("thinkpad-e14", "laptops", "Lenovo", "لنوو ThinkPad E14", "Lenovo ThinkPad E14", "laptop", 495000000, "512GB", "16GB"),
+        Extra("vivobook-15", "laptops", "Asus", "ایسوس VivoBook 15", "Asus VivoBook 15", "laptop", 369000000, "512GB", "8GB"),
+        Extra("ideapad-slim", "laptops", "Lenovo", "لنوو IdeaPad Slim", "Lenovo IdeaPad Slim", "laptop", 318000000, "256GB", "8GB"),
+        Extra("xbox-series-s", "gaming", "Microsoft", "ایکس‌باکس Series S", "Xbox Series S", "console", 299000000, "512GB"),
+        Extra("ps5-slim", "gaming", "Sony", "پلی‌استیشن ۵ اسلیم", "PlayStation 5 Slim", "console", 510000000, "1TB"),
+        Extra("usb-c-65w", "accessories", "Sayman Demo", "شارژر ۶۵ وات USB-C", "65 W USB-C charger", "charger", 18700000),
+        Extra("headphones-wireless", "accessories", "Sayman Demo", "هدفون بی‌سیم سایمان", "Sayman wireless headphones", "headphones", 23600000),
+        Extra("headphones-travel", "accessories", "Sayman Demo", "هدفون تاشوی مسافرتی", "Foldable travel headphones", "headphones", 14900000),
+    ];
+
+    private static Model Extra(string slug, string category, string brand, string fa, string en,
+        string image, long price, string storage = "", string ram = "") =>
+        new("d134-demo-" + slug, category, brand, fa, en, "/products/" + image + ".svg", "", "",
+            [new("ARVAN-" + slug.ToUpperInvariant() + "-BK", storage, ram, "مشکی", "Black", "#252a2d",
+                price.ToString(CultureInfo.InvariantCulture), (price + price / 10).ToString(CultureInfo.InvariantCulture), 5),
+             new("ARVAN-" + slug.ToUpperInvariant() + "-SV", storage, ram, "نقره‌ای", "Silver", "#c5d7e0",
+                (price + price / 20).ToString(CultureInfo.InvariantCulture), null, 0)]);
+
+    public static async Task<object> RunAsync(IServiceProvider services, IHostEnvironment environment, string contentRoot, CancellationToken ct, bool usedExamples = false, bool arvan = false)
     {
         if (!environment.IsDevelopment())
             throw new InvalidOperationException("Product examples are restricted to Development.");
@@ -59,7 +82,7 @@ public static class DevelopmentProductExamples
         var results = new List<object>();
         var actor = usedExamples ? "development-sample:used-devices" : Actor;
         var skuPrefix = usedExamples ? "D83-USED-DEMO-" : "D70-DEMO-";
-        foreach (var model in usedExamples ? UsedModels : Models)
+        foreach (var model in usedExamples ? UsedModels : arvan ? Models.Concat(ArvanModels) : Models)
         {
             if (await catalog.Products.AnyAsync(p => p.Slug == model.Slug, ct))
             {
@@ -71,7 +94,7 @@ public static class DevelopmentProductExamples
                 continue;
             }
             ProductVideoInput[] videos = [];
-            if (model.Slug == "d70-sample-iphone-15")
+            if (model.Slug == "d70-sample-iphone-15" && (!arvan || services.GetRequiredService<PublicVideoService>().Configured))
             {
                 var service = services.GetRequiredService<PublicVideoService>();
                 var prior = await catalog.Set<PublicVideoAsset>().AsNoTracking().Where(a => a.CreatedBy == Actor && a.Status == "Ready" && a.Extension == "mp4").OrderBy(a => a.CreatedAt).FirstOrDefaultAsync(ct);
