@@ -1,5 +1,5 @@
 import { serverI18n } from '@/lib/navigation/server-locale';
-import { CartPage } from '@/components/checkout/checkout';
+import { CartPage } from '@/components/checkout/cart-page';
 export async function generateMetadata() {
   const { t } = await serverI18n();
   return { title: t('سبد خرید'), robots: { index: false, follow: false } };

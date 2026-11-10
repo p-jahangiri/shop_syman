@@ -15,7 +15,7 @@ import {
   failOrderV2Attempt,
   type OrderV2Attempt,
 } from '@/lib/orders/order-v2-journal';
-import { CartError } from '@/lib/checkout/cart-client';
+import { CartError, isCartReviewConflict } from '@/lib/checkout/cart-client';
 import {
   digitalOrderCapacityMessage,
   physicalOrderCapacityMessage,
@@ -38,7 +38,7 @@ export function OrderV2Form({
 }: {
   quote: CheckoutQuoteV5 | null;
   onCreated: () => void;
-  onInvalidated?: () => void;
+  onInvalidated?: (needsCartReview: boolean) => void;
 }) {
   const { locale, digits } = useI18n(),
     auth = useCustomerSession(),
@@ -128,7 +128,7 @@ export function OrderV2Form({
                       ? 'limited'
                       : 'invalid',
       );
-      if (!uncertain) onInvalidated?.();
+      if (!uncertain) onInvalidated?.(isCartReviewConflict(e));
     } finally {
       if (active() && mounted.current && !controller.signal.aborted) setBusy(false);
     }

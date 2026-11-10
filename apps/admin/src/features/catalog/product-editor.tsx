@@ -770,6 +770,11 @@ function ProductEditorForm({
                           path={'attribute.' + rule.attributeId}
                           error={errors['attribute.' + rule.attributeId]}
                           required={rule.isRequired && value.status === 'Published'}
+                          help={
+                            definition.key === 'insurance'
+                              ? 'پوشش مشترک کالا، کنار گارانتی در فروشگاه نمایش داده می‌شود. برای یک تنوع می‌توانید پوشش جداگانه انتخاب کنید.'
+                              : undefined
+                          }
                           onChange={(next) =>
                             change(
                               {
@@ -1215,9 +1220,12 @@ function VariantDetails({
   }, []);
   const field = (key: string) => fields.find((f) => f.key === key)!;
   const config = (key: string) => ({ label: field(key).label, help: field(key).help });
-  const axes =
-    data.categories.find((c) => c.id === categoryId)?.attributes.filter((a) => a.isVariantAxis) ??
-    [];
+  const variantFields = (
+    data.categories.find((c) => c.id === categoryId)?.attributes ?? []
+  ).flatMap((rule) => {
+    const definition = data.attributes.find((a) => a.id === rule.attributeId);
+    return definition && (rule.isVariantAxis || definition.key === 'insurance') ? [definition] : [];
+  });
   return (
     <Dialog open fullWidth maxWidth="md" onClose={onClose} aria-labelledby="variant-details-title">
       <DialogTitle id="variant-details-title">جزئیات تنوع {value.sku || 'جدید'}</DialogTitle>
@@ -1325,22 +1333,24 @@ function VariantDetails({
               />
             </Stack>
           )}
-          {axes.map((rule) => {
-            const definition = data.attributes.find((a) => a.id === rule.attributeId);
-            return definition ? (
-              <ProductAttributeField
-                key={rule.attributeId}
-                definition={definition}
-                disabled={disabled}
-                value={value.attributes.find((a) => a.attributeId === rule.attributeId)}
-                path={root + 'attribute.' + rule.attributeId}
-                error={errors[root + 'attribute.' + rule.attributeId]}
-                onChange={(next) =>
-                  onChange({ attributes: replaceValue(value.attributes, rule.attributeId, next) })
-                }
-              />
-            ) : null;
-          })}
+          {variantFields.map((definition) => (
+            <ProductAttributeField
+              key={definition.id}
+              definition={definition}
+              disabled={disabled}
+              value={value.attributes.find((a) => a.attributeId === definition.id)}
+              path={root + 'attribute.' + definition.id}
+              error={errors[root + 'attribute.' + definition.id]}
+              help={
+                definition.key === 'insurance'
+                  ? 'اگر خالی بماند، بیمهٔ تعریف‌شده برای کالای مادر نمایش داده می‌شود.'
+                  : undefined
+              }
+              onChange={(next) =>
+                onChange({ attributes: replaceValue(value.attributes, definition.id, next) })
+              }
+            />
+          ))}
           <Box sx={{ gridColumn: '1/-1' }}>
             <ProductTextField
               label="محدودیت روش خرید این تنوع"

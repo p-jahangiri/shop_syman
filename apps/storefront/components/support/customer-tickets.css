@@ -213,8 +213,21 @@
   font-size: 1rem;
 }
 .purchase-request-modal .ticket-create-form > button {
+  display: grid;
+  inline-size: min(100%, 16rem);
   min-block-size: 44px;
-  margin-block-start: 0.8rem;
+  place-items: center;
+  margin: 0.8rem auto 0;
+  padding-inline: 1rem;
+  border: 1px solid var(--primary);
+  border-radius: 0.75rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 700;
+}
+.purchase-request-modal .ticket-create-form > button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
 }
 .support-tickets-page[data-purchase] .ticket-selection-empty {
   border-style: dashed;

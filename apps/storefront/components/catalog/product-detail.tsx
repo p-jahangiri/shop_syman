@@ -24,7 +24,7 @@ import {
   WalletCards,
   Check,
   Plus,
-  Minus,
+  Umbrella,
   Expand,
   MessageCircle,
   Info,
@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { availablePurchaseMethods, eligibleChequePlans } from '@/lib/catalog/purchasing';
 import { phoneConfigurations } from '@/lib/catalog/phone-configurations';
+import { insuranceAttributeKey, productInsurance } from '@/lib/catalog/insurance';
 import type { Product } from '@sayman/web-shared/lib/shared/types.ts';
 import { chequeQuote, discount } from '@sayman/web-shared/lib/shared/commerce.ts';
 import { useShop } from '../providers/shop-provider';
@@ -147,11 +148,20 @@ export function ProductDetail({
         product.variants.find((v) => v.stock > 0)?.id ??
         product.variants[0].id,
     ),
-    [count, setCount] = useState(1),
     [tab, setTab] = useState<string>(initialTab ?? 'specs'),
     [gallery, setGallery] = useState({ key: '', view: 0, zoom: false });
-  const { add, wishlist, toggleWish, compare, toggleCompare, notify, cartBusy, loadError, ready } =
-    useShop();
+  const {
+    add,
+    wishlist,
+    wishlistStatus,
+    toggleWish,
+    compare,
+    toggleCompare,
+    notify,
+    cartBusy,
+    loadError,
+    ready,
+  } = useShop();
   const variant = product.variants.find((v) => v.id === variantId)!;
   const phone = phoneConfigurations(product);
   const phoneGroup = phone?.groups.find((group) => group.variants.includes(variant));
@@ -198,6 +208,7 @@ export function ProductDetail({
   const returnGuidance = site.categoryReturnGuidance?.find(
     (item) => item.categoryId === product.category,
   )?.text;
+  const insurance = productInsurance(product, variant);
   const methods = availablePurchaseMethods(product, variant, purchaseMethods);
   const availableAlternative =
     variant.stock <= 0
@@ -211,7 +222,6 @@ export function ProductDetail({
             availablePurchaseMethods(product, item, purchaseMethods).length > 0,
         )
       : undefined;
-  const selectedQuantity = Math.min(count, Math.max(1, variant.stock));
   const plans = eligibleChequePlans(chequePlans, BigInt(variant.priceRial), [product]);
   const chequeMethod = methods.some((m) => m.kind === 'cheque');
   const quote =
@@ -220,8 +230,9 @@ export function ProductDetail({
     phoneGroup?.specs ?? { ...product.attributes, ...variant.attributes },
   ).filter(
     ([key]) =>
-      category.attributeRules?.find((a) => a.key === key)?.showInSpecs ??
-      attributeDefinitions.find((a) => a.key === key)?.showInSpecs !== false,
+      key !== insuranceAttributeKey &&
+      (category.attributeRules?.find((a) => a.key === key)?.showInSpecs ??
+        attributeDefinitions.find((a) => a.key === key)?.showInSpecs !== false),
   );
   const featureOrder =
     product.category === 'phones'
@@ -262,7 +273,6 @@ export function ProductDetail({
     url.searchParams.set('variant', id);
     window.history.replaceState(null, '', url.pathname + url.search + url.hash);
     setVariantId(id);
-    setCount(1);
     setGallery({ key: '', view: 0, zoom: false });
   }
   async function share() {
@@ -293,6 +303,7 @@ export function ProductDetail({
               className={`icon-button ${wishlist.includes(product.id) ? 'is-active' : ''}`}
               aria-label={t('ذخیره در علاقه‌مندی‌ها')}
               aria-pressed={wishlist.includes(product.id)}
+              disabled={wishlistStatus && (!wishlistStatus.ready || wishlistStatus.busy)}
               onClick={() => toggleWish(product.id, product)}
             >
               <Heart size={20} fill={wishlist.includes(product.id) ? 'currentColor' : 'none'} />
@@ -547,20 +558,31 @@ export function ProductDetail({
           </Link>
         </div>
         <aside className="purchase-panel">
-          <div className="purchase-heading">
-            <span className="brand-mini">{t('سایمان')}</span>
-            <span>{t('فروشندهٔ این کالا')}</span>
-          </div>
-          <UsedConditionReport condition={variant.usedCondition} locale={locale} />
-          {hasWarranty && (
-            <div className="purchase-detail product-warranty">
-              <ShieldCheck size={18} aria-hidden="true" />
-              <span>
-                <strong>{fa ? 'گارانتی' : 'Warranty'}</strong>
-                <span dir="auto">{t(warranty)}</span>
-              </span>
+          <div className="purchase-assurances">
+            <div className="purchase-heading">
+              <span className="brand-mini">{t('سایمان')}</span>
+              <span>{t('فروشندهٔ این کالا')}</span>
             </div>
-          )}
+            <UsedConditionReport condition={variant.usedCondition} locale={locale} />
+            {hasWarranty && (
+              <div className="purchase-detail product-warranty">
+                <ShieldCheck size={18} aria-hidden="true" />
+                <span>
+                  <strong>{fa ? 'گارانتی' : 'Warranty'}</strong>
+                  <span dir="auto">{t(warranty)}</span>
+                </span>
+              </div>
+            )}
+            {insurance && (
+              <div className="purchase-detail product-coverage">
+                <Umbrella size={18} aria-hidden="true" />
+                <span>
+                  <strong>{fa ? 'بیمهٔ کالا' : 'Product insurance'}</strong>
+                  <span dir="auto">{insurance}</span>
+                </span>
+              </div>
+            )}
+          </div>
 
           <div className="detail-divider" />
           <div
@@ -590,46 +612,14 @@ export function ProductDetail({
           </div>
           {t(
             variant.stock > 0 ? (
-              <>
-                <div className="purchase-quantity">
-                  <strong id="product-quantity-label">{t('تعداد')}</strong>
-                  {variant.stock === 1 ? (
-                    <span className="purchase-single-quantity">{fa ? '۱ عدد' : '1 item'}</span>
-                  ) : (
-                    <div
-                      className="purchase-stepper"
-                      role="group"
-                      aria-labelledby="product-quantity-label"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setCount(selectedQuantity + 1)}
-                        disabled={selectedQuantity >= variant.stock}
-                        aria-label={t('افزایش تعداد')}
-                      >
-                        <Plus size={18} aria-hidden="true" />
-                      </button>
-                      <output>{digits(selectedQuantity)}</output>
-                      <button
-                        type="button"
-                        onClick={() => setCount(selectedQuantity - 1)}
-                        disabled={selectedQuantity <= 1}
-                        aria-label={t('کاهش تعداد')}
-                      >
-                        <Minus size={18} aria-hidden="true" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <Button
-                  className="full"
-                  disabled={!methods.length || cartBusy || loadError || !ready}
-                  onClick={() => add(variant.id, selectedQuantity, product)}
-                >
-                  {t('افزودن به سبد خرید')}
-                  <Plus size={18} />
-                </Button>
-              </>
+              <Button
+                className="full"
+                disabled={!methods.length || cartBusy || loadError || !ready}
+                onClick={() => add(variant.id, 1, product)}
+              >
+                {t('افزودن به سبد خرید')}
+                <Plus size={18} />
+              </Button>
             ) : (
               <Button className="full" disabled>
                 {stockLabel}
@@ -878,7 +868,7 @@ export function ProductDetail({
         </div>
         <Button
           disabled={!variant.stock || !methods.length || cartBusy || loadError || !ready}
-          onClick={() => add(variant.id, selectedQuantity, product)}
+          onClick={() => add(variant.id, 1, product)}
         >
           {variant.stock === 0
             ? stockLabel

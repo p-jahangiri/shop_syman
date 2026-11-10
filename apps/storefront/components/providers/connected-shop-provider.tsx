@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useI18n, useProductRegistry } from '../navigation/locale-provider';
+import { usePathname } from '../navigation/localized-link';
 import { useCustomerSession } from '../auth/auth-provider';
 import { ShopContext } from './shop-context';
 import { useConnectedWishlist } from '../wishlist/connected-wishlist';
@@ -32,6 +33,16 @@ import {
   type CartCommand,
 } from '@/lib/checkout/cart-conversion-contract';
 import { cartReviewCapabilities } from '@/lib/checkout/cart-review-capabilities';
+import {
+  prepareSavedCartMove,
+  readSavedCart,
+  savedCartKey,
+  SavedCartError,
+  settleSavedCart,
+  withoutSavedVariant,
+  writeSavedCart,
+  type SavedCart,
+} from '@/lib/checkout/cart-saved';
 const preferencesKey = 'sayman:preferences:v1',
   legacyKey = 'sayman:legacy-cart:v1';
 const scope = (auth: AuthState) =>
@@ -40,6 +51,8 @@ const scope = (auth: AuthState) =>
     : auth.status === 'guest'
       ? 'guest'
       : 'unavailable';
+const ordinaryLines = (cart: ServerCart): CartLine[] =>
+  cart.ordinaryLines.map(({ variantId, quantity }) => ({ variantId, quantity }));
 function saved(key: string) {
   try {
     const value = localStorage.getItem(key);
@@ -50,6 +63,7 @@ function saved(key: string) {
 }
 export function ConnectedShopProvider({ children }: { children: ReactNode }) {
   const { locale, t } = useI18n();
+  const pathname = usePathname();
   const text = (fa: string, en: string) => (locale === 'fa' ? fa : en);
   const registry = useProductRegistry();
   const auth = useCustomerSession();
@@ -60,11 +74,13 @@ export function ConnectedShopProvider({ children }: { children: ReactNode }) {
     [preferencesReady, setPreferencesReady] = useState(false),
     [preferencesError, setPreferencesError] = useState(false),
     [preferencesAttempt, setPreferencesAttempt] = useState(0);
+  const [savedData, setSavedData] = useState<{ owner: string; value: SavedCart | null } | null>(
+    null,
+  );
   const [loadError, setLoadError] = useState(false),
     [mergePending, setMergePending] = useState(false),
     [busy, setBusy] = useState(false),
     [attempt, setAttempt] = useState(0),
-    [cartOpen, setCartOpen] = useState(false),
     [toast, setToast] = useState('');
   const wishes = useConnectedWishlist(setToast);
   const { compare, compareVariants } = comparison;
@@ -75,6 +91,7 @@ export function ConnectedShopProvider({ children }: { children: ReactNode }) {
   const epoch = useRef(0),
     reloadAfterWrite = useRef(false),
     operation = useRef(false),
+    lastAvailabilityRefresh = useRef(0),
     mounted = useRef(true),
     channel = useRef<BroadcastChannel | null>(null),
     mergeConflict = useRef<{ scope: string; retry: boolean } | null>(null);
@@ -82,12 +99,39 @@ export function ConnectedShopProvider({ children }: { children: ReactNode }) {
   snapshot.current = data;
   const visible = data?.scope === key && key !== 'unavailable' ? data.cart : null;
   const ready = visible !== null;
-  const cart =
-    visible?.ordinaryLines.map((l) => ({ variantId: l.variantId, quantity: l.quantity })) ?? [];
-  const retry = () => {
+  const cart = visible ? ordinaryLines(visible) : [];
+  const savedState = savedData?.owner === key ? savedData : null;
+  const savedItems = savedState?.value
+    ? (visible ? settleSavedCart(savedState.value, cart) : savedState.value).items
+    : [];
+  useEffect(() => {
+    if (key === 'unavailable') return;
+    const storageKey = savedCartKey(key);
+    function loadSaved() {
+      try {
+        setSavedData({ owner: key, value: readSavedCart(localStorage, storageKey) });
+      } catch {
+        setSavedData({ owner: key, value: null });
+      }
+    }
+    loadSaved();
+    const storageChanged = (event: StorageEvent) => {
+      if (event.key === storageKey || event.key === null) loadSaved();
+    };
+    window.addEventListener('storage', storageChanged);
+    return () => window.removeEventListener('storage', storageChanged);
+  }, [key]);
+  const retry = useCallback(() => {
     if (operation.current) reloadAfterWrite.current = true;
     else setAttempt((n) => n + 1);
-  };
+  }, []);
+  const refreshAvailability = useCallback(() => {
+    const now = Date.now();
+    if (document.visibilityState !== 'visible' || now - lastAvailabilityRefresh.current <= 3000)
+      return;
+    lastAvailabilityRefresh.current = now;
+    retry();
+  }, [retry]);
   const retryMerge = () => {
     if (scope(auth.store.snapshot()) !== key) return;
     if (mergeConflict.current?.scope === key) mergeConflict.current.retry = true;
@@ -128,21 +172,28 @@ export function ConnectedShopProvider({ children }: { children: ReactNode }) {
     } catch {
       /* SQL version checks still protect writes without cross-tab hints. */
     }
-    let lastFocus = 0;
-    const focus = () => {
-      if (Date.now() - lastFocus > 3000) {
-        lastFocus = Date.now();
-        retry();
-      }
-    };
-    window.addEventListener('focus', focus);
+    window.addEventListener('focus', refreshAvailability);
     return () => {
       mounted.current = false;
       bus?.close();
       channel.current = null;
-      window.removeEventListener('focus', focus);
+      window.removeEventListener('focus', refreshAvailability);
     };
-  }, []);
+  }, [refreshAvailability, retry]);
+  useEffect(() => {
+    if (pathname !== '/cart') return;
+    // The provider survives navigation. Refresh its existing snapshot on entry;
+    // the regular load effect supplies the first snapshot on a full page load.
+    if (snapshot.current) refreshAvailability();
+    document.addEventListener('visibilitychange', refreshAvailability);
+    const timer = window.setInterval(() => {
+      if (snapshot.current?.cart.ordinaryLines.length) refreshAvailability();
+    }, 45_000);
+    return () => {
+      document.removeEventListener('visibilitychange', refreshAvailability);
+      window.clearInterval(timer);
+    };
+  }, [pathname, refreshAvailability]);
   useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
@@ -295,12 +346,17 @@ export function ConnectedShopProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(timer);
   }, [toast]);
   function message(error: unknown) {
+    if (error instanceof SavedCartError) {
+      if (error.reason === 'limit')
+        return text('فهرست خرید بعدی پر است.', 'Your saved-for-later list is full.');
+      if (error.reason === 'changed')
+        return text('انتخاب‌های سبد تغییر کرده‌اند.', 'Your cart selections have changed.');
+      return text(
+        'ذخیرهٔ خرید بعدی در این مرورگر ممکن نشد.',
+        'Saved-for-later could not be stored in this browser.',
+      );
+    }
     if (error instanceof CartError) {
-      if (error.status === 409)
-        return text(
-          'سبد در جای دیگری تغییر کرده است؛ اطلاعات تازه را بررسی و دوباره انتخاب کنید.',
-          'Your cart changed elsewhere. Review the refreshed cart and try again.',
-        );
       if (error.code === 'insufficient_stock')
         return text(
           'تعداد درخواستی از موجودی فعلی بیشتر است.',
@@ -308,6 +364,11 @@ export function ConnectedShopProvider({ children }: { children: ReactNode }) {
         );
       if (error.code === 'cart_variant_unavailable')
         return text('این تنوع دیگر قابل خرید نیست.', 'This variant is no longer available.');
+      if (error.status === 409)
+        return text(
+          'سبد در جای دیگری تغییر کرده است؛ اطلاعات تازه را بررسی و دوباره انتخاب کنید.',
+          'Your cart changed elsewhere. Review the refreshed cart and try again.',
+        );
       if (error.code.includes('limit'))
         return text(
           'تعداد اقلام یا مبلغ از حد مجاز بیشتر است؛ انتخاب‌های قبلی حفظ شده‌اند.',
@@ -323,6 +384,7 @@ export function ConnectedShopProvider({ children }: { children: ReactNode }) {
     change: (lines: CartLine[]) => CartLine[],
     success: string,
     onSuccess?: () => void,
+    move?: { kind: 'save' | 'restore'; variantId: string },
   ) {
     const current = snapshot.current;
     const owner = scope(auth.store.snapshot());
@@ -347,15 +409,28 @@ export function ConnectedShopProvider({ children }: { children: ReactNode }) {
     try {
       await withCartLock(async () => {
         if (scope(auth.store.snapshot()) !== owner) throw new Error('Session changed');
+        let lines = ordinaryLines(current.cart);
+        const savedState = await recoverSaved(owner, Boolean(move));
+        if (scope(auth.store.snapshot()) !== owner) throw new Error('Session changed');
+        const transfer =
+          move && savedState
+            ? prepareSavedCartMove(savedState, lines, move.kind, move.variantId)
+            : null;
+        if (transfer) {
+          storeSaved(owner, transfer.journal);
+          lines = transfer.lines;
+        }
         const result = await requestCart(auth.store.fetch, locale, 'PUT', {
-          lines: change(
-            current.cart.ordinaryLines.map((l) => ({
-              variantId: l.variantId,
-              quantity: l.quantity,
-            })),
-          ),
+          lines: transfer ? lines : change(lines),
           version: current.cart.version,
         });
+        if (transfer) {
+          try {
+            storeSaved(owner, settleSavedCart(transfer.journal, ordinaryLines(result)));
+          } catch {
+            /* The persisted journal still resolves against the confirmed cart. */
+          }
+        }
         if (scope(auth.store.snapshot()) !== owner || ticket !== epoch.current) return;
         onSuccess?.();
         await accept(result, owner, ticket);
@@ -495,6 +570,50 @@ export function ConnectedShopProvider({ children }: { children: ReactNode }) {
       text('سبد به‌روز شد.', 'Cart updated.'),
     );
   }
+  function storeSaved(owner: string, value: SavedCart) {
+    writeSavedCart(localStorage, savedCartKey(owner), value);
+    setSavedData((old) => (old?.owner === owner ? { owner, value } : old));
+  }
+  async function recoverSaved(owner: string, required: boolean) {
+    let value: SavedCart;
+    try {
+      value = readSavedCart(localStorage, savedCartKey(owner));
+    } catch (error) {
+      if (required) throw error;
+      return null;
+    }
+    if (!value.pending) return value;
+    const fresh = await requestCart(auth.store.fetch, locale);
+    if (scope(auth.store.snapshot()) !== owner) throw new Error('Session changed');
+    const recovered = settleSavedCart(value, ordinaryLines(fresh));
+    storeSaved(owner, recovered);
+    return recovered;
+  }
+  function moveSaved(kind: 'save' | 'restore', variantId: string) {
+    void mutate(
+      (lines) => lines,
+      kind === 'save'
+        ? text('برای خرید بعدی ذخیره شد.', 'Saved for later.')
+        : text('به سبد خرید برگشت.', 'Moved back to your cart.'),
+      undefined,
+      { kind, variantId },
+    );
+  }
+  async function removeSaved(variantId: string) {
+    const owner = scope(auth.store.snapshot());
+    if (owner === 'unavailable' || operation.current) return;
+    try {
+      await withCartLock(async () => {
+        if (scope(auth.store.snapshot()) !== owner) return;
+        const value = await recoverSaved(owner, true);
+        if (!value || scope(auth.store.snapshot()) !== owner) return;
+        storeSaved(owner, { items: withoutSavedVariant(value.items, variantId) });
+        setToast(text('از خرید بعدی حذف شد.', 'Removed from saved for later.'));
+      });
+    } catch (error) {
+      if (scope(auth.store.snapshot()) === owner) setToast(message(error));
+    }
+  }
   const toggleWish = wishes.toggle;
   function toggleCompare(id: string, product?: Product, variantId?: string) {
     if (!preferencesReady) return;
@@ -545,6 +664,14 @@ export function ConnectedShopProvider({ children }: { children: ReactNode }) {
     <ShopContext.Provider
       value={{
         cart,
+        savedCart: {
+          items: savedItems,
+          ready: !!savedState?.value,
+          failed: !!savedState && !savedState.value,
+          save: (id) => moveSaved('save', id),
+          restore: (id) => moveSaved('restore', id),
+          remove: (id) => void removeSaved(id),
+        },
         wishlist,
         compare,
         compareVariants,
@@ -556,8 +683,6 @@ export function ConnectedShopProvider({ children }: { children: ReactNode }) {
           if (auth.status === 'unavailable') void auth.store.restore().catch(() => {});
           else retry();
         },
-        cartOpen,
-        setCartOpen,
         add,
         quantity,
         clearCart: () => {

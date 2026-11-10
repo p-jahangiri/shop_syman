@@ -28,8 +28,8 @@ public sealed class CartV2SalesSqlTests(SqlFixture fixture):IClassFixture<SqlFix
     private static SourcingConversionInput Input(Scenario s,string? cartVersion=null)=>new(Id(),s.Plan.TaskId,V,V,V,s.Plan.AcceptanceId,s.Plan.AcceptanceId,s.AgreementVersion,s.Allocation,V,H,cartVersion??s.CartVersion);
     private sealed class Catalog(OfferSkuSnapshot sku):ICartCatalogReader,ICatalogOfferReader
     {
-        public string? Failure;public long PublicPrice=100;public OfferSkuSnapshot Current=sku;
-        public Task<IReadOnlyDictionary<string,CartCatalogVariant>> ReadCartVariantsAsync(string locale,IReadOnlyCollection<string> ids,CancellationToken ct)=>Task.FromResult<IReadOnlyDictionary<string,CartCatalogVariant>>(ids.ToDictionary(id=>id,id=>new CartCatalogVariant(id,"ordinary-model","phones","ordinary-phone",locale=="en"?"Ordinary current name":"نام جاری عادی","Current variant",PublicPrice,false),StringComparer.OrdinalIgnoreCase));
+        public string? Failure;public long PublicPrice=100;public long? CompareAt;public OfferSkuSnapshot Current=sku;
+        public Task<IReadOnlyDictionary<string,CartCatalogVariant>> ReadCartVariantsAsync(string locale,IReadOnlyCollection<string> ids,CancellationToken ct)=>Task.FromResult<IReadOnlyDictionary<string,CartCatalogVariant>>(ids.ToDictionary(id=>id,id=>new CartCatalogVariant(id,"ordinary-model","phones","ordinary-phone",locale=="en"?"Ordinary current name":"نام جاری عادی","Current variant",PublicPrice,false,CompareAt),StringComparer.OrdinalIgnoreCase));
         public Task<IReadOnlyDictionary<string,OfferSkuSnapshot>> ReadAsync(string[] ids,CancellationToken ct){if(Failure is not null)throw new BusinessException(Failure,"Explicit synthetic current Catalog failure");return Task.FromResult<IReadOnlyDictionary<string,OfferSkuSnapshot>>(ids.Where(id=>id.Equals(Current.VariantId,StringComparison.OrdinalIgnoreCase)).ToDictionary(id=>id,_=>Current,StringComparer.OrdinalIgnoreCase));}
         public Task<OfferSkuPage> LookupAsync(string model,string? query,string? cursor,CancellationToken ct)=>throw new NotSupportedException();
     }
@@ -77,6 +77,25 @@ public sealed class CartV2SalesSqlTests(SqlFixture fixture):IClassFixture<SqlFix
     private static async Task<SourcingConversionMutation> ConvertOfferAsync(Env env,AcceptedSourcingPurchasePlan plan,SourcingConversionInput input,SourcingStockConversionProof proof)
     {
         var service=env.Conversion;await service.AcquireCommandLockAsync(plan.OwnerId,input.RequestId,default);var replay=await service.ReplayAsync(plan.OwnerId,plan.RequestId,plan.OfferId,input,default);if(replay is not null)return replay;var token=await service.PrepareAsync(plan.OwnerId,plan,input,default);return await service.CompleteAsync(token,proof,default);
+    }
+    [Fact] public async Task CartCompareAtIsOptInAndNeverChangesPurchaseSubtotal()
+    {
+        var scenario = await Seed();
+        await Scope(scenario, async env =>
+        {
+            env.Catalog.CompareAt = 9007199254740993;
+            var identity = new CartIdentity(scenario.Plan.OwnerId, null);
+            var legacy = await env.V2.ReadAsync(identity, "fa", default);
+            var optedIn = await env.V2.ReadAsync(identity, "fa", default, includeCompareAt: true);
+            Assert.Null(Assert.Single(legacy.OrdinaryLines).CompareAtRial);
+            Assert.Equal("9007199254740993", Assert.Single(optedIn.OrdinaryLines).CompareAtRial);
+            Assert.Equal(legacy.BuySubtotalRial, optedIn.BuySubtotalRial);
+            Assert.Equal(legacy.Version, optedIn.Version);
+            env.Catalog.CompareAt = env.Catalog.PublicPrice;
+            var noDiscount = await env.V2.ReadAsync(identity, "fa", default, includeCompareAt: true);
+            Assert.Null(Assert.Single(noDiscount.OrdinaryLines).CompareAtRial);
+            return true;
+        });
     }
     [Fact] public async Task TwoAgreementsAndOrdinarySameSkuRetainThreePricesAndInquiryWithoutFinancialWrites()
     {

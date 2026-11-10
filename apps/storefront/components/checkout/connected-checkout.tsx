@@ -35,7 +35,7 @@ import {
   type CheckoutQuote,
 } from '@sayman/web-shared/lib/checkout/quote-contract.ts';
 import type { ServerCartV2 as ServerCart } from '@/lib/checkout/cart-v2-contract';
-import { CartError } from '@/lib/checkout/cart-client';
+import { CartError, isCartReviewConflict } from '@/lib/checkout/cart-client';
 import {
   digitalOrderCapacityMessage,
   isDigitalOrderCapacityError,
@@ -173,6 +173,7 @@ function QuoteReview() {
     cart: ServerCart;
     data: CheckoutQuote | null;
     failed: boolean;
+    cartReview?: boolean;
     capacity?: boolean;
     metadata?: boolean;
   } | null>(null);
@@ -222,6 +223,7 @@ function QuoteReview() {
             cart: serverCart,
             data: null,
             failed: true,
+            cartReview: isCartReviewConflict(error),
             capacity: isDigitalOrderCapacityError(error),
             metadata: isDigitalMetadataCapacityError(error),
           });
@@ -240,6 +242,7 @@ function QuoteReview() {
   }, [saved]);
   const data = overview?.cart === serverCart ? overview.data : null;
   const failed = overview?.cart === serverCart && overview.failed;
+  const needsCartReview = failed && overview.cartReview;
   const currentMethods =
     data?.methods.filter((method) =>
       purchaseMethods.some((current) => current.enabled && current.id === method.id),
@@ -315,11 +318,13 @@ function QuoteReview() {
             ? 'metadata'
             : isDigitalOrderCapacityError(e)
               ? 'capacity'
-              : e instanceof CartError && e.status === 409
-                ? 'conflict'
-                : e instanceof CartError && e.code === 'cheque_amount_too_small'
-                  ? 'small'
-                  : 'unavailable',
+              : isCartReviewConflict(e)
+                ? 'cart-review'
+                : e instanceof CartError && e.status === 409
+                  ? 'conflict'
+                  : e instanceof CartError && e.code === 'cheque_amount_too_small'
+                    ? 'small'
+                    : 'unavailable',
         );
       }
     } finally {
@@ -402,19 +407,34 @@ function QuoteReview() {
         </div>
       ) : failed ? (
         <div className="card-panel empty-state" role="alert">
-          <h2>{text('بررسی شرایط خرید انجام نشد', 'Purchase conditions could not be checked')}</h2>
+          <h2>
+            {needsCartReview
+              ? text('سبد به بازبینی نیاز دارد', 'Your cart needs review')
+              : text('بررسی شرایط خرید انجام نشد', 'Purchase conditions could not be checked')}
+          </h2>
           <p>
-            {overview?.cart === serverCart && (overview.capacity || overview.metadata)
-              ? digitalOrderCapacityMessage(locale, overview.metadata ? 'metadata' : 'capacity')
-              : text(
-                  'برای دریافت مبلغ و روش‌های مجاز دوباره تلاش کنید.',
-                  'Try again to retrieve current amounts and eligible methods.',
-                )}
+            {needsCartReview
+              ? text(
+                  'موجودی یا اقلام سبد تغییر کرده است. سبد را بازبینی کنید و دوباره ادامه دهید.',
+                  'Stock or cart items changed. Review your cart before continuing.',
+                )
+              : overview?.cart === serverCart && (overview.capacity || overview.metadata)
+                ? digitalOrderCapacityMessage(locale, overview.metadata ? 'metadata' : 'capacity')
+                : text(
+                    'برای دریافت مبلغ و روش‌های مجاز دوباره تلاش کنید.',
+                    'Try again to retrieve current amounts and eligible methods.',
+                  )}
           </p>
-          <Button onClick={() => setAttempt((n) => n + 1)}>
-            <RefreshCw size={16} />
-            {t('تلاش دوباره')}
-          </Button>
+          {needsCartReview ? (
+            <Button asChild>
+              <Link href="/cart">{text('بازبینی سبد خرید', 'Review cart')}</Link>
+            </Button>
+          ) : (
+            <Button onClick={() => setAttempt((n) => n + 1)}>
+              <RefreshCw size={16} />
+              {t('تلاش دوباره')}
+            </Button>
+          )}
         </div>
       ) : !data ? (
         <div
@@ -522,39 +542,54 @@ function QuoteReview() {
                         : text('محاسبهٔ مبلغ و شرایط', 'Calculate amounts and conditions')}
                   </Button>
                 )}
-                {error && (error !== 'small' || method?.kind === 'cheque') && (
+                {error === 'cart-review' && (
                   <div className="notice" role="alert">
                     <p>
-                      {error === 'capacity' || error === 'metadata'
-                        ? digitalOrderCapacityMessage(locale, error)
-                        : error === 'conflict'
-                          ? text(
-                              'سبد یا شرایط تغییر کرده است. ابتدا اطلاعات تازه را دریافت کنید.',
-                              'Your cart or its conditions changed. Load the latest details first.',
-                            )
-                          : error === 'small'
-                            ? text(
-                                'مبلغ برای تعداد چک‌های این طرح کافی نیست؛ طرح یا روش دیگری انتخاب کنید.',
-                                'This amount is too small for the number of cheques. Select another plan or method.',
-                              )
-                            : text(
-                                'پاسخ محاسبه دریافت نشد. تلاش دوباره با همان درخواست انجام می‌شود.',
-                                'The calculation response was not received. Retrying will use the same request.',
-                              )}{' '}
-                      {error === 'conflict' && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            retry();
-                            setAttempt((n) => n + 1);
-                          }}
-                        >
-                          {text('دریافت اطلاعات تازه', 'Load latest details')}
-                        </button>
+                      {text(
+                        'موجودی یا اقلام سبد تغییر کرده است. سبد را بازبینی کنید و دوباره ادامه دهید.',
+                        'Stock or cart items changed. Review your cart before continuing.',
                       )}
                     </p>
+                    <Link href="/cart" className="text-link">
+                      {text('بازبینی سبد خرید', 'Review cart')}
+                    </Link>
                   </div>
                 )}
+                {error &&
+                  error !== 'cart-review' &&
+                  (error !== 'small' || method?.kind === 'cheque') && (
+                    <div className="notice" role="alert">
+                      <p>
+                        {error === 'capacity' || error === 'metadata'
+                          ? digitalOrderCapacityMessage(locale, error)
+                          : error === 'conflict'
+                            ? text(
+                                'سبد یا شرایط تغییر کرده است. ابتدا اطلاعات تازه را دریافت کنید.',
+                                'Your cart or its conditions changed. Load the latest details first.',
+                              )
+                            : error === 'small'
+                              ? text(
+                                  'مبلغ برای تعداد چک‌های این طرح کافی نیست؛ طرح یا روش دیگری انتخاب کنید.',
+                                  'This amount is too small for the number of cheques. Select another plan or method.',
+                                )
+                              : text(
+                                  'پاسخ محاسبه دریافت نشد. تلاش دوباره با همان درخواست انجام می‌شود.',
+                                  'The calculation response was not received. Retrying will use the same request.',
+                                )}{' '}
+                        {error === 'conflict' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              retry();
+                              setAttempt((n) => n + 1);
+                            }}
+                          >
+                            {text('دریافت اطلاعات تازه', 'Load latest details')}
+                          </button>
+                        )}
+                      </p>
+                    </div>
+                  )}
               </section>
               <DeliveryDetails quote={display!} />
               {calculation && (

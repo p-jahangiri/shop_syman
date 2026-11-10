@@ -29,16 +29,16 @@ public static class CartEndpoints
             var result = await service.MergeAsync(http.User.FindFirstValue("sub")!, Guest(http), locale, ct);
             http.Response.Cookies.Delete(CookieName, Cookie(app.Environment.IsDevelopment())); return Results.Ok(result);
         }).RequireAuthorization("customer");
-        group.MapGet("/{locale}/v2",async(string locale,HttpContext http,CartV2Service service,CancellationToken ct)=>Results.Ok(await service.ReadAsync(Identity(http),locale,ct))).AddEndpointFilter<SourcingTransactionFilter>().AllowAnonymous();
+        group.MapGet("/{locale}/v2",async(string locale,HttpContext http,CartV2Service service,CancellationToken ct)=>Results.Ok(await service.ReadAsync(Identity(http),locale,ct,IncludeCompareAt(http)))).AddEndpointFilter<SourcingTransactionFilter>().AllowAnonymous();
         group.MapPut("/{locale}/v2",async(string locale,CartV2Input input,HttpContext http,CartV2Service service,CancellationToken ct)=>{
             var identity=Identity(http);var created=identity.OwnerId is null&&identity.GuestToken is null;
             if(created)identity=identity with{GuestToken=CartService.CreateGuestToken()};
-            var result=await service.ReplaceAsync(identity,locale,input,ct);
+            var result=await service.ReplaceAsync(identity,locale,input,ct,IncludeCompareAt(http));
             if(created)http.Response.Cookies.Append(CookieName,identity.GuestToken!,Cookie(app.Environment.IsDevelopment()));
             return Results.Ok(result);
         }).AddEndpointFilter<SourcingTransactionFilter>().AllowAnonymous();
         group.MapPost("/{locale}/v2/merge",async(string locale,HttpContext http,CartV2Service service,CancellationToken ct)=>{
-            var result=await service.MergeAsync(http.User.FindFirstValue("sub")!,Guest(http),locale,ct);
+            var result=await service.MergeAsync(http.User.FindFirstValue("sub")!,Guest(http),locale,ct,IncludeCompareAt(http));
             http.Response.Cookies.Delete(CookieName,Cookie(app.Environment.IsDevelopment()));return Results.Ok(result);
         }).AddEndpointFilter<SourcingTransactionFilter>().RequireAuthorization("customer");
         group.MapDelete("/{locale}/v2/offers/{agreementId}",async(string locale,string agreementId,[Microsoft.AspNetCore.Mvc.FromBody]CartOfferRemoveInput input,HttpContext http,CartOfferService service,CancellationToken ct)=>Results.Ok(await service.RemoveAsync(http.User.FindFirstValue("sub")!,locale,agreementId,input,ct))).AddEndpointFilter<SourcingTransactionFilter>().RequireAuthorization("customer");
@@ -47,6 +47,10 @@ public static class CartEndpoints
             return Results.Ok(await service.ReadRemovalCommandAsync(http.User.FindFirstValue("sub")!,agreementId,commandId,ct));
         }).RequireAuthorization("customer");
     }
+    // Existing V2 clients validate a closed response shape.
+    private static bool IncludeCompareAt(HttpContext http) =>
+        http.Request.Headers["X-Sayman-Cart-Prices"].ToString() == "compare-at";
+
     internal static CartIdentity Identity(HttpContext http)
     {
         if (http.User.Identity?.IsAuthenticated == true) {

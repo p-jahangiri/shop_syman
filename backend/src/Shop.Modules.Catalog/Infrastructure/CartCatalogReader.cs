@@ -13,7 +13,7 @@ public sealed partial class CatalogService : ICartCatalogReader
                             join product in db.Products on variant.ProductId equals product.Id
                             where ids.Contains(variant.Id) && variant.IsActive && product.Status == "Published" && (product.PublishAt == null || product.PublishAt <= now)
                                 && db.Categories.Any(c => c.Id == product.CategoryId && c.IsActive) && db.Brands.Any(b => b.Id == product.BrandId && b.IsActive)
-                            select new { variant.Id, ProductId = product.Id, product.CategoryId, product.Slug, Name = product.Translations.Where(t => t.Locale == locale).Select(t => t.Name).FirstOrDefault(), Fallback = product.Translations.Where(t => t.Locale == "fa").Select(t => t.Name).FirstOrDefault(), Label = locale == "en" ? variant.LabelEn : variant.LabelFa, variant.PriceRial, product.IsDigital }).ToListAsync(ct);
-        return values.ToDictionary(x => x.Id, x => new CartCatalogVariant(x.Id, x.ProductId, x.CategoryId, x.Slug, x.Name ?? x.Fallback ?? "", x.Label, x.PriceRial, x.IsDigital), StringComparer.OrdinalIgnoreCase);
+                            select new { variant.Id, ProductId = product.Id, product.CategoryId, product.Slug, Name = product.Translations.Where(t => t.Locale == locale).Select(t => t.Name).FirstOrDefault(), Fallback = product.Translations.Where(t => t.Locale == "fa").Select(t => t.Name).FirstOrDefault(), Label = locale == "en" ? variant.LabelEn : variant.LabelFa, variant.PriceRial, product.IsDigital, variant.CompareAtPriceRial }).ToListAsync(ct);
+        return values.ToDictionary(x => x.Id, x => new CartCatalogVariant(x.Id, x.ProductId, x.CategoryId, x.Slug, x.Name ?? x.Fallback ?? "", x.Label, x.PriceRial, x.IsDigital, x.CompareAtPriceRial), StringComparer.OrdinalIgnoreCase);
     }
 }

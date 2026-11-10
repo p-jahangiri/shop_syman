@@ -21,7 +21,6 @@ export function PreviewShopProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false),
     [loadError, setLoadError] = useState(false),
     [attempt, setAttempt] = useState(0),
-    [cartOpen, setCartOpen] = useState(false),
     [toast, setToast] = useState('');
   useEffect(() => {
     const controller = new AbortController();
@@ -162,8 +161,6 @@ export function PreviewShopProvider({ children }: { children: ReactNode }) {
         quoteReviewIssue: true,
         loadError,
         retry: () => setAttempt((n) => n + 1),
-        cartOpen,
-        setCartOpen,
         add,
         quantity: (id, n) => {
           if (canEdit())

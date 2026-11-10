@@ -12,6 +12,7 @@ import * as media from '@sayman/web-shared/lib/media/media-paths.ts';
 import * as gallery from '../lib/catalog/used-inspection-photos.ts';
 import * as purchasing from '../lib/catalog/purchasing.ts';
 import * as phoneConfigurations from '../lib/catalog/phone-configurations.ts';
+import * as insurance from '../lib/catalog/insurance.ts';
 import * as commerce from '@sayman/web-shared/lib/shared/commerce.ts';
 import { usedConditionSchema } from '@sayman/web-shared/lib/catalog/used-condition-contract.ts';
 
@@ -62,6 +63,7 @@ for (const locale of ['fa', 'en'] as const)
           PhoneConfigurationOptions: 'PhoneConfigurationOptions',
         },
         '@/lib/catalog/phone-configurations': phoneConfigurations,
+        '@/lib/catalog/insurance': insurance,
         '@sayman/web-shared/lib/media/media-paths.ts': media,
         '@/lib/catalog/used-inspection-photos': gallery,
         '@/components/navigation/locale-provider': {

@@ -15,7 +15,9 @@ import { CartError } from '../lib/checkout/cart-client.ts';
 import { requestCartV2 } from '../lib/checkout/cart-v2-client.ts';
 import { cart2Snapshot } from './cart-v2.test-fixtures.ts';
 import { cartReviewCapabilities } from '../lib/checkout/cart-review-capabilities.ts';
+import type { ShopContextType } from '../components/providers/shop-context.tsx';
 import * as cartContract from '../lib/checkout/cart-v2-contract.ts';
+import * as cartSaved from '../lib/checkout/cart-saved.ts';
 import * as savedShop from '../lib/wishlist/saved-shop.ts';
 import { localeHref } from '../lib/navigation/i18n.ts';
 import { bindRealtimeTransport } from '@sayman/web-shared/lib/notifications/private-realtime-client.ts';
@@ -707,6 +709,8 @@ function connectedCart(
     changes: string[] = [],
     cookieWrites: string[] = [],
     windowEvents = new Map<string, () => void>(),
+    documentEvents = new Map<string, () => void>(),
+    route = { pathname: '/catalog', time: 10_000 },
     buses: { onmessage: (() => void) | null }[] = [];
   const auth: {
       status: 'member' | 'guest';
@@ -723,8 +727,9 @@ function connectedCart(
   auth.store = store;
   const registry = { publish() {}, release() {}, current: () => [] };
   const document = {
-    addEventListener() {},
-    removeEventListener() {},
+    visibilityState: 'visible',
+    addEventListener: (name: string, handler: () => void) => documentEvents.set(name, handler),
+    removeEventListener: (name: string) => documentEvents.delete(name),
     get cookie() {
       return 'sayman_cart=guest-token-preserved';
     },
@@ -740,6 +745,7 @@ function connectedCart(
         useI18n: () => ({ locale: 'fa', t: (value: string) => value }),
         useProductRegistry: () => registry,
       },
+      '../navigation/localized-link': { usePathname: () => route.pathname },
       '../auth/auth-provider': { useCustomerSession: () => auth },
       './shop-context': { ShopContext: { Provider: 'ShopContextProvider' } },
       '../wishlist/connected-wishlist': {
@@ -755,9 +761,13 @@ function connectedCart(
       },
       '@/lib/checkout/cart-v2-client': { requestCartV2 },
       '@/lib/checkout/cart-v2-contract': cartContract,
-      '@/lib/catalog/catalog-client': { lookupProducts: async () => [] },
+      '@/lib/catalog/catalog-client': {
+        lookupProducts: async (_locale: string, options: { variantIds: string[] }) => [
+          { variants: options.variantIds.map((id) => ({ id })) },
+        ],
+      },
       '@/lib/wishlist/saved-shop': savedShop,
-      '@sayman/web-shared/lib/shared/commerce.ts': { findVariant: () => null },
+      '@sayman/web-shared/lib/shared/commerce.ts': { findVariant: () => true },
       '@/lib/checkout/cart-addition': {
         addCartSelection() {
           throw Error('No cart edit was requested.');
@@ -773,14 +783,18 @@ function connectedCart(
         cartOfferRemovalInputSchema: { parse: (v: unknown) => v },
       },
       '@/lib/checkout/cart-review-capabilities': { cartReviewCapabilities },
+      '@/lib/checkout/cart-saved': cartSaved,
       '@/lib/market/sourcing-journal': sourcingJournal,
     },
     '',
     {
       document,
+      Date: { now: () => route.time },
       window: {
         addEventListener: (name: string, handler: () => void) => windowEvents.set(name, handler),
         removeEventListener: (name: string) => windowEvents.delete(name),
+        setInterval: h.schedule,
+        clearInterval: h.cancel,
       },
       BroadcastChannel: class {
         onmessage: (() => void) | null = null;
@@ -815,10 +829,106 @@ function connectedCart(
     changes,
     cookieWrites,
     windowEvents,
+    documentEvents,
+    document,
+    route,
     buses,
     auth,
   };
 }
+
+test('entering the cart refreshes the same selection and blocks checkout when stock has sold', async () => {
+  const available = cart2Snapshot('ordinary');
+  const sold = cartContract.cartSnapshotV2Schema.parse({
+    ...available,
+    ordinaryLines: available.ordinaryLines.map((line) => ({
+      ...line,
+      available: 0,
+      issue: 'insufficient_stock',
+    })),
+    hasIssues: true,
+    canCheckout: false,
+    blockers: ['cart_requires_review'],
+  });
+  let current = available;
+  const q = connectedCart(() => Response.json(current));
+  try {
+    q.render();
+    await flush();
+    assert.equal(shopValue(q.render()).cartIssue, false);
+    current = sold;
+    q.route.pathname = '/cart';
+    q.render();
+    q.render();
+    await flush();
+    const reviewed = shopValue(q.render());
+    assert.equal(reviewed.cartIssue, true);
+    assert.deepEqual(reviewed.serverCart, sold);
+    assert.equal(q.h.timers.size, 1);
+    q.windowEvents.get('focus')?.();
+    q.documentEvents.get('visibilitychange')?.();
+    q.render();
+    await flush();
+    assert.equal(q.calls.length, 2, 'simultaneous entry and focus must share one refresh');
+    q.route.pathname = '/checkout';
+    q.render();
+    assert.equal(q.h.timers.size, 0);
+    assert.equal(q.documentEvents.has('visibilitychange'), false);
+  } finally {
+    q.h.dispose();
+  }
+});
+
+test('actual cart provider recovers a saved SKU after a lost write and restores it once', async () => {
+  let server = cart2Snapshot('ordinary');
+  const [initial] = server.ordinaryLines;
+  const cartLine = { variantId: initial.variantId, quantity: initial.quantity };
+  const key = cartSaved.savedCartKey(`member:${owner}`);
+  const snapshot = (kind: 'ordinary' | 'empty', version: string) => {
+    const value = cart2Snapshot(kind);
+    return { ...value, version, inquiry: { ...value.inquiry, version } };
+  };
+  let pendingAtWrite: string | undefined;
+  const fixture = connectedCart((_path, init) => {
+    if (init.method !== 'PUT') return Response.json(server);
+    const input = JSON.parse(String(init.body));
+    if (!input.lines.length) {
+      pendingAtWrite = fixture.storage.get(key);
+      server = snapshot('empty', 'AAAAAAAAAAI=');
+      throw new Error('Response was lost after the server committed');
+    }
+    server = snapshot('ordinary', 'AAAAAAAAAAM=');
+    return Response.json(server);
+  });
+  const saved = () => {
+    const value = shopValue(fixture.render()).savedCart as ShopContextType['savedCart'];
+    assert.ok(value);
+    return value;
+  };
+  try {
+    fixture.render();
+    await flush();
+    saved().save(cartLine.variantId);
+    await flush();
+    assert.ok(pendingAtWrite);
+    assert.deepEqual(JSON.parse(pendingAtWrite).pending, { kind: 'save', line: cartLine });
+    assert.deepEqual(JSON.parse(JSON.stringify(saved().items)), [cartLine]);
+    assert.equal((shopValue(fixture.render()).cart as unknown[]).length, 0);
+
+    saved().restore(cartLine.variantId);
+    await flush();
+    assert.equal(saved().items.length, 0);
+    assert.deepEqual(JSON.parse(fixture.storage.get(key)!), { items: [] });
+    const writes = fixture.calls.filter((call) => call.method === 'PUT');
+    assert.equal(writes.length, 2);
+    assert.deepEqual(JSON.parse(String(writes[1].body)), {
+      lines: [cartLine],
+      version: 'AAAAAAAAAAI=',
+    });
+  } finally {
+    fixture.h.dispose();
+  }
+});
 
 for (const code of ['cart_phone_configuration_conflict', 'phone_configuration_required'])
   test(

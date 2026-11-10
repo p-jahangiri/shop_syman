@@ -15,7 +15,8 @@ public sealed record CartOrdinaryLineV2Data(string LineId,string LineKind,string
     [property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? ProductId,[property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? Slug,
     [property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? Name,[property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? Label,
     [property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? UnitPriceRial,int Available,
-    [property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? LineTotalRial,[property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? Issue);
+    [property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? LineTotalRial,[property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? Issue,
+    [property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]string? CompareAtRial = null);
 public sealed record CartOfferLineData(string LineId,string LineKind,string ConversionId,string AgreementId,string AgreementLineId,
     string RequestId,string TaskId,string OfferId,string AcceptanceId,string AllocationId,string OfferLineId,string VariantId,int Quantity,
     string ProductId,string Slug,string Sku,string Name,string Label,string Warranty,[property:JsonIgnore(Condition=JsonIgnoreCondition.Never)]string? ImageUrl,
@@ -33,12 +34,12 @@ public sealed class CartV2Service(SalesDbContext db,CartService carts,CartSourci
     {
         CartService.ValidateIdentity(identity);CartOfferRules.RequireParent(db);if(identity.OwnerId is null&&identity.GuestToken is null)return null;await carts.LockIdentityAsync(identity,false,ct);var cart=await carts.FindAsync(identity,false,ct);CartService.EnsureCapacity(cart);return cart is null?null:Convert.ToBase64String(cart.Version);
     }
-    public async Task<CartSnapshotV2> ReadAsync(CartIdentity identity,string locale,CancellationToken ct)
+    public async Task<CartSnapshotV2> ReadAsync(CartIdentity identity,string locale,CancellationToken ct,bool includeCompareAt=false)
     {
         CartService.ValidateIdentity(identity);CartService.ValidateLocale(locale);CartOfferRules.RequireParent(db);if(identity.OwnerId is null&&identity.GuestToken is null)return Empty(locale);
-        await carts.LockIdentityAsync(identity,false,ct);var cart=await carts.FindAsync(identity,false,ct);CartService.EnsureCapacity(cart);var offers=await ReadOffersAsync(identity,cart,ct);return await SnapshotAsync(identity,cart,locale,offers,ct);
+        await carts.LockIdentityAsync(identity,false,ct);var cart=await carts.FindAsync(identity,false,ct);CartService.EnsureCapacity(cart);var offers=await ReadOffersAsync(identity,cart,ct);return await SnapshotAsync(identity,cart,locale,offers,includeCompareAt,ct);
     }
-    public async Task<CartSnapshotV2> ReplaceAsync(CartIdentity identity,string locale,CartV2Input input,CancellationToken ct)
+    public async Task<CartSnapshotV2> ReplaceAsync(CartIdentity identity,string locale,CartV2Input input,CancellationToken ct,bool includeCompareAt=false)
     {
         CartService.ValidateIdentity(identity);CartService.ValidateLocale(locale);ValidateInput(input);CartOfferRules.RequireParent(db);if(identity.OwnerId is null&&identity.GuestToken is null)throw new BusinessException("invalid_cart","A guest session is required for cart changes.");
         await carts.LockIdentityAsync(identity,true,ct);var before=await carts.FindAsync(identity,true,ct);CartService.EnsureCapacity(before,input.Lines.Length);
@@ -46,14 +47,14 @@ public sealed class CartV2Service(SalesDbContext db,CartService carts,CartSourci
         // no-op updates. Never invert the allocation/expiry writer's order.
         var offers=await ReadOffersAsync(identity,before,ct);var previousVersion=before is null?null:Convert.ToBase64String(before.Version);
         var cart=await carts.ReplaceInTransactionAsync(identity,locale,new(input.Lines.Select(l=>new CartLineInput(l.VariantId,l.Quantity)).ToArray(),input.Version),true,ct);
-        var result=await SnapshotAsync(identity,cart,locale,offers,ct);if(previousVersion!=result.Version&&result.OrdinarySubtotalRial is not null&&result.BuySubtotalRial is null)throw new BusinessException("cart_amount_limit","All purchase lanes together exceed integer rial capacity.");return result;
+        var result=await SnapshotAsync(identity,cart,locale,offers,includeCompareAt,ct);if(previousVersion!=result.Version&&result.OrdinarySubtotalRial is not null&&result.BuySubtotalRial is null)throw new BusinessException("cart_amount_limit","All purchase lanes together exceed integer rial capacity.");return result;
     }
-    public async Task<CartSnapshotV2> MergeAsync(string ownerId,string? guestToken,string locale,CancellationToken ct)
+    public async Task<CartSnapshotV2> MergeAsync(string ownerId,string? guestToken,string locale,CancellationToken ct,bool includeCompareAt=false)
     {
         var identity=new CartIdentity(ownerId,null);CartService.ValidateIdentity(identity);CartService.ValidateLocale(locale);CartOfferRules.RequireParent(db);
         // The core obtains both cart identities in their existing canonical
         // order. It never reads Stock or follows agreement/allocation pointers.
-        var cart=await carts.MergeInTransactionAsync(ownerId,guestToken,locale,true,ct);var offers=await ReadOffersAsync(identity,cart,ct);var result=await SnapshotAsync(identity,cart,locale,offers,ct);
+        var cart=await carts.MergeInTransactionAsync(ownerId,guestToken,locale,true,ct);var offers=await ReadOffersAsync(identity,cart,ct);var result=await SnapshotAsync(identity,cart,locale,offers,includeCompareAt,ct);
         if(result.OrdinarySubtotalRial is not null&&result.BuySubtotalRial is null)throw new BusinessException("cart_amount_limit","All merged purchase lanes together exceed integer rial capacity.");return result;
     }
     private async Task<OfferRead[]> ReadOffersAsync(CartIdentity identity,ShoppingCart? cart,CancellationToken ct)
@@ -84,13 +85,13 @@ public sealed class CartV2Service(SalesDbContext db,CartService carts,CartSourci
         }
         return result.ToArray();
     }
-    private async Task<CartSnapshotV2> SnapshotAsync(CartIdentity identity,ShoppingCart? cart,string locale,OfferRead[] offers,CancellationToken ct)
+    private async Task<CartSnapshotV2> SnapshotAsync(CartIdentity identity,ShoppingCart? cart,string locale,OfferRead[] offers,bool includeCompareAt,CancellationToken ct)
     {
         var ordinary=await carts.SnapshotOrdinaryAsync(cart,locale,ct);var inquiry=await sourcing.ReadAsync(identity,locale,ct);if(inquiry.Version!=ordinary.Version)throw new BusinessException("cart_version_conflict","The cart sections changed while being read.");
         var now=clock.GetUtcNow();var accepted=offers.Select(item=>Data(item,locale,now)).ToArray();long offerTotal;
         try{offerTotal=offers.Aggregate(0L,(sum,item)=>checked(sum+item.Line.LineTotalRial));}catch(OverflowException){throw CartOfferRules.Capacity();}
         string? total=null;var amountIssue=false;if(ordinary.SubtotalRial is not null){try{total=CartOfferRules.Money(checked(long.Parse(ordinary.SubtotalRial,CultureInfo.InvariantCulture)+offerTotal));}catch(OverflowException){amountIssue=true;}}
-        var normal=ordinary.Lines.Select(l=>new CartOrdinaryLineV2Data(CartOfferRules.OrdinaryLineId(cart!.Id,l.VariantId),"ordinary",l.VariantId,l.Quantity,l.ProductId,l.Slug,l.Name,l.Label,l.UnitPriceRial,l.Available,l.LineTotalRial,l.Issue)).ToArray();
+        var normal=ordinary.Lines.Select(l=>new CartOrdinaryLineV2Data(CartOfferRules.OrdinaryLineId(cart!.Id,l.VariantId),"ordinary",l.VariantId,l.Quantity,l.ProductId,l.Slug,l.Name,l.Label,l.UnitPriceRial,l.Available,l.LineTotalRial,l.Issue,includeCompareAt?l.CompareAtRial:null)).ToArray();
         var blockers=new List<string>();if(normal.Length==0&&accepted.Length==0)blockers.Add("empty_cart");if(ordinary.HasIssues)blockers.Add("ordinary_cart_review_required");if(accepted.Length>0)blockers.Add("accepted_offer_checkout_unavailable");if(accepted.Any(l=>l.Issue is not null))blockers.Add("accepted_offer_review_required");if(inquiry.HasIssues)blockers.Add("inquiry_review_required");if(amountIssue)blockers.Add("cart_amount_limit");
         var value=new CartSnapshotV2(2,locale,ordinary.Version,normal,accepted,inquiry,ordinary.SubtotalRial,CartOfferRules.Money(offerTotal),total,ordinary.HasIssues||accepted.Any(l=>l.Issue is not null)||inquiry.HasIssues||amountIssue,accepted.Length==0&&normal.Length>0&&!ordinary.HasIssues&&!amountIssue,false,blockers.ToArray());return Bound(value);
     }

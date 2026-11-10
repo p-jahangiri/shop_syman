@@ -9,7 +9,7 @@ import { SavedAddressPicker } from '../address/saved-address-picker';
 import { useShop } from '../providers/shop-context';
 import { addressOrderFields } from '@/lib/address/address-contract';
 import { createOrder } from '@/lib/orders/order-client';
-import { CartError } from '@/lib/checkout/cart-client';
+import { CartError, isCartReviewConflict } from '@/lib/checkout/cart-client';
 import {
   digitalOrderCapacityMessage,
   physicalOrderCapacityMessage,
@@ -42,7 +42,9 @@ export function TemporaryOrderForm({
   const router = useRouter();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
-    [uncertain, setUncertain] = useState(false);
+    [uncertain, setUncertain] = useState(false),
+    [reviewQuoteId, setReviewQuoteId] = useState<string | null>(null);
+  const needsCartReview = reviewQuoteId !== null && quote?.quoteId === reviewQuoteId;
   const pending = useRef<OrderInput | null>(null);
   const submittedMinutes = useRef<number | null>(null);
   const mounted = useRef(true);
@@ -75,7 +77,8 @@ export function TemporaryOrderForm({
     };
   }, []);
   async function submit(values: OrderFormValues) {
-    if (busy || auth.status !== 'member' || shop.serverCart?.offerLines.length) return;
+    if (busy || needsCartReview || auth.status !== 'member' || shop.serverCart?.offerLines.length)
+      return;
     clearErrors();
     setError('');
     if (!pending.current) {
@@ -128,6 +131,12 @@ export function TemporaryOrderForm({
       if (!mounted.current || controller.signal.aborted) return;
       const status = e instanceof CartError ? e.status : 0;
       if (status >= 400 && status < 500) {
+        if (isCartReviewConflict(e)) {
+          setReviewQuoteId(pending.current?.quoteId ?? null);
+          pending.current = null;
+          setUncertain(false);
+          return;
+        }
         pending.current = null;
         setUncertain(false);
         setError(
@@ -317,6 +326,19 @@ export function TemporaryOrderForm({
             )}
           </p>
         )}
+        {needsCartReview && (
+          <div className="notice" role="alert">
+            <p>
+              {text(
+                'موجودی یا اقلام سبد هنگام ثبت سفارش تغییر کرد. سبد را بازبینی کنید و دوباره ادامه دهید.',
+                'Stock or cart items changed while placing the order. Review your cart before continuing.',
+              )}
+            </p>
+            <Link href="/cart" className="text-link">
+              {text('بازبینی سبد خرید', 'Review cart')}
+            </Link>
+          </div>
+        )}
         {error && (
           <div className="notice" role="alert">
             <p>
@@ -359,7 +381,10 @@ export function TemporaryOrderForm({
             </Link>
           </div>
         )}
-        <Button type="submit" disabled={busy || (!uncertain && (!option?.canCreate || expired))}>
+        <Button
+          type="submit"
+          disabled={busy || needsCartReview || (!uncertain && (!option?.canCreate || expired))}
+        >
           {busy
             ? text('در حال ثبت…', 'Creating…')
             : uncertain

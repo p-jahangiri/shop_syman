@@ -140,6 +140,8 @@ async function proxy(
     if (authorization) forwarded.set('Authorization', authorization);
     if (supplied) forwarded.set('Origin', supplied);
     if (mode === 'cart' || mode === 'merge') {
+      if (request.headers.get('X-Sayman-Cart-Prices') === 'compare-at')
+        forwarded.set('X-Sayman-Cart-Prices', 'compare-at');
       const cookies = (request.headers.get('Cookie') ?? '')
         .split(';')
         .map((value) => value.trim())

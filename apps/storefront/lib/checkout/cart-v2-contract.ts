@@ -56,6 +56,7 @@ export const ordinaryCartLineV2Schema = z
     name: nullable(z.string().max(1000)),
     label: nullable(z.string().max(8000)),
     unitPriceRial: nullable(money),
+    compareAtRial: money.optional(),
     available: z.number().int().min(0).max(2147483647),
     lineTotalRial: nullable(money),
     issue: nullable(z.enum(['unavailable', 'insufficient_stock', 'amount_limit'])),
@@ -134,13 +135,20 @@ export const cartSnapshotV2Schema = z
     }
     for (const line of cart.ordinaryLines) {
       if (line.issue === 'unavailable') {
-        if (line.unitPriceRial !== null || line.lineTotalRial !== null || line.productId !== null)
+        if (
+          line.unitPriceRial !== null ||
+          line.compareAtRial !== undefined ||
+          line.lineTotalRial !== null ||
+          line.productId !== null
+        )
           return false;
         continue;
       }
       if (
         line.unitPriceRial === null ||
         line.productId === null ||
+        (line.compareAtRial !== undefined &&
+          BigInt(line.compareAtRial) <= BigInt(line.unitPriceRial)) ||
         (line.lineTotalRial !== null &&
           BigInt(line.unitPriceRial) * BigInt(line.quantity) !== BigInt(line.lineTotalRial)) ||
         (line.issue === null && line.available < line.quantity)

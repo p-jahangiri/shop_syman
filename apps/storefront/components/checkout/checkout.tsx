@@ -1,5 +1,5 @@
 'use client';
-import { CartAmount, CartCheckoutLink } from './cart-summary';
+import { CartAmount } from './cart-summary';
 import { useI18n, useStorefront } from '@/components/navigation/locale-provider';
 import Link from '@/components/navigation/localized-link';
 import { useState } from 'react';
@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useShop } from '../providers/shop-provider';
 import { availableCartMethods, eligibleChequePlans } from '@/lib/catalog/purchasing';
-import { CartLines } from '../navigation/shell';
+import { CartLines } from './cart-lines';
 import {
   cartTotal,
   chequeQuote,
@@ -29,9 +29,6 @@ import {
 } from '@sayman/web-shared/lib/shared/commerce.ts';
 import { Button, Modal } from '../shared/ui';
 import { ConnectedCheckout } from './connected-checkout';
-import { AcceptedCartGroups } from './accepted-cart-groups';
-import { CartCommandNotice } from './cart-command-notice';
-import { cartV2BuyCount, cartV2HasBuyLines } from '@/lib/checkout/cart-v2-contract';
 const addressSchema = z.object({
   name: z.string().trim().min(3, 'نام و نام خانوادگی را وارد کنید'),
   phone: z
@@ -52,86 +49,6 @@ const addressSchema = z.object({
   note: z.string().max(500, 'حداکثر ۵۰۰ نویسه').optional(),
 });
 type AddressForm = z.infer<typeof addressSchema>;
-export function CartPage() {
-  const { locale, t, digits } = useI18n(),
-    { cart, ready, serverCart } = useShop(),
-    text = (fa: string, en: string) => (locale === 'fa' ? fa : en);
-  const count = serverCart
-      ? cartV2BuyCount(serverCart)
-      : cart.reduce((sum, line) => sum + line.quantity, 0),
-    nonempty = serverCart ? cartV2HasBuyLines(serverCart) : cart.length > 0;
-  return (
-    <div className="container cart-page">
-      <div className="page-top">
-        <div className="breadcrumbs">
-          <Link href="/">{t('سایمان')}</Link>
-          <ChevronLeft />
-          <span>{t('سبد خرید')}</span>
-        </div>
-        <div className="page-title-row">
-          <h1>{t('سبد خرید شما')}</h1>
-          <span>
-            {ready
-              ? digits(count) + ' ' + text('کالا برای خرید', 'purchase items')
-              : text('در حال بررسی…', 'Checking…')}
-          </span>
-        </div>
-      </div>
-      <CartCommandNotice />
-      {!ready ? (
-        <div
-          className="skeleton skeleton-card"
-          role="status"
-          aria-label={text('در حال بازیابی سبد', 'Loading your cart')}
-        />
-      ) : (
-        <>
-          <div className="checkout-layout">
-            <div>
-              <section className="card-panel">
-                <h2>{text('کالاهای عادی فروشگاه', 'Ordinary store products')}</h2>
-                {cart.length ? (
-                  <CartLines />
-                ) : (
-                  <p>
-                    {text(
-                      'در این بخش کالایی انتخاب نشده است.',
-                      'No ordinary store products selected.',
-                    )}
-                  </p>
-                )}
-                <Link className="text-link cart-continue" href="/catalog">
-                  {t('ادامهٔ انتخاب محصولات')}
-                  <ArrowLeft size={16} />
-                </Link>
-              </section>
-              <AcceptedCartGroups />
-              {!nonempty && <EmptyCart />}
-            </div>
-            {nonempty && (
-              <aside className="card-panel order-summary">
-                <h2>{t('خلاصهٔ سبد')}</h2>
-                <div className="info-row cart-summary-total">
-                  <span>{text('جمع اقلام سبد', 'Cart subtotal')}</span>
-                  <strong>
-                    <CartAmount />
-                  </strong>
-                </div>
-                <p>
-                  {text(
-                    'هزینهٔ ارسال و مالیات در مرحلهٔ پرداخت مشخص می‌شوند.',
-                    'Shipping and tax are determined at checkout.',
-                  )}
-                </p>
-                <CartCheckoutLink />
-              </aside>
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 function EmptyCart() {
   const { t, locale } = useI18n();
   useStorefront();

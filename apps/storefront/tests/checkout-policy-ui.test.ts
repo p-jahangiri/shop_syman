@@ -9,7 +9,7 @@ import {
 import * as display from '@sayman/web-shared/lib/checkout/checkout-shipping.ts';
 import * as capacity from '../lib/orders/order-capacity-message.ts';
 import { formatToman } from '@sayman/web-shared/lib/shared/money.ts';
-import { CartError } from '../lib/checkout/cart-client.ts';
+import { CartError, isCartReviewConflict } from '../lib/checkout/cart-client.ts';
 import {
   quoteExpired,
   quoteSnapshotSchema,
@@ -55,7 +55,7 @@ function common(locale: 'fa' | 'en') {
     '@sayman/web-shared/components/catalog/used-condition': {
       UsedConditionReport: 'UsedConditionReport',
     },
-    '@/lib/checkout/cart-client': { CartError },
+    '@/lib/checkout/cart-client': { CartError, isCartReviewConflict },
     '@sayman/web-shared/lib/shared/money.ts': { formatToman },
   };
 }

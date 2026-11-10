@@ -6,6 +6,14 @@ import type { CartCommand } from '@/lib/checkout/cart-conversion-contract';
 import type { CartCommandMode, pendingCartCommand } from '@/lib/checkout/cart-command-runner';
 export type ShopContextType = {
   cart: CartLine[];
+  savedCart?: {
+    items: CartLine[];
+    ready: boolean;
+    failed: boolean;
+    save: (variantId: string) => void;
+    restore: (variantId: string) => void;
+    remove: (variantId: string) => void;
+  };
   wishlist: string[];
   compare: string[];
   compareVariants?: Readonly<Record<string, string>>;
@@ -23,8 +31,6 @@ export type ShopContextType = {
   };
   loadError: boolean;
   retry: () => void;
-  cartOpen: boolean;
-  setCartOpen: (v: boolean) => void;
   add: (variantId: string, quantity?: number, product?: Product) => void;
   quantity: (id: string, n: number) => void;
   clearCart: () => void;

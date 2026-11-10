@@ -1,9 +1,5 @@
 'use client';
-import { UsedConditionReport } from '@sayman/web-shared/components/catalog/used-condition';
 import { StoreIdentityFooter } from '../content/store-identity-footer';
-import { CartAmount, CartCheckoutLink } from '../checkout/cart-summary';
-import { AcceptedCartGroups } from '../checkout/accepted-cart-groups';
-import { CartCommandNotice } from '../checkout/cart-command-notice';
 import { cartV2BuyCount, cartV2HasBuyLines } from '@/lib/checkout/cart-v2-contract';
 import { useI18n, useStorefront } from '@/components/navigation/locale-provider';
 import Link from '@/components/navigation/localized-link';
@@ -38,13 +34,9 @@ import {
   PackageCheck,
   Smartphone,
   X,
-  Plus,
-  Minus,
-  Trash2,
 } from 'lucide-react';
-import { findVariant } from '@sayman/web-shared/lib/shared/commerce.ts';
 import { useShop } from '../providers/shop-provider';
-import { Button, Modal } from '../shared/ui';
+import { Modal } from '../shared/ui';
 import './shop-navigation.css';
 
 function filterUsedCatalogMenu(items: MenuItem[]): MenuItem[] {
@@ -107,7 +99,7 @@ export function Header() {
     );
   };
   const notificationsLabel = locale === 'fa' ? 'اعلان‌های من' : 'My notifications';
-  const { cart, serverCart, wishlist, setCartOpen, ready } = useShop();
+  const { cart, serverCart, wishlist, ready } = useShop();
   const [query, setQuery] = useState(''),
     [searchOpen, setSearchOpen] = useState(false),
     [menu, setMenu] = useState(false),
@@ -434,14 +426,15 @@ export function Header() {
               <span>{t('حساب کاربری')}</span>
             </Link>
             <span className="header-divider" />
-            <button
+            <Link
+              href="/cart"
               className="cart-header"
-              onClick={() => setCartOpen(true)}
+              aria-current={pathname === '/cart' ? 'page' : undefined}
               aria-label={t('سبد خرید{0}', [ready ? t('، {0} کالا', [digits(count)]) : ''])}
             >
-              <ShoppingBag size={21} />
-              {t(ready && count > 0 && <span className="count-badge">{t(digits(count))}</span>)}
-            </button>
+              <ShoppingBag size={21} aria-hidden="true" />
+              {ready && count > 0 && <span className="count-badge">{digits(count)}</span>}
+            </Link>
           </div>
         </div>
         <div className="container nav-row">
@@ -658,255 +651,36 @@ export function Footer() {
 export function MobileNav() {
   const { t, locale } = useI18n();
   const pathname = usePathname();
-  const { setCartOpen, cart, serverCart } = useShop();
+  const { cart, serverCart } = useShop();
+  const cartHasItems = serverCart ? cartV2HasBuyLines(serverCart) : cart.length > 0;
   const destinations = [
     { href: '/', label: t('خانه'), Icon: Home },
     { href: '/catalog', label: t('دسته‌ها'), Icon: Grid2X2 },
+    { href: '/cart', label: locale === 'fa' ? t('سبد خرید') : 'Bag', Icon: ShoppingBag },
     { href: '/wishlist', label: t('علاقه‌مندی'), Icon: Heart },
     { href: '/account', label: locale === 'fa' ? 'حساب من' : 'Account', Icon: UserRound },
   ];
-  const cartButton = (
-    <button
-      type="button"
-      key="cart"
-      onClick={() => setCartOpen(true)}
-      aria-label={t('سبد خرید')}
-      aria-haspopup="dialog"
-    >
-      <span className="mobile-nav-icon">
-        <ShoppingBag size={20} />
-        {(serverCart ? cartV2HasBuyLines(serverCart) : cart.length > 0) && (
-          <i className="cart-has-items" />
-        )}
-      </span>
-      {locale === 'fa' ? t('سبد خرید') : 'Bag'}
-    </button>
-  );
   return (
     <nav className="mobile-bottom" aria-label={t('پیمایش موبایل')}>
-      {destinations.flatMap(({ href, label, Icon }, index) => {
-        const active =
-          href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/');
-        const link = (
+      {destinations.map(({ href, label, Icon }) => {
+        const active = pathname === href || (href !== '/' && pathname.startsWith(href + '/'));
+        return (
           <Link
             key={href}
             href={href}
-            className={active ? 'active' : ''}
+            className={active ? 'active' : undefined}
             aria-current={active ? 'page' : undefined}
+            aria-label={href === '/cart' ? t('سبد خرید') : undefined}
           >
             <span className="mobile-nav-icon">
-              <Icon size={20} />
+              <Icon size={20} aria-hidden="true" />
+              {href === '/cart' && cartHasItems && <i className="cart-has-items" />}
             </span>
             {label}
           </Link>
         );
-        return index === 1 ? [link, cartButton] : [link];
       })}
     </nav>
-  );
-}
-export function CartLines() {
-  const { t, digits, toman, locale } = useI18n();
-  const { products } = useStorefront();
-  const { cart, serverCart, cartBusy, loadError, quantity, setCartOpen } = useShop();
-  const text = (fa: string, en: string) => (locale === 'fa' ? fa : en);
-  return (
-    <div className="cart-lines" aria-busy={cartBusy}>
-      {cart.map((line) => {
-        const found = findVariant(products, line.variantId);
-        const live = serverCart?.ordinaryLines.find((l) => l.variantId === line.variantId);
-        const name = live
-          ? (live.name ?? text('کالای خارج از فهرست فعلی', 'Item outside the current catalogue'))
-          : (found?.product.name ?? text('کالای ناموجود', 'Unavailable item'));
-        const label = live ? live.label : found?.variant.label;
-        const slug = live ? live.slug : found?.product.slug;
-        const image = live?.issue === 'unavailable' ? undefined : found?.product.image;
-        const total = live
-          ? live.lineTotalRial
-          : found
-            ? (BigInt(found.variant.priceRial) * BigInt(line.quantity)).toString()
-            : null;
-        const available = live?.available ?? found?.variant.stock ?? 0;
-        const content = (
-          <>
-            {image ? (
-              <Image src={image} alt={name} width={110} height={100} />
-            ) : (
-              <ShoppingBag size={46} aria-hidden="true" />
-            )}
-          </>
-        );
-        return (
-          <article className="cart-line" key={line.variantId}>
-            {slug ? (
-              <Link
-                href={`/product/${slug}?variant=${line.variantId}`}
-                onClick={() => setCartOpen(false)}
-              >
-                {content}
-              </Link>
-            ) : (
-              <div className="cart-line-placeholder">{content}</div>
-            )}
-            <div className="cart-line-info">
-              {slug ? (
-                <Link
-                  href={`/product/${slug}?variant=${line.variantId}`}
-                  onClick={() => setCartOpen(false)}
-                >
-                  {name}
-                </Link>
-              ) : (
-                <strong>{name}</strong>
-              )}
-              <small>{label}</small>
-              {live?.issue !== 'unavailable' && (
-                <UsedConditionReport condition={found?.variant.usedCondition} locale={locale} />
-              )}
-              <span className="line-price">
-                {total !== null ? (
-                  <>
-                    {toman(total)} <small>{t('تومان')}</small>
-                  </>
-                ) : (
-                  text('نیاز به بررسی', 'Needs review')
-                )}
-              </span>
-              {live?.issue && (
-                <p className="field-error" role="status">
-                  {live.issue === 'insufficient_stock'
-                    ? text(
-                        `موجودی فعلی: ${digits(available)}؛ تعداد را اصلاح کنید.`,
-                        `Current stock: ${digits(available)}. Adjust the quantity.`,
-                      )
-                    : live.issue === 'unavailable'
-                      ? text(
-                          'این کالا فعلاً قابل خرید نیست؛ می‌توانید آن را حذف کنید.',
-                          'This item is unavailable. You can remove it.',
-                        )
-                      : text(
-                          'مبلغ نیاز به بررسی دارد؛ سبد را اصلاح کنید.',
-                          'The amount needs review. Please edit the cart.',
-                        )}
-                </p>
-              )}
-              <div className="quantity-row">
-                <div className="quantity-control">
-                  <button
-                    type="button"
-                    disabled={cartBusy || loadError || line.quantity >= available}
-                    onClick={() => quantity(line.variantId, line.quantity + 1)}
-                    aria-label={t('افزایش تعداد {0}', [name])}
-                  >
-                    <Plus size={15} />
-                  </button>
-                  <span>{digits(line.quantity)}</span>
-                  <button
-                    type="button"
-                    disabled={cartBusy || loadError}
-                    onClick={() => quantity(line.variantId, line.quantity - 1)}
-                    aria-label={t('کاهش تعداد {0}', [name])}
-                  >
-                    {line.quantity === 1 ? <Trash2 size={14} /> : <Minus size={15} />}
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  disabled={cartBusy || loadError}
-                  className="text-button muted"
-                  onClick={() => quantity(line.variantId, 0)}
-                >
-                  {t('حذف')}
-                </button>
-              </div>
-            </div>
-          </article>
-        );
-      })}
-    </div>
-  );
-}
-export function CartDrawer() {
-  const { locale, t, digits } = useI18n(),
-    { cart, serverCart, cartOpen, setCartOpen, ready, loadError, retry, cartBusy } = useShop(),
-    text = (fa: string, en: string) => (locale === 'fa' ? fa : en);
-  const count = serverCart
-      ? cartV2BuyCount(serverCart)
-      : cart.reduce((sum, line) => sum + line.quantity, 0),
-    nonempty = serverCart ? cartV2HasBuyLines(serverCart) : cart.length > 0;
-  return (
-    <Modal
-      open={cartOpen}
-      onOpenChange={setCartOpen}
-      title={text('سبد خرید شما', 'Your cart') + (count ? ' (' + digits(count) + ')' : '')}
-      drawer
-    >
-      <CartCommandNotice />
-      {!ready ? (
-        <div className="empty-state" role="status">
-          <p>
-            {loadError
-              ? text(
-                  'بازیابی سبد انجام نشد؛ اطلاعات قبلی محفوظ است.',
-                  'Cart could not be loaded. Previous selections remain saved.',
-                )
-              : text('در حال بازیابی سبد…', 'Loading cart…')}
-          </p>
-          {loadError && (
-            <Button variant="outline" onClick={retry}>
-              {t('تلاش دوباره')}
-            </Button>
-          )}
-        </div>
-      ) : nonempty ? (
-        <>
-          {loadError && (
-            <p className="notice" role="alert">
-              {text(
-                'ارتباط سبد کامل نشد؛ پیش از ادامه بازخوانی کنید.',
-                'The cart connection failed. Refresh before continuing.',
-              )}{' '}
-              <button onClick={retry}>{t('تلاش دوباره')}</button>
-            </p>
-          )}
-          {cartBusy && (
-            <p role="status">
-              {text('فرمان سبد در حال بررسی است…', 'A cart command is being checked…')}
-            </p>
-          )}
-          {cart.length > 0 && (
-            <>
-              <h3>{text('کالاهای عادی فروشگاه', 'Ordinary store products')}</h3>
-              <CartLines />
-            </>
-          )}
-          <AcceptedCartGroups compact />
-          <div className="drawer-summary">
-            <div>
-              <span>{t('جمع کالاها')}</span>
-              <strong>
-                <CartAmount />
-              </strong>
-            </div>
-            <CartCheckoutLink onClick={() => setCartOpen(false)} />
-            <Link className="drawer-cart-link" href="/cart" onClick={() => setCartOpen(false)}>
-              {text('مشاهدهٔ هر سه بخش سبد', 'Review all three cart sections')}
-            </Link>
-          </div>
-        </>
-      ) : (
-        <div className="empty-state">
-          <ShoppingBag size={52} />
-          <h3>{text('کالایی برای خرید در سبد نیست', 'No purchase items in your cart')}</h3>
-          <Button asChild>
-            <Link href="/catalog" onClick={() => setCartOpen(false)}>
-              {t('کشف محصولات')}
-              <ArrowLeft size={17} />
-            </Link>
-          </Button>
-        </div>
-      )}
-    </Modal>
   );
 }
 export function CompareTray() {

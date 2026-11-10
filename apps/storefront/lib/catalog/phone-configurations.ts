@@ -1,5 +1,6 @@
 import { normalizePersian } from '@sayman/web-shared/lib/shared/commerce.ts';
 import type { Product, Variant } from '@sayman/web-shared/lib/shared/types.ts';
+import { insuranceAttributeKey } from './insurance.ts';
 
 function phoneColorKey(variant: Variant) {
   return normalizePersian(variant.colorName);
@@ -13,7 +14,7 @@ export function phoneConfigurations(product: Product) {
   const configurations = new Map<string, { specs: Record<string, string>; variants: Variant[] }>();
   for (const variant of product.variants) {
     const entries = Object.entries({ ...product.attributes, ...variant.attributes }).filter(
-      ([key]) => key !== 'color',
+      ([key]) => key !== 'color' && key !== insuranceAttributeKey,
     );
     const key = JSON.stringify(
       [...entries].sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0)),

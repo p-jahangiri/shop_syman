@@ -16,7 +16,7 @@ import { useShop } from '../providers/shop-provider';
 import Link from '../navigation/localized-link';
 import { Button } from '../shared/ui';
 import { OrderV2Form } from '../orders/order-v2-form';
-import { CartError } from '@/lib/checkout/cart-client';
+import { CartError, isCartReviewConflict } from '@/lib/checkout/cart-client';
 import { requestQuoteV5 } from '@/lib/checkout/quote-v5-client';
 import {
   readQuoteV5Attempt,
@@ -140,7 +140,15 @@ export function AcceptedOrderPreparation({
         uncertain = failQuoteV5Attempt(owner, frozen.input.requestId!, status);
       if (!active() || ticket !== generation.current || abort.signal.aborted) return;
       setPending(readQuoteV5Attempt(owner));
-      setError(uncertain ? 'uncertain' : status === 409 ? 'conflict' : 'unavailable');
+      setError(
+        uncertain
+          ? 'uncertain'
+          : isCartReviewConflict(e)
+            ? 'cart-review'
+            : status === 409
+              ? 'conflict'
+              : 'unavailable',
+      );
     } finally {
       if (active() && ticket === generation.current && !abort.signal.aborted) setBusy(false);
     }
@@ -209,7 +217,20 @@ export function AcceptedOrderPreparation({
               : text('دریافت شرایط ثبت سفارش موقت', 'Prepare temporary order conditions')}
           </Button>
         )}
-        {error && (
+        {error === 'cart-review' && (
+          <div className="notice" role="alert">
+            <p>
+              {text(
+                'موجودی یا اقلام سبد تغییر کرده است. سبد را بازبینی کنید و دوباره ادامه دهید.',
+                'Stock or cart items changed. Review your cart before continuing.',
+              )}
+            </p>
+            <Link className="text-link" href="/cart">
+              {text('بازبینی سبد خرید', 'Review cart')}
+            </Link>
+          </div>
+        )}
+        {error && error !== 'cart-review' && (
           <p className="notice" role="alert">
             {error === 'uncertain'
               ? text(
@@ -310,9 +331,9 @@ export function AcceptedOrderPreparation({
           key={`${owner}:${quote.quoteId}`}
           quote={quote}
           onCreated={shop.retry}
-          onInvalidated={() => {
+          onInvalidated={(needsCartReview) => {
             setPrepared(null);
-            setError('conflict');
+            setError(needsCartReview ? 'cart-review' : 'conflict');
           }}
         />
       )}

@@ -26,6 +26,35 @@ import {
 import { sourcingTestCart } from '@sayman/web-shared/testing/sourcing.test-fixtures.ts';
 import { sourcingCartSchema } from '@sayman/web-shared/lib/market/sourcing-contract.ts';
 import { storefrontSnapshot } from '../lib/data/fixtures.ts';
+import { cartDisplayTotals } from '../lib/checkout/cart-display.ts';
+test('Cart2 savings use only authoritative ordinary compare-at and retain exact rial totals', () => {
+  const previousCart = cart2Snapshot();
+  const currentCart = {
+    ...previousCart,
+    ordinaryLines: [{ ...previousCart.ordinaryLines[0], compareAtRial: '9007199254740993' }],
+  };
+  const parsed = cartSnapshotV2Schema.parse(currentCart);
+  assert.deepEqual(cartDisplayTotals([], [], parsed), {
+    total: 18014398509482086n,
+    savings: 9007199254740893n,
+    beforeDiscounts: 27021597764222979n,
+  });
+  assert.equal(cartDisplayTotals([], [], previousCart)?.savings, 0n);
+  assert.equal(
+    cartSnapshotV2Schema.safeParse({
+      ...currentCart,
+      ordinaryLines: [{ ...currentCart.ordinaryLines[0], compareAtRial: '100' }],
+    }).success,
+    false,
+  );
+  assert.equal(
+    cartDisplayTotals([], [], {
+      ...parsed,
+      ordinaryLines: [{ ...parsed.ordinaryLines[0], issue: 'insufficient_stock' }],
+    }),
+    null,
+  );
+});
 test('Cart2 preserves exact private accepted prices alongside a public same-SKU line', () => {
   const value = cart2Snapshot();
   assert.equal(value.buySubtotalRial, '18014398509482086');

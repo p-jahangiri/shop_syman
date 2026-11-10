@@ -30,7 +30,7 @@ export async function requestCartV2(
   const raw = await cartJson(
     await fetcher(`/api/cart/${locale}/v2${method === 'POST' ? '/merge' : ''}`, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Sayman-Cart-Prices': 'compare-at' },
       body:
         method === 'POST'
           ? '{}'

@@ -160,7 +160,10 @@ public sealed class CartService(SalesDbContext db, ICartCatalogReader catalog, I
             var available = stock.GetValueOrDefault(line.VariantId); string? issue = available < line.Quantity ? "insufficient_stock" : null; string? lineTotal = null;
             try { var amount = checked(variant.PriceRial * line.Quantity); lineTotal = Money(amount); subtotal = checked(subtotal + amount); }
             catch (OverflowException) { validTotal = false; issue = "amount_limit"; }
-            lines.Add(new(line.VariantId, line.Quantity, variant.ProductId, variant.Slug, variant.Name, variant.Label, Money(variant.PriceRial), available, lineTotal, issue));
+            lines.Add(new(line.VariantId, line.Quantity, variant.ProductId, variant.Slug, variant.Name, variant.Label, Money(variant.PriceRial), available, lineTotal, issue)
+            {
+                CompareAtRial = variant.CompareAtPriceRial is long compareAt && compareAt > variant.PriceRial ? Money(compareAt) : null
+            });
         }
         return new(1, locale, Convert.ToBase64String(cart.Version), lines.ToArray(), validTotal ? Money(subtotal) : null, lines.Any(x => x.Issue is not null));
     }

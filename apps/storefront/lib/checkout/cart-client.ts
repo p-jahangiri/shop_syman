@@ -14,6 +14,13 @@ export class CartError extends Error {
     this.status = status;
   }
 }
+export function isCartReviewConflict(error: unknown) {
+  return (
+    error instanceof CartError &&
+    error.status === 409 &&
+    (error.code === 'cart_review_conflict' || error.code === 'cart_version_conflict')
+  );
+}
 export type CartFetch = (path: string, init: RequestInit) => Promise<Response>;
 export async function requestCart(
   fetcher: CartFetch,

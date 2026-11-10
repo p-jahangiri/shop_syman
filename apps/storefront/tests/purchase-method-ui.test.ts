@@ -11,6 +11,7 @@ import * as money from '@sayman/web-shared/lib/shared/money.ts';
 import * as media from '@sayman/web-shared/lib/media/media-paths.ts';
 import * as inspectionPhotos from '../lib/catalog/used-inspection-photos.ts';
 import * as phoneConfigurations from '../lib/catalog/phone-configurations.ts';
+import * as insurance from '../lib/catalog/insurance.ts';
 import * as catalog from '../lib/catalog/catalog-contract.ts';
 import * as homeBlocks from '../lib/content/home-blocks.ts';
 import * as seo from '../lib/seo/seo.ts';
@@ -166,7 +167,6 @@ function compile(
         loadError: false,
         cart: [],
         serverCart: null,
-        setCartOpen() {},
       }),
     },
     '@sayman/web-shared/components/catalog/used-condition': {
@@ -221,6 +221,7 @@ function compile(
     '@/lib/catalog/used-inspection-photos': inspectionPhotos,
     './product-detail-presentation.css': {},
     '@/lib/catalog/phone-configurations': phoneConfigurations,
+    '@/lib/catalog/insurance': insurance,
     './phone-variant-picker': {
       PhoneColorOptions: 'PhoneColorOptions',
       PhoneConfigurationOptions: 'PhoneConfigurationOptions',
@@ -451,7 +452,14 @@ test('the product purchase panel shows the exact category return note and the se
   const value = snapshot('en');
   const product = structuredClone(value.products[0]);
   product.name = 'Samsung Galaxy A07 Dual SIM with 128 GB storage and 4 GB RAM';
-  product.variants = [{ ...product.variants[0], warranty: '18-month warranty' }];
+  product.attributes.insurance = 'Model coverage';
+  product.variants = [
+    {
+      ...product.variants[0],
+      warranty: '18-month warranty',
+      attributes: { ...product.variants[0].attributes, insurance: 'Exact SKU coverage' },
+    },
+  ];
   value.site.categoryReturnGuidance = [
     { categoryId: product.category, text: 'Keep the original packaging for review.' },
     { categoryId: 'laptops', text: 'Laptop-only conditions' },
@@ -462,11 +470,16 @@ test('the product purchase panel shows the exact category return note and the se
   assert.ok(text(tree).includes(product.name));
   assert.ok(text(tree).includes('Keep the original packaging for review.'));
   assert.ok(text(tree).includes('18-month warranty'));
+  assert.ok(text(tree).includes('Exact SKU coverage'));
+  assert.ok(!text(tree).includes('Model coverage'));
+  assert.ok(!elements(tree).some((node) => node.props.className === 'purchase-quantity'));
   assert.ok(!text(tree).includes('Laptop-only conditions'));
 
   product.variants[0].warranty = '';
+  delete product.variants[0].attributes?.insurance;
   value.site.categoryReturnGuidance = [{ categoryId: 'laptops', text: 'Laptop-only conditions' }];
   tree = renderProduct({ product });
+  assert.ok(text(tree).includes('Model coverage'));
   assert.ok(!elements(tree).some((node) => node.props.className === 'purchase-return-guidance'));
   assert.ok(
     !elements(tree).some((node) => node.props.className === 'purchase-detail product-warranty'),

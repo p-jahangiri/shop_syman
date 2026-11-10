@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 namespace Shop.Modules.Sales;
 
@@ -132,6 +133,10 @@ public sealed partial class SalesDbContext(DbContextOptions<SalesDbContext> opti
 }
 public sealed record CartLineInput(string VariantId, int Quantity);
 public sealed record CartInput(CartLineInput[] Lines, string? Version);
-public sealed record CartLineData(string VariantId, int Quantity, string? ProductId, string? Slug, string? Name, string? Label, string? UnitPriceRial, int Available, string? LineTotalRial, string? Issue);
+public sealed record CartLineData(string VariantId, int Quantity, string? ProductId, string? Slug, string? Name, string? Label, string? UnitPriceRial, int Available, string? LineTotalRial, string? Issue)
+{
+    [JsonIgnore]
+    internal string? CompareAtRial { get; init; }
+}
 public sealed record CartSnapshot(int SchemaVersion, string Locale, string? Version, CartLineData[] Lines, string? SubtotalRial, bool HasIssues);
 public sealed record CartIdentity(string? OwnerId, string? GuestToken);

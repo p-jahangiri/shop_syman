@@ -20,7 +20,7 @@ import { publicOrigin } from '@/lib/seo/seo';
 import { translate } from '@/lib/navigation/i18n';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { ShopProvider } from '@/components/providers/shop-provider';
-import { Header, Footer, MobileNav, CartDrawer, CompareTray } from '@/components/navigation/shell';
+import { Header, Footer, MobileNav, CompareTray } from '@/components/navigation/shell';
 import { resolveSiteDesign } from '@sayman/web-shared/lib/content/site-design.ts';
 import { storefrontColorVariables } from '@sayman/web-shared/lib/content/brand-colors.ts';
 // Constant application code. CMS values are read only from validated attributes.
@@ -147,7 +147,6 @@ export default async function RootLayout({
                 <main id="main">{children}</main>
                 <Footer />
                 <MobileNav />
-                <CartDrawer />
                 <CompareTray />
               </ShopProvider>
             </AuthProvider>

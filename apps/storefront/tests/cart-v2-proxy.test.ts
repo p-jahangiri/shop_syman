@@ -62,6 +62,7 @@ test('Cart2 GET forwards only its cookie and preserves complete private V2 respo
   const response = await proxyCartV2(request, 'fa', [], env, (async (url, init) => {
     assert.equal(url, env.SHOP_API_URL + '/api/cart/fa/v2');
     assert.equal(new Headers(init?.headers).get('Cookie'), 'sayman_cart=' + 'b'.repeat(43));
+    assert.equal(new Headers(init?.headers).get('X-Sayman-Cart-Prices'), null);
     assert.equal(init?.cache, 'no-store');
     assert.equal(init?.redirect, 'error');
     return Response.json(cart2Snapshot(), {
@@ -72,6 +73,20 @@ test('Cart2 GET forwards only its cookie and preserves complete private V2 respo
   assert.equal((await response.json()).offerLines[0].unitPriceRial, '9007199254740993');
   assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
   assert.match(response.headers.get('Set-Cookie')!, /^sayman_cart=/);
+});
+test('Cart2 allows an explicit comparison-price opt-in on private cart snapshots', async () => {
+  const request = req('/api/cart/fa/v2', 'GET', undefined, false);
+  request.headers.set('X-Sayman-Cart-Prices', 'compare-at');
+  const snapshot = cart2Snapshot('ordinary');
+  const response = await proxyCartV2(request, 'fa', [], env, (async (_url, init) => {
+    assert.equal(new Headers(init?.headers).get('X-Sayman-Cart-Prices'), 'compare-at');
+    return Response.json({
+      ...snapshot,
+      ordinaryLines: [{ ...snapshot.ordinaryLines[0], compareAtRial: '120' }],
+    });
+  }) as typeof fetch);
+  assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
+  assert.equal((await response.json()).ordinaryLines[0].compareAtRial, '120');
 });
 test('Cart2 merge requires a member, exact empty input, trusted origin and no query', async () => {
   let sent = 0;
@@ -262,6 +277,7 @@ test('Cart2 client uses V2 read/write/merge and rejects V1 or wrong locale witho
   const paths: string[] = [];
   const fetcher = async (path: string, init: RequestInit) => {
     paths.push(path);
+    assert.equal(new Headers(init.headers).get('X-Sayman-Cart-Prices'), 'compare-at');
     if (init.method === 'PUT')
       assert.deepEqual(JSON.parse(init.body as string), { lines: [], version: null });
     return Response.json(cart2Snapshot());
