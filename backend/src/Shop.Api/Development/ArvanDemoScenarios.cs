@@ -12,10 +12,11 @@ using Shop.Modules.Support;
 
 internal static class ArvanDemoScenarios
 {
-    private const string Actor = "development-seed:arvan-scenarios";
+    private const string Actor = "development-seed-arvan-scenarios";
 
     public static async Task<object> RunAsync(IServiceProvider root, IHostEnvironment environment, CancellationToken ct)
     {
+        TicketRules.Actor(Actor);
         await using (var scope = root.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
