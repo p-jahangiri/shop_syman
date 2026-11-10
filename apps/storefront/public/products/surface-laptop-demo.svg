@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 560" role="img" aria-label="Illustrative catalogue sample">
+  <defs>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e4caa7"/><stop offset="1" stop-color="#98836c"/></linearGradient>
+    <radialGradient id="back"><stop stop-color="#e4caa7" stop-opacity=".72"/><stop offset="1" stop-color="#e4caa7" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="-40%" y="-50%" width="180%" height="230%"><feDropShadow dx="7" dy="18" stdDeviation="14" flood-color="#233646" flood-opacity=".22"/></filter>
+  </defs>
+  <ellipse cx="350" cy="280" rx="330" ry="245" fill="url(#back)"/>
+  <g filter="url(#shadow)"><path d="M139 113Q139 96 159 96H541Q562 96 562 115V374H139Z" fill="#23303a"/><rect x="150" y="109" width="400" height="252" rx="12" fill="url(#metal)"/><path d="M150 300 Q300 195 550 225V361H150Z" fill="#24364a" opacity=".57"/><path d="M150 334Q408 178 550 286V361H150Z" fill="#edf5ee" opacity=".57"/><path d="M139 374H562L628 425Q632 442 606 448H94Q66 443 73 424Z" fill="url(#metal)" stroke="#485563" stroke-width="2"/><path d="M178 385H521L558 410H145Z" fill="#34424b" opacity=".62"/><path d="M290 419H410L430 435H270Z" fill="#263640" opacity=".38"/></g>
+</svg>

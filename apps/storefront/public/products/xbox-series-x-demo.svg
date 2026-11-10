@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 560" role="img" aria-label="Illustrative catalogue sample">
+  <defs>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a7c581"/><stop offset="1" stop-color="#435b53"/></linearGradient>
+    <radialGradient id="back"><stop stop-color="#a7c581" stop-opacity=".72"/><stop offset="1" stop-color="#a7c581" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="-40%" y="-50%" width="180%" height="230%"><feDropShadow dx="7" dy="18" stdDeviation="14" flood-color="#233646" flood-opacity=".22"/></filter>
+  </defs>
+  <ellipse cx="350" cy="280" rx="330" ry="245" fill="url(#back)"/>
+  <g filter="url(#shadow)"><g transform="translate(209 103) rotate(-8 105 190)"><path d="M5 33L126 5 242 35V376L124 403 5 375Z" fill="url(#metal)" stroke="#21362e" stroke-width="4"/><path d="M5 33L126 5 242 35 122 64Z" fill="#243630"/><path d="M122 64V403" stroke="#263730" stroke-width="3"/><circle cx="166" cy="108" r="12" fill="#b9dca0"/><path d="M23 99V225" stroke="#213a30" stroke-width="6" stroke-linecap="round"/></g></g>
+</svg>

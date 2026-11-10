@@ -20,6 +20,8 @@ import {
   Share2,
   ShieldCheck,
   CreditCard,
+  CalendarDays,
+  WalletCards,
   Check,
   Plus,
   Minus,
@@ -590,24 +592,34 @@ export function ProductDetail({
             variant.stock > 0 ? (
               <>
                 <div className="purchase-quantity">
-                  <span>{t('تعداد')}</span>
-                  <div className="quantity-control">
-                    <button
-                      onClick={() => setCount(selectedQuantity + 1)}
-                      disabled={selectedQuantity >= variant.stock}
-                      aria-label={t('افزایش تعداد')}
+                  <strong id="product-quantity-label">{t('تعداد')}</strong>
+                  {variant.stock === 1 ? (
+                    <span className="purchase-single-quantity">{fa ? '۱ عدد' : '1 item'}</span>
+                  ) : (
+                    <div
+                      className="purchase-stepper"
+                      role="group"
+                      aria-labelledby="product-quantity-label"
                     >
-                      <Plus size={15} />
-                    </button>
-                    <span>{t(digits(selectedQuantity))}</span>
-                    <button
-                      onClick={() => setCount(selectedQuantity - 1)}
-                      disabled={selectedQuantity <= 1}
-                      aria-label={t('کاهش تعداد')}
-                    >
-                      <Minus size={15} />
-                    </button>
-                  </div>
+                      <button
+                        type="button"
+                        onClick={() => setCount(selectedQuantity + 1)}
+                        disabled={selectedQuantity >= variant.stock}
+                        aria-label={t('افزایش تعداد')}
+                      >
+                        <Plus size={18} aria-hidden="true" />
+                      </button>
+                      <output>{digits(selectedQuantity)}</output>
+                      <button
+                        type="button"
+                        onClick={() => setCount(selectedQuantity - 1)}
+                        disabled={selectedQuantity <= 1}
+                        aria-label={t('کاهش تعداد')}
+                      >
+                        <Minus size={18} aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <Button
                   className="full"
@@ -670,16 +682,29 @@ export function ProductDetail({
               {locale === 'fa' ? 'درخواست تهیهٔ این مدل' : 'Request this model'}
             </Link>
           )}
-          <div className="purchase-method-list">
-            <strong>{t('روش‌های خرید این کالا')}</strong>
-            {methods.map((m) => (
-              <span key={m.id}>
-                <Check size={13} />
-                {t(m.name)}
-              </span>
-            ))}
-            {!methods.length && <span>{t('روش خرید فعالی برای این کالا تعریف نشده است.')}</span>}
-          </div>
+          <section className="purchase-method-list" aria-labelledby="purchase-methods-title">
+            <h2 id="purchase-methods-title">{t('روش‌های خرید این کالا')}</h2>
+            {methods.length ? (
+              <ul>
+                {methods.map((method) => {
+                  const Icon =
+                    method.kind === 'cheque'
+                      ? CalendarDays
+                      : method.kind === 'installment'
+                        ? WalletCards
+                        : CreditCard;
+                  return (
+                    <li key={method.id} data-kind={method.kind}>
+                      <Icon size={18} aria-hidden="true" />
+                      <span dir="auto">{t(method.name)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p>{t('روش خرید فعالی برای این کالا تعریف نشده است.')}</p>
+            )}
+          </section>
           {returnGuidance && (
             <details className="purchase-return-guidance">
               <summary>

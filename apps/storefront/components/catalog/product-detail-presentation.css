@@ -117,3 +117,110 @@
   overflow-wrap: anywhere;
   white-space: pre-line;
 }
+
+.product-page .purchase-quantity {
+  min-inline-size: 0;
+  min-block-size: 44px;
+  gap: 0.65rem;
+  margin-block-start: 0.9rem;
+  font-size: 0.9rem;
+  color: var(--foreground);
+}
+.purchase-stepper {
+  display: inline-grid;
+  grid-template-columns: 44px minmax(2.4rem, auto) 44px;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+.purchase-stepper button {
+  display: grid;
+  min-block-size: 44px;
+  place-items: center;
+  border-radius: 0.65rem;
+  color: var(--foreground);
+}
+.purchase-stepper button:not(:disabled):hover {
+  background: var(--surface-soft);
+}
+.purchase-stepper button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -3px;
+}
+.purchase-stepper button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+.purchase-stepper output {
+  display: grid;
+  min-inline-size: 0;
+  place-items: center;
+  padding-inline: 0.2rem;
+  border-inline: 1px solid var(--border);
+  font-size: 1rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.purchase-single-quantity {
+  display: inline-grid;
+  min-block-size: 38px;
+  place-items: center;
+  padding-inline: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  font-weight: 650;
+}
+.product-page .purchase-panel > .button {
+  min-block-size: 46px;
+  margin-block-start: 0.7rem;
+  font-size: 0.85rem;
+}
+.purchase-method-list {
+  grid-column: 1 / -1;
+  min-inline-size: 0;
+  margin-block-start: 0.9rem;
+  padding-block-start: 0.75rem;
+  border-block-start: 1px solid var(--border);
+}
+.purchase-method-list h2 {
+  margin: 0 0 0.5rem;
+  color: var(--foreground);
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+.purchase-method-list ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.purchase-method-list li {
+  display: flex;
+  min-inline-size: 0;
+  min-block-size: 43px;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.36rem 0.52rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.purchase-method-list li svg {
+  flex-shrink: 0;
+  color: var(--primary);
+}
+.purchase-method-list p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.81rem;
+  line-height: 1.65;
+}

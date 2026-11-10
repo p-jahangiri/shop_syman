@@ -16,7 +16,7 @@ public static class DevelopmentProductExamples
 {
     private const string Actor = "development-sample:product-workspace";
     private sealed record Variant(string Code, string Storage, string Ram, string Color, string ColorEn, string Hex, string Price, string? Reference, int Quantity);
-    private sealed record Model(string Slug, string Category, string Brand, string Name, string NameEn, string Image, string Processor, string Display, Variant[] Variants, InspectionExample? Inspection = null);
+    private sealed record Model(string Slug, string Category, string Brand, string Name, string NameEn, string Image, string Processor, string Display, Variant[] Variants, InspectionExample? Inspection = null, string? GalleryImage = null, bool IncludeCheque = false, int? WarrantyMonths = null);
     private sealed record InspectionExample(string Technical, string Battery, int? Percent, string Screen, string Body, string Repair, string NoteFa, string NoteEn);
     private static readonly Model[] Models = [
         new("d70-sample-galaxy-a10","phones","Samsung","سامسونگ Galaxy A10","Samsung Galaxy A10","/products/phone-titanium.svg","Exynos 7884","6.2 inches",[
@@ -61,6 +61,38 @@ public static class DevelopmentProductExamples
         Extra("headphones-travel", "accessories", "Sayman Demo", "هدفون تاشوی مسافرتی", "Foldable travel headphones", "headphones", 14900000),
     ];
 
+    private static readonly Model[] AdditionalArvanModels = [
+        More("galaxy-s24", "phones", "Samsung", "سامسونگ Galaxy S24", "Samsung Galaxy S24", "phone-titanium", 515000000, "256GB", "8GB", true, 18),
+        More("iphone-13-mini", "phones", "Apple", "اپل iPhone 13 mini", "Apple iPhone 13 mini", "phone-silver", 459000000, "128GB", "4GB", true),
+        More("pixel-8a", "phones", "Google", "گوگل Pixel 8a", "Google Pixel 8a", "phone-green", 321000000, "128GB", "8GB", false, 12),
+        More("poco-x6", "phones", "Xiaomi", "شیائومی Poco X6", "Xiaomi Poco X6", "phone-titanium", 192000000, "256GB", "12GB"),
+        More("swift-go", "laptops", "Acer", "ایسر Swift Go", "Acer Swift Go", "laptop", 480000000, "512GB", "16GB", true, 18),
+        More("zenbook-14", "laptops", "Asus", "ایسوس Zenbook 14", "Asus Zenbook 14", "laptop-dark", 680000000, "1TB", "16GB", true),
+        More("latitude-5440", "laptops", "Dell", "دل Latitude 5440", "Dell Latitude 5440", "laptop", 442000000, "512GB", "16GB", false, 12),
+        More("surface-laptop", "laptops", "Microsoft", "مایکروسافت Surface Laptop", "Microsoft Surface Laptop", "laptop-dark", 740000000, "1TB", "16GB"),
+        More("switch-oled", "gaming", "Nintendo", "نینتندو Switch OLED", "Nintendo Switch OLED", "controller", 310000000, "64GB", "", true),
+        More("xbox-series-x", "gaming", "Microsoft", "ایکس‌باکس Series X", "Xbox Series X", "console", 548000000, "1TB", "", true, 12),
+        More("arcade-pad", "gaming", "Sayman Demo", "کنترلر آرکید سایمان", "Sayman arcade controller", "controller", 42000000),
+        More("handheld-lite", "gaming", "Sayman Demo", "کنسول دستی لایت", "Lite handheld console", "console", 180000000, "128GB"),
+        More("travel-powerbank", "accessories", "Sayman Demo", "پاوربانک مسافرتی", "Travel power bank", "powerbank", 18200000, "", "", false, 6),
+        More("usb-c-braided", "accessories", "Sayman Demo", "کابل بافتهٔ USB-C", "Braided USB-C cable", "cable", 4300000),
+        More("compact-hub", "accessories", "Sayman Demo", "هاب رومیزی USB-C", "Compact USB-C hub", "charger", 23100000),
+        More("studio-headset", "accessories", "Sayman Demo", "هدفون استودیویی", "Studio headphones", "headphones", 37600000, "", "", false, 12),
+    ];
+
+    private static Model More(string slug, string category, string brand, string fa, string en, string gallery,
+        long price, string storage = "", string ram = "", bool cheque = false, int? warranty = null)
+    {
+        var model = Extra(slug, category, brand, fa, en, slug + "-demo", price, storage, ram);
+        return model with
+        {
+            Slug = "d135-demo-" + slug,
+            GalleryImage = "/products/" + gallery + ".svg",
+            IncludeCheque = cheque,
+            WarrantyMonths = warranty,
+        };
+    }
+
     private static Model Extra(string slug, string category, string brand, string fa, string en,
         string image, long price, string storage = "", string ram = "") =>
         new("d134-demo-" + slug, category, brand, fa, en, "/products/" + image + ".svg", "", "",
@@ -82,7 +114,7 @@ public static class DevelopmentProductExamples
         var results = new List<object>();
         var actor = usedExamples ? "development-sample:used-devices" : Actor;
         var skuPrefix = usedExamples ? "D83-USED-DEMO-" : "D70-DEMO-";
-        foreach (var model in usedExamples ? UsedModels : arvan ? Models.Concat(ArvanModels) : Models)
+        foreach (var model in usedExamples ? UsedModels : arvan ? Models.Concat(ArvanModels).Concat(AdditionalArvanModels) : Models)
         {
             if (await catalog.Products.AnyAsync(p => p.Slug == model.Slug, ct))
             {
@@ -162,12 +194,18 @@ public static class DevelopmentProductExamples
                         attrs.Add(item);
                     var label = string.Join(" / ", new[] { variant.Storage, variant.Ram, variant.Color }.Where(s => s.Length > 0));
                     var labelEn = usedExamples ? variant.ColorEn : label;
-                    variants.Add(new(null, skuPrefix + variant.Code, variant.Price, variant.Reference, variant.Hex, variant.Color, variant.ColorEn, label, labelEn, "نمونهٔ آموزشی؛ قرارداد گارانتی واقعی نیست.", "Development example; no real warranty contract.", true, attrs.ToArray(), [], null));
+                    var warrantyFa = model.WarrantyMonths is int months ? $"ضمانت نمونهٔ {months} ماهه برای بازبینی" : "نمونهٔ آموزشی؛ قرارداد گارانتی واقعی نیست.";
+                    var warrantyEn = model.WarrantyMonths is int monthsEn ? $"Sample {monthsEn}-month warranty for review" : "Development example; no real warranty contract.";
+                    variants.Add(new(null, skuPrefix + variant.Code, variant.Price, variant.Reference, variant.Hex, variant.Color, variant.ColorEn, label, labelEn, warrantyFa, warrantyEn, true, attrs.ToArray(), [], null));
                 }
-                var online = (await services.GetRequiredService<IPurchaseConfiguration>().MethodsAsync("fa", ct)).FirstOrDefault(m => m.Kind == "online");
+                var methods = await services.GetRequiredService<IPurchaseConfiguration>().MethodsAsync("fa", ct);
+                var online = methods.FirstOrDefault(m => m.Kind == "online");
                 if (online is null)
                     throw new InvalidOperationException("An existing online purchase method is required; examples never enable a payment provider.");
-                var input = new ProductInput(category.Id, brandId, model.Slug, "Published", false, true, [new("fa", model.Name + " · نمونهٔ آموزشی", "نمونهٔ Development برای آزمون تنوع، قیمت، تخفیف و انبار. قیمت و تعداد آموزشی‌اند؛ تصویر، طرح مفهومی پروژه است و پیشنهاد فروش واقعی یا قرارداد گارانتی نیست.", "نمونهٔ آموزشی"), new("en", model.NameEn + " · Demo", "Development catalogue example. Prices and warehouse quantities are synthetic; the image is project concept art, not a real sale offer or warranty.", "Development demo")], common.ToArray(), variants.ToArray(), [model.Image], [online.Id], [], null, videos);
+                var cheque = model.IncludeCheque ? methods.FirstOrDefault(m => m.Kind == "cheque" && m.Enabled) : null;
+                string[] methodIds = cheque is null ? [online.Id] : [online.Id, cheque.Id];
+                string[] photos = model.GalleryImage is null ? [model.Image] : [model.Image, model.GalleryImage];
+                var input = new ProductInput(category.Id, brandId, model.Slug, "Published", false, true, [new("fa", model.Name + " · نمونهٔ آموزشی", "نمونهٔ Development برای آزمون تنوع، قیمت، تخفیف و انبار. قیمت و تعداد آموزشی‌اند؛ تصویر، طرح مفهومی پروژه است و پیشنهاد فروش واقعی یا قرارداد گارانتی نیست.", "نمونهٔ آموزشی"), new("en", model.NameEn + " · Demo", "Development catalogue example. Prices and warehouse quantities are synthetic; the image is project concept art, not a real sale offer or warranty.", "Development demo")], common.ToArray(), variants.ToArray(), photos, methodIds, [], null, videos);
                 var receipt = await services.GetRequiredService<ProductWorkspaceCommands>().SaveAsync(actor, new(Guid.NewGuid().ToString("N"), null, input), ct);
                 var product = await catalog.Products.Include(p => p.Variants).SingleAsync(p => p.Id == receipt.ProductId, ct);
                 if (model.Inspection is { } example)

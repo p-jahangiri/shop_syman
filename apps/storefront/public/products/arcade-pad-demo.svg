@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 560" role="img" aria-label="Illustrative catalogue sample">
+  <defs>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dcc4e4"/><stop offset="1" stop-color="#a374b9"/></linearGradient>
+    <radialGradient id="back"><stop stop-color="#dcc4e4" stop-opacity=".72"/><stop offset="1" stop-color="#dcc4e4" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="-40%" y="-50%" width="180%" height="230%"><feDropShadow dx="7" dy="18" stdDeviation="14" flood-color="#233646" flood-opacity=".22"/></filter>
+  </defs>
+  <ellipse cx="350" cy="280" rx="330" ry="245" fill="url(#back)"/>
+  <g filter="url(#shadow)"><g transform="translate(143 180) rotate(-10 210 100)"><rect width="420" height="206" rx="56" fill="url(#metal)" stroke="#30404b" stroke-width="5"/><circle cx="105" cy="100" r="47" fill="#45405a"/><path d="M105 58V99" stroke="#303346" stroke-width="18"/><circle cx="105" cy="55" r="23" fill="#e8d8ee"/><g fill="#ece4f4"><circle cx="280" cy="83" r="23"/><circle cx="334" cy="83" r="23"/><circle cx="280" cy="138" r="23"/><circle cx="334" cy="138" r="23"/></g></g></g>
+</svg>

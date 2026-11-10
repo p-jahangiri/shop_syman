@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 560" role="img" aria-label="Illustrative catalogue sample">
+  <defs>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e5bda3"/><stop offset="1" stop-color="#aa614d"/></linearGradient>
+    <radialGradient id="back"><stop stop-color="#e5bda3" stop-opacity=".72"/><stop offset="1" stop-color="#e5bda3" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="-40%" y="-50%" width="180%" height="230%"><feDropShadow dx="7" dy="18" stdDeviation="14" flood-color="#233646" flood-opacity=".22"/></filter>
+  </defs>
+  <ellipse cx="350" cy="280" rx="330" ry="245" fill="url(#back)"/>
+  <g filter="url(#shadow)"><path d="M224 274C214 108 514 118 512 292C511 431 263 426 267 298C272 205 438 200 433 304C428 356 340 349 332 313" fill="none" stroke="#3a2a28" stroke-width="27" stroke-linecap="round"/><path d="M224 274C214 108 514 118 512 292C511 431 263 426 267 298C272 205 438 200 433 304C428 356 340 349 332 313" fill="none" stroke="#a56b53" stroke-width="19" stroke-dasharray="3 4"/><rect x="201" y="252" width="49" height="89" rx="12" fill="url(#metal)"/><rect x="214" y="328" width="23" height="28" rx="6" fill="#30414a"/><rect x="307" y="274" width="49" height="64" rx="12" fill="url(#metal)"/></g>
+</svg>

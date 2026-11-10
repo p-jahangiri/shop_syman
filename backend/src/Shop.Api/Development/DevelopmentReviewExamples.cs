@@ -1,5 +1,7 @@
 using System.Data;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Shop.Modules.Catalog.Infrastructure;
@@ -26,6 +28,21 @@ public static class DevelopmentReviewExamples
             "در این نمونهٔ آموزشی شارژر به‌خاطر اندازهٔ کوچک انتخاب شده است؛ توان درج‌شده برای هر تنوع باید جداگانه بررسی شود.", true),
     ];
 
+    private static readonly Example[] ArvanMoreExamples = [
+        new("d135-demo-galaxy-s24", "s24-camera", "fa", 5, "کاربر نمونهٔ سایمان", "نور روز و خوانایی نمایشگر",
+            "این دیدگاه نمونه است. نمایشگر روشن است و هنگام انتخاب نسخه بهتر است ظرفیت ذخیره‌سازی را بررسی کنید.", true, true),
+        new("d135-demo-zenbook-14", "zenbook-portability", "fa", 4, "کاربر نمونهٔ سایمان", "برای کار روزمره سبک است",
+            "برای نمایش حالت دیدگاه عکس‌دار، تجربهٔ فرضی کار با لپ‌تاپ در سفر و کلاس را نوشته‌ام.", true, true),
+        new("d135-demo-switch-oled", "switch-portable", "en", 4, "Sayman demo reviewer", "Portable and docked use",
+            "Illustrative feedback for testing both languages and moderation. Check the included accessories for the selected SKU.", true),
+        new("d135-demo-travel-powerbank", "powerbank-finish", "fa", 3, "کاربر نمونهٔ سایمان", "صف بازبینی عکس لوازم جانبی",
+            "نمونهٔ دیدگاه منتظر تأیید است تا مدیر بتواند عکس و متن را پیش از انتشار مرور کند.", false, true),
+        new("d135-demo-studio-headset", "studio-microphone", "fa", 5, "کاربر نمونهٔ سایمان", "میکروفون و نحوهٔ اتصال",
+            "در این دیدگاه آموزشی، کیفیت فرضی تماس و سازگاری با رابط دستگاه بررسی شده است.", true),
+        new("d135-demo-latitude-5440", "latitude-keyboard", "en", 2, "Sayman demo reviewer", "Keyboard layout needs checking",
+            "A pending English review for testing moderation, rating, and customer contribution history.", false),
+    ];
+
     public static async Task<object> RunAsync(IServiceProvider services, IHostEnvironment environment, CancellationToken ct, bool arvan = false)
     {
         if (!environment.IsDevelopment()) throw new InvalidOperationException("Review examples require Development.");
@@ -39,9 +56,11 @@ public static class DevelopmentReviewExamples
                 context.Database.GetDbConnection().Database != "Sayman" || context.Database.GetDbConnection().State != ConnectionState.Closed))
             throw new InvalidOperationException("Review examples require the canonical local Sayman database.");
 
-        var products = await catalog.Products.AsNoTracking().Where(p => p.Slug == Phone || p.Slug == Charger)
+        var examples = arvan ? Examples.Concat(ArvanMoreExamples).ToArray() : Examples;
+        var slugs = examples.Select(item => item.Slug).Distinct(StringComparer.Ordinal).ToArray();
+        var products = await catalog.Products.AsNoTracking().Where(p => slugs.Contains(p.Slug))
             .ToDictionaryAsync(p => p.Slug, p => p.Id, ct);
-        if (products.Count != 2) throw new InvalidOperationException("The expected development catalogue examples are missing.");
+        if (products.Count != slugs.Length) throw new InvalidOperationException("The expected development catalogue examples are missing.");
         var service = services.GetRequiredService<ReviewService>();
         var entries = new List<object>();
         await using var transaction = await reviews.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
@@ -58,7 +77,7 @@ public static class DevelopmentReviewExamples
                     throw new InvalidOperationException("Review examples are already being prepared.");
             }
 
-            foreach (var example in Examples)
+            foreach (var example in examples)
             {
                 var productId = products[example.Slug];
                 var owner = "demo-review:d86:" + example.Key;
@@ -69,7 +88,7 @@ public static class DevelopmentReviewExamples
                 }
                 var command = Id();
                 var input = new SaveReviewInput(null, example.Locale, example.Rating, example.Name, example.Title, example.Body, true,
-                    example.Photo ? new ReviewPhotoInput("replace", "demo-phone.png", "image/png", Illustration()) : null);
+                    example.Photo ? new ReviewPhotoInput("replace", "demo-phone.png", "image/png", Illustration(example.Key)) : null);
                 var row = (await service.SaveAsync(owner, productId, command, input, ct)).Review!;
                 if (example.Publish)
                 {
@@ -90,13 +109,14 @@ public static class DevelopmentReviewExamples
     private static string Id() => Guid.NewGuid().ToString("N");
 
     // A synthetic review attachment, with no camera metadata, brand claims, or personal data.
-    private static string Illustration()
+    private static string Illustration(string key)
     {
+        var tint = SHA256.HashData(Encoding.UTF8.GetBytes(key));
         using var bitmap = new SKBitmap(480, 320);
         using var canvas = new SKCanvas(bitmap);
-        canvas.Clear(new SKColor(230, 225, 209));
+        canvas.Clear(new SKColor((byte)(213 + tint[0] % 38), (byte)(205 + tint[1] % 43), (byte)(198 + tint[2] % 45)));
         using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(191, 198, 166) };
-        canvas.DrawCircle(270, 158, 118, paint);
+        canvas.DrawCircle(245 + tint[3] % 65, 158, 103 + tint[4] % 28, paint);
         paint.Color = new SKColor(44, 64, 55);
         canvas.DrawRoundRect(new SKRect(174, 44, 306, 276), 19, 19, paint);
         paint.Color = new SKColor(121, 153, 134);

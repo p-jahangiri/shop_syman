@@ -38,13 +38,14 @@ internal static class ArvanDemoScenarios
             reviews = await DevelopmentReviewExamples.RunAsync(scope.ServiceProvider, environment, ct, arvan: true);
         await using (var scope = root.CreateAsyncScope())
             cms = await DevelopmentCmsExamples.RunAsync(scope.ServiceProvider, environment, ct, arvan: true);
-        for (var n = 1; n <= 8; n++)
+        const int customerCount = 12;
+        for (var n = 1; n <= customerCount; n++)
         {
             await using var scope = root.CreateAsyncScope();
             await AddCustomerStoryAsync(scope.ServiceProvider, n, ct);
         }
 
-        return new { Catalog = catalog, Used = used, Reviews = reviews, Cms = cms, SampleCustomers = 8, SampleTickets = 8 };
+        return new { Catalog = catalog, Used = used, Reviews = reviews, Cms = cms, SampleCustomers = customerCount, SampleTickets = customerCount };
     }
 
     private static async Task EnableCheckoutAsync(IServiceProvider services, CancellationToken ct)
@@ -104,12 +105,13 @@ internal static class ArvanDemoScenarios
                 throw new InvalidOperationException("The sample customer identifier is already in use.");
             await transaction.CommitAsync(ct);
         }
-        var (subject, message) = (n % 4) switch
+        var (subject, message) = n switch
         {
-            0 => ("[phone] درخواست نمونهٔ Pixel 9", "مدل — Pixel 9\nرنگ — مشکی\nحافظه — ۱۲۸ گیگابایت\nسقف بودجه (تومان) — ۴۵۰۰۰۰۰۰"),
-            1 => ("[product-question] پرسش نمونه دربارهٔ Galaxy A10", "d70-sample-galaxy-a10\n\nاین گوشی برای تماس و پیام‌رسانی سبک مناسب است؟"),
-            2 => ("نمونهٔ پشتیبانی · پیگیری بسته", "این گفت‌وگوی نمونه برای بررسی گردش پیگیری بسته در پنل است."),
-            _ => ("نمونهٔ پشتیبانی · تغییر نشانی", "می‌خواهم پیش از ارسال، گردش تغییر نشانی سفارش را بررسی کنم.")
+            9 => ("[product-question] پرسش نمونهٔ سازگاری هاب", "d135-demo-compact-hub\n\nاین هاب برای اتصال مانیتور و شارژ هم‌زمان چه درگاه‌هایی لازم دارد؟"),
+            10 => ("[phone] درخواست نمونهٔ نینتندو Switch OLED", "مدل — Switch OLED\nرنگ — نقره‌ای\nتوضیحات — نمونهٔ درخواست تنوع ناموجود برای بررسی تیم."),
+            11 => ("نمونهٔ پشتیبانی · پیگیری ضمانت", "این پرونده برای تمرین پاسخ‌گویی به سؤال شرایط ضمانت ثبت شده است."),
+            12 => ("نمونهٔ پشتیبانی · شرایط مرجوعی", "لطفاً مسیر ثبت درخواست مرجوعی برای کالای نمونه را توضیح دهید."),
+            _ => ExistingStory(n),
         };
         var command = $"ticket/{n}";
         var created = await tickets.CreateAsync(id, Id(command), new(subject, message, "fa"), ct);
@@ -133,6 +135,14 @@ internal static class ArvanDemoScenarios
         await staffTransaction.CommitAsync(ct);
     }
 
+    private static (string Subject, string Message) ExistingStory(int n) =>
+        (n % 4) switch
+        {
+            0 => ("[phone] درخواست نمونهٔ Pixel 9", "مدل — Pixel 9\nرنگ — مشکی\nحافظه — ۱۲۸ گیگابایت\nسقف بودجه (تومان) — ۴۵۰۰۰۰۰۰"),
+            1 => ("[product-question] پرسش نمونه دربارهٔ Galaxy A10", "d70-sample-galaxy-a10\n\nاین گوشی برای تماس و پیام‌رسانی سبک مناسب است؟"),
+            2 => ("نمونهٔ پشتیبانی · پیگیری بسته", "این گفت‌وگوی نمونه برای بررسی گردش پیگیری بسته در پنل است."),
+            _ => ("نمونهٔ پشتیبانی · تغییر نشانی", "می‌خواهم پیش از ارسال، گردش تغییر نشانی سفارش را بررسی کنم.")
+        };
     private static void AddAudit(IdentityDbContext db, string resource, string key) =>
         db.Audit.Add(new() { ActorId = Actor, Action = "DevelopmentExample", Resource = resource, TraceId = Id(key) });
 
